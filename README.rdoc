@@ -5,12 +5,19 @@ Zuul provides a simple authorization framework for Rails apps.
 ==Quick Start
 
 In your User model, specify the valid roles
+
   valid_roles :guest, :member, :admin
 
-In your application controller
+In your application controller, enable access restrictions
 
   include Zuul::RestrictAccess
   restrict_access
+
+In your controllers, specify which roles are allowed for which actions.
+
+  require_user :guest, :admin, :only => :index, :show
+
+==Examples and Options
 
 You can pass +restrict_access+ some options
 * +access_denied_message+
@@ -23,19 +30,23 @@ You can pass +restrict_access+ some options
 
   The name of a method, as a symbol, that will be called to determine where to redirect someone when they have been denied access. The method is expected to return a string. The default is :unauthorized_path which returns "/".
 
-In your controllers, specify which roles are allowed for which actions. Some examples:
-* <code>require_user :admin</code>
+You can pass +require_user+ a list of roles and also indicate which actions to apply the restriction to using <code>:only</code> and <code>:except</code>. Some examples:
+* Restrict access to all actions for a specific role.
 
-  Restrict access to all actions for a specific role.
-* <code>require_user :guest, :admin, :only => :index, :show</code>
+  <code>require_user :admin</code>
 
-  Restrict access to specific actions for specific roles.
-* <code>require_user :only => :show</code>
+* Restrict access to specific actions for specific roles.
 
-  Require a user but don't care about the role.
-* <code>require_no_user :only => :edit, :update</code>
+  <code>require_user :guest, :admin, :only => :index, :show</code>
 
-  Don't allow access to the edit action if there is a user.
+* Require a user but don't care about the role.
+
+  <code>require_user :only => :show</code>
+
+* Don't allow access to edit or update if there is a user.
+
+  <code>require_no_user :only => :edit, :update</code>
+
 
 == Note on Patches/Pull Requests
 
