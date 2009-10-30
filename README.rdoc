@@ -18,7 +18,7 @@ You can pass +restrict_access+ some options
   The string that will be added to the flash[:notice] if the user has been denied access to an action. Defaults to "You must be logged in to access this page".
 * +require_no_user_message+
 
-  The string that will be added to the flash[:notice] if the requested action requires there be NO user signed in and there is on. Defaults to "You must be logged out to access this page".
+  The string that will be added to the flash[:notice] if the requested action requires there be NO user signed in and there is one. Defaults to "You must be logged out to access this page".
 * +unauthorized_redirect_path+
 
   The name of a method, as a symbol, that will be called to determine where to redirect someone when they have been denied access. The method is expected to return a string. The default is :unauthorized_path which returns "/".
@@ -43,9 +43,7 @@ In your controllers, specify which roles are allowed for which actions. Some exa
 * Make your feature addition or bug fix.
 * Add tests for it. This is important so I don't break it in a
   future version unintentionally.
-* Commit, do not mess with rakefile, version, or history.
-  (if you want to have your own version, that is fine but
-   bump version in a commit by itself I can ignore when I pull)
+* Commit, do not mess with rakefile, version, or history. (if you want to have your own version, that is fine but bump version in a commit by itself I can ignore when I pull)
 * Send me a pull request. Bonus points for topic branches.
 
 == Copyright
