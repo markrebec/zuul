@@ -1,32 +1,41 @@
-= zuul
+=Zuul
 
-In your User model, specify the valid roles:
-valid_roles :guest, :member, :admin
+Zuul provides a simple authorization framework for Rails apps.
 
-In your application controller:
-include Zuul::RestrictAccess
-restrict_access
+==Quick Start
 
-You can pass +restrict_access+ some options:
-* +access_denied_message+: The string that will be added to the
-  flash[:notice] if the user has been denied access to an action.
-  Defaults to "You must be logged in to access this page".
-* +require_no_user_message+: The string that will be added to the
-  flash[:notice] if the requested action requires there be NO user signed
-  in and there is on. Defaults to "You must be logged out to access this
-  page.".
-* +unauthorized_redirect_path+: The name of a method, as a symbol, that
-  will be called to determine where to redirect someone when they have
-  been denied access. The method is expected to return a string. The
-  default is :unauthorized_path which returns "/".
+In your User model, specify the valid roles
+  valid_roles :guest, :member, :admin
 
-In your controllers:
-* +require_user :admin+: Restrict access to all actions for a specific role.
-* +require_user :guest, :admin, :only => :index, :show+: Restrict access to
-   specific actions for specific roles.
-* +require_user :only => :show+: Require a user but don't care about the role.
-* +require_no_user :only => :edit, :update+: Don't allow access to the edit action
-   if there is a user.
+In your application controller
+
+  include Zuul::RestrictAccess
+  restrict_access
+
+You can pass +restrict_access+ some options
+* +access_denied_message+
+
+  The string that will be added to the flash[:notice] if the user has been denied access to an action. Defaults to "You must be logged in to access this page".
+* +require_no_user_message+
+
+  The string that will be added to the flash[:notice] if the requested action requires there be NO user signed in and there is on. Defaults to "You must be logged out to access this page".
+* +unauthorized_redirect_path+
+
+  The name of a method, as a symbol, that will be called to determine where to redirect someone when they have been denied access. The method is expected to return a string. The default is :unauthorized_path which returns "/".
+
+In your controllers, specify which roles are allowed for which actions. Some examples:
+* <code>require_user :admin</code>
+
+  Restrict access to all actions for a specific role.
+* <code>require_user :guest, :admin, :only => :index, :show</code>
+
+  Restrict access to specific actions for specific roles.
+* <code>require_user :only => :show</code>
+
+  Require a user but don't care about the role.
+* <code>require_no_user :only => :edit, :update</code>
+
+  Don't allow access to the edit action if there is a user.
 
 == Note on Patches/Pull Requests
 

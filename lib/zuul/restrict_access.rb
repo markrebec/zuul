@@ -11,12 +11,12 @@ module Zuul
         klass.cattr_accessor :unauthorized_redirect_path
       end
 
-      # +require_user+ is meant to be called from your controllers. This is
+      # Meant to be called from your controllers. This is
       # where you define which roles have access to which actions in the
       # controller. Examples:
-      # * +require_user :admin+: Restrict access to all actions for a specific role.
-      # * +require_user :guest, :admin, :only => :index, :show+: Restrict access to specific actions for specific roles.
-      # * +require_user :only => :show+: Require a user but don't care about the role.
+      # * <code>require_user :admin</code>: Restrict access to all actions for a specific role.
+      # * <code>require_user :guest, :admin, :only => :index, :show</code>: Restrict access to specific actions for specific roles.
+      # * <code>require_user :only => :show</code>: Require a user but don't care about the role.
       def require_user(*roles)
         options = roles.extract_options!
         self.before_filter options do |controller|
@@ -24,9 +24,9 @@ module Zuul
         end
       end
 
-      # +require_no_user+ tells its controller to check that there is no user
+      # Tells its controller to check that there is no user
       # before allowing someone into an action. For example:
-      # * +require_no_user :only => :edit, :update+: Don't allow access to the edit action
+      # * <code>require_no_user :only => :edit, :update</code>: Don't allow access to the edit action
       # if there is a user.
       def require_no_user(options = {})
         self.before_filter options do |controller|
@@ -34,7 +34,7 @@ module Zuul
         end
       end
 
-      #+restrict_access+ is intended to be called by ApplicationController. It mixes
+      # Intended to be called by ApplicationController. It mixes
       # in a set of instance methods that manage conferring or denying access to actions.
       # You can customize the behavior when a user is denied access with these
       # options:
