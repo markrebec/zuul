@@ -19,4 +19,5 @@ rdoc
 pkg
 
 ## PROJECT::SPECIFIC
-spec/test.db
+spec/rails_root/db/test.sqlite3
+spec/rails_root/log/*

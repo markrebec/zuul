@@ -5,8 +5,8 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "zuul"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
+    gem.summary = %Q{Authorization}
+    gem.description = %Q{Authorization}
     gem.email = "wes@hashrocket.com"
     gem.homepage = "http://github.com/wgibbs/zuul"
     gem.authors = ["Wes Gibbs"]
@@ -18,10 +18,17 @@ rescue LoadError
   puts "Jeweler (or a dependency) not available. Install it with: sudo gem install jeweler"
 end
 
+require 'rake/testtask'
+Rake::TestTask.new(:test) do |test|
+  test.libs << 'lib' << 'test'
+  test.pattern = 'teset/rails_root/test/**/test_*.rb'
+  test.verbose = true
+end
+
 require 'spec/rake/spectask'
 Spec::Rake::SpecTask.new(:spec) do |spec|
   spec.libs << 'lib' << 'spec'
-  spec.spec_files = FileList['spec/**/*_spec.rb']
+  spec.spec_files = FileList['spec/rails_root/spec/**/*_spec.rb']
 end
 
 Spec::Rake::SpecTask.new(:rcov) do |spec|
