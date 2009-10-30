@@ -11,6 +11,12 @@ module Zuul
         klass.cattr_accessor :unauthorized_redirect_path
       end
 
+      # +require_user+ is meant to be called from your controllers. This is
+      # where you define which roles have access to which actions in the
+      # controller. Examples:
+      # * +require_user :admin+: Restrict access to all actions for a specific role.
+      # * +require_user :guest, :admin, :only => :index, :show+: Restrict access to specific actions for specific roles.
+      # * +require_user :only => :show+: Require a user but don't care about the role.
       def require_user(*roles)
         options = roles.extract_options!
         self.before_filter options do |controller|
@@ -18,12 +24,31 @@ module Zuul
         end
       end
 
+      # +require_no_user+ tells its controller to check that there is no user
+      # before allowing someone into an action. For example:
+      # * +require_no_user :only => :edit, :update+: Don't allow access to the edit action
+      # if there is a user.
       def require_no_user(options = {})
         self.before_filter options do |controller|
           controller.send(:require_no_user)
         end
       end
 
+      #+restrict_access+ is intended to be called by ApplicationController. It mixes
+      # in a set of instance methods that manage conferring or denying access to actions.
+      # You can customize the behavior when a user is denied access with these
+      # options:
+      # * +access_denied_message+: The string that will be added to the
+      #   flash[:notice] if the user has been denied access to an action.
+      #   Defaults to "You must be logged in to access this page".
+      # * +require_no_user_message+: The string that will be added to the
+      #   flash[:notice] if the requested action requires there be NO user signed
+      #   in and there is on. Defaults to "You must be logged out to access this
+      #   page.".
+      # * +unauthorized_redirect_path+: The name of a method, as a symbol, that
+      #   will be called to determine where to redirect someone when they have
+      #   been denied access. The method is expected to return a string. The
+      #   default is :unauthorized_path which returns "/".
       def restrict_access(options = {})
         self.access_denied_message = options[:access_denied_message] || "You must be logged in to access this page"
         self.require_no_user_message = options[:require_no_user_message] || "You must be logged out to access this page"
