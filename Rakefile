@@ -5,12 +5,14 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "zuul"
-    gem.summary = %Q{Authorization}
-    gem.description = %Q{Authorization}
+    gem.summary = %Q{Simple Rails Authorization}
+    gem.description = %Q{A simple authorization solution for Rails apps.}
     gem.email = "wes@hashrocket.com"
     gem.homepage = "http://github.com/wgibbs/zuul"
     gem.authors = ["Wes Gibbs"]
     gem.add_development_dependency "rspec", ">= 1.2.9"
+    gem.test_files = ["spec/**/*"]
+    gem.files.exclude "spec/rails_root/**/*"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new

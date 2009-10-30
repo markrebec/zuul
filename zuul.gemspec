@@ -9,8 +9,8 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Wes Gibbs"]
-  s.date = %q{2009-10-28}
-  s.description = %q{TODO: longer description of your gem}
+  s.date = %q{2009-10-30}
+  s.description = %q{A simple authorization solution for Rails apps.}
   s.email = %q{wes@hashrocket.com}
   s.extra_rdoc_files = [
     "LICENSE",
@@ -24,21 +24,42 @@ Gem::Specification.new do |s|
      "Rakefile",
      "VERSION",
      "lib/zuul.rb",
-     "spec/spec.opts",
-     "spec/spec_helper.rb",
-     "spec/zuul_spec.rb"
+     "lib/zuul/restrict_access.rb",
+     "lib/zuul/valid_roles.rb",
+     "zuul.gemspec"
   ]
   s.homepage = %q{http://github.com/wgibbs/zuul}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.5}
-  s.summary = %q{TODO: one-line summary of your gem}
+  s.summary = %q{Simple Rails Authorization}
   s.test_files = [
-    "spec/spec_helper.rb",
-     "spec/zuul_spec.rb",
-     "test/boot.rb",
-     "test/helper.rb",
-     "test/test_assets_controller.rb"
+    "spec/rails_root",
+     "spec/rails_root/app",
+     "spec/rails_root/app/controllers",
+     "spec/rails_root/app/controllers/application_controller.rb",
+     "spec/rails_root/app/models",
+     "spec/rails_root/app/models/user.rb",
+     "spec/rails_root/config",
+     "spec/rails_root/config/boot.rb",
+     "spec/rails_root/config/database.yml",
+     "spec/rails_root/config/environment.rb",
+     "spec/rails_root/config/environments",
+     "spec/rails_root/config/environments/test.rb",
+     "spec/rails_root/config/initializers",
+     "spec/rails_root/config/initializers/session_store.rb",
+     "spec/rails_root/config/routes.rb",
+     "spec/rails_root/db",
+     "spec/rails_root/db/test.sqlite3",
+     "spec/rails_root/log",
+     "spec/rails_root/log/test.log",
+     "spec/rails_root/spec",
+     "spec/rails_root/spec/controllers",
+     "spec/rails_root/spec/controllers/require_user_spec.rb",
+     "spec/rails_root/spec/controllers/restrict_access_spec.rb",
+     "spec/rails_root/spec/models",
+     "spec/rails_root/spec/models/user_spec.rb",
+     "spec/rails_root/spec/spec_helper.rb"
   ]
 
   if s.respond_to? :specification_version then
