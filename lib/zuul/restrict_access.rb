@@ -43,7 +43,7 @@ module Zuul
       #   Defaults to "You must be logged in to access this page".
       # * +require_no_user_message+: The string that will be added to the
       #   flash[:notice] if the requested action requires there be NO user signed
-      #   in and there is on. Defaults to "You must be logged out to access this
+      #   in and there is one. Defaults to "You must be logged out to access this
       #   page.".
       # * +unauthorized_redirect_path+: The name of a method, as a symbol, that
       #   will be called to determine where to redirect someone when they have
