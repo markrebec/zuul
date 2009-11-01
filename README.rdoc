@@ -1,14 +1,18 @@
 =Zuul
 
-Zuul provides a simple authorization framework for Rails apps.
+Zuul provides a simple role-based authorization framework for Rails apps.
 
 ==Quick Start
 
-In your User model, specify the valid roles
+Add a +role+ to your +users+ table
+
+   add_column :users, :role, :string
+
+In your +User+ model, specify the valid roles
 
   valid_roles :guest, :member, :admin
 
-In your application controller, enable access restrictions
+In your +ApplicationController+, enable access restrictions
 
   include Zuul::RestrictAccess
   restrict_access
@@ -20,15 +24,9 @@ In your controllers, specify which roles are allowed for which actions.
 ==Examples and Options
 
 You can pass +restrict_access+ some options
-* +access_denied_message+
-
-  The string that will be added to the flash[:notice] if the user has been denied access to an action. Defaults to "You must be logged in to access this page".
-* +require_no_user_message+
-
-  The string that will be added to the flash[:notice] if the requested action requires there be NO user signed in and there is one. Defaults to "You must be logged out to access this page".
-* +unauthorized_redirect_path+
-
-  The name of a method, as a symbol, that will be called to determine where to redirect someone when they have been denied access. The method is expected to return a string. The default is :unauthorized_path which returns "/".
+* +access_denied_message+ - The string that will be added to the flash[:notice] if the user has been denied access to an action. Defaults to "You must be logged in to access this page".
+* +require_no_user_message+ - The string that will be added to the flash[:notice] if the requested action requires there be NO user signed in and there is one. Defaults to "You must be logged out to access this page".
+* +unauthorized_redirect_path+ - The name of a method, as a symbol, that will be called to determine where to redirect someone when they have been denied access. The method is expected to return a string. The default is :unauthorized_path which returns "/".
 
 You can pass +require_user+ a list of roles and also indicate which actions to apply the restriction to using <code>:only</code> and <code>:except</code>. Some examples:
 * Restrict access to all actions for a specific role.
