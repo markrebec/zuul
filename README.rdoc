@@ -45,6 +45,9 @@ You can pass +require_user+ a list of roles and also indicate which actions to a
 
   <code>require_no_user :only => :edit, :update</code>
 
+== Credits
+
+Thanks to {Les Hill}[http://github.com/leshill] for help testing the +ApplicationController+ mixins.
 
 == Note on Patches/Pull Requests
 
