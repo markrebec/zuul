@@ -53,54 +53,52 @@ module Zuul
         self.access_denied_message = options[:access_denied_message] || "You must be logged in to access this page"
         self.require_no_user_message = options[:require_no_user_message] || "You must be logged out to access this page"
         self.unauthorized_redirect_path = options[:unauthorized_redirect_path] || :unauthorized_path
-        include ApplicationController::InstanceMethods
+        include InstanceMethods
       end
     end
 
-    module ApplicationController
-      module InstanceMethods
-        def require_user(*roles)
-          roles.flatten!
-          return true if current_user && roles.empty?
-          deny_access unless roles.any? do |role|
-            method = (role.to_s + "?").to_sym
-            if current_user && current_user.respond_to?(method)
-              current_user.send(method)
-            else
-              false
-            end
+    module InstanceMethods
+      def require_user(*roles)
+        roles.flatten!
+        return true if current_user && roles.empty?
+        deny_access unless roles.any? do |role|
+          method = (role.to_s + "?").to_sym
+          if current_user && current_user.respond_to?(method)
+            current_user.send(method)
+          else
+            false
           end
         end
-        private :require_user
+      end
+      private :require_user
 
-        def require_no_user
-          if current_user
-            store_location
-            flash[:notice] = self.class.require_no_user_message
-            redirect_to send(self.class.unauthorized_redirect_path)
-            return false
-          end
-        end
-        private :require_no_user
-
-        def deny_access
+      def require_no_user
+        if current_user
           store_location
-          flash[:notice] = self.class.access_denied_message
+          flash[:notice] = self.class.require_no_user_message
           redirect_to send(self.class.unauthorized_redirect_path)
           return false
         end
-        private :deny_access
-
-        def store_location
-          session[:return_to] = request.request_uri
-        end
-        private :store_location
-
-        def unauthorized_path
-          "/"
-        end
-        private :unauthorized_path
       end
+      private :require_no_user
+
+      def deny_access
+        store_location
+        flash[:notice] = self.class.access_denied_message
+        redirect_to send(self.class.unauthorized_redirect_path)
+        return false
+      end
+      private :deny_access
+
+      def store_location
+        session[:return_to] = request.request_uri
+      end
+      private :store_location
+
+      def unauthorized_path
+        "/"
+      end
+      private :unauthorized_path
     end
   end
 end
