@@ -4,15 +4,17 @@ Zuul provides a simple role-based authorization framework for Rails apps.
 
 ==Quick Start
 
-Add a +role+ to your +users+ table
+Zuul expects that you have a +current_user+ method available.
+
+Add a +role+ to your +users+ table.
 
    add_column :users, :role, :string
 
-In your +User+ model, specify the valid roles
+In your +User+ model, specify the valid roles.
 
   valid_roles :guest, :member, :admin
 
-In your +ApplicationController+, enable access restrictions
+In your +ApplicationController+, enable access restrictions.
 
   include Zuul::RestrictAccess
   restrict_access
