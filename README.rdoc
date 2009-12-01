@@ -2,6 +2,8 @@
 
 Zuul provides a simple role-based authorization framework for Rails apps.
 
+  sudo gem install zuul --source http://gemcutter.org
+
 ==Quick Start
 
 Zuul expects that you have a +current_user+ method available.
