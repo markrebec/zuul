@@ -1,0 +1,7 @@
+- controller DSL
+
+- include a default Role and Permission model + generator for migration?
+- generators for Role, Permission, RolePermission, SubjectRole, SubjectPermission models?
+- generators for migrations to add fields to custom Role, Permission models?
+
+- helpers for views like --  <% requires_role(:role) do %>HTML HERE<% end %>
