@@ -28,20 +28,16 @@ module Allowables
           
           self.class.instance_eval do
             auth_classes.each do |class_type,c|
-              define_method "#{class_type.to_s}" do
-                if c.is_a?(Class)
-                  "::#{c.class.name}".constantize
-                else
-                  "::#{c.to_s.singularize.camelize}".constantize
-                end
-              end
-              
               define_method "#{class_type.to_s}_name" do
                 if c.is_a?(Class)
                   c.class.name
                 else
                   c.to_s.singularize.camelize
                 end
+              end
+              
+              define_method "#{class_type.to_s}" do
+                "::#{send("#{class_type.to_s}_name")}".constantize
               end
             end
           end
@@ -81,15 +77,15 @@ module Allowables
         end
 
         def role_foreign_key
-          "#{role_class_name.underscore}_id"
+          "#{role_class_name.underscore}_#{role_class.primary_key}"
         end
 
         def permission_foreign_key
-          "#{permission_class_name.underscore}_id"
+          "#{permission_class_name.underscore}_#{permission_class.primary_key}"
         end
 
         def subject_foreign_key
-          "#{subject_class_name.underscore}_id"
+          "#{subject_class_name.underscore}_#{subject_class.primary_key}"
         end
       end
 
