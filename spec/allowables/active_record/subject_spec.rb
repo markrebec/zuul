@@ -1,5 +1,5 @@
 require 'spec_helper'
 
-describe "Allowables" do
+describe "Allowables::ActiveRecord::Subject" do
   pending "add specs"
 end
