@@ -13,8 +13,12 @@ Gem::Specification.new do |s|
   s.test_files  = Dir["spec/**/*"]
   s.homepage    = "http://github.com/markrebec/allowables"
 
-  s.add_dependency "rails"
+  s.add_dependency "active_support"
+  s.add_dependency "activerecord"
+  s.add_dependency "actionpack"
 
+  s.add_development_dependency "sqlite3"
   s.add_development_dependency "rspec"
+  s.add_development_dependency "rake"
   s.add_development_dependency "database_cleaner"
 end
