@@ -1,3 +1,6 @@
+class Dummy < ActiveRecord::Base
+end
+
 class User < ActiveRecord::Base
   attr_accessible :name
 end
