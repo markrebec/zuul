@@ -16,4 +16,5 @@ Gem::Specification.new do |s|
   s.add_dependency "rails"
 
   s.add_development_dependency "rspec"
+  s.add_development_dependency "database_cleaner"
 end
