@@ -48,7 +48,9 @@ module Allowables
 
       def acts_as_authorization_context(args={})
         include AuthorizationMethods
+        args = {:with_permissions => true}.merge(args)
         
+        with_permissions args[:with_permissions]
         auth_classes = args.select { |k,v| DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) }
         set_authorization_class_names auth_classes 
         

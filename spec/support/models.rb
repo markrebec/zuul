@@ -41,3 +41,41 @@ end
 Object.send(:remove_const, :Dummy) if defined?(Dummy)
 class Dummy < ActiveRecord::Base
 end
+
+
+Object.send(:remove_const, :Soldier) if defined?(Soldier)
+class Soldier < ActiveRecord::Base
+  attr_accessible :name
+end
+
+Object.send(:remove_const, :Rank) if defined?(Rank)
+class Rank < ActiveRecord::Base
+  attr_accessible :name, :slug, :level, :context_type, :context_id
+end
+
+Object.send(:remove_const, :Skill) if defined?(Skill)
+class Skill < ActiveRecord::Base
+  attr_accessible :name, :slug, :context_type, :context_id
+end
+
+Object.send(:remove_const, :Weapon) if defined?(Weapon)
+class Weapon < ActiveRecord::Base
+end
+
+Object.send(:remove_const, :RankSoldier) if defined?(RankSoldier)
+class RankSoldier < ActiveRecord::Base
+  belongs_to :soldier
+  belongs_to :rank
+end
+
+Object.send(:remove_const, :SkillSoldier) if defined?(SkillSoldier)
+class SkillSoldier < ActiveRecord::Base
+  belongs_to :soldier
+  belongs_to :skill
+end
+
+Object.send(:remove_const, :RankSkill) if defined?(RankSkill)
+class RankSkill < ActiveRecord::Base
+  belongs_to :rank
+  belongs_to :skill
+end

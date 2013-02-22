@@ -17,7 +17,7 @@ module Allowables
             join_classes = join_types.map do |class_type|
               type_class = auth_classes["#{class_type.to_s}_class".to_sym]
               if type_class.is_a?(Class)
-                type_class.class.name.underscore
+                type_class.name.underscore
               else
                 type_class.to_s.singularize.underscore
               end
@@ -30,7 +30,7 @@ module Allowables
             auth_classes.each do |class_type,c|
               define_method "#{class_type.to_s}_name" do
                 if c.is_a?(Class)
-                  c.class.name
+                  c.name
                 else
                   c.to_s.singularize.camelize
                 end

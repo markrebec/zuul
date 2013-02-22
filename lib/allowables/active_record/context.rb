@@ -25,6 +25,7 @@ module Allowables
         end
 
         # Checks whether the subject possesses the specified permission within the context of self
+        # TODO define this dynamically depending on with_permissions?
         def allowed_to?(subject, permission)
           subject.has_permission?(permission, self)
         end
