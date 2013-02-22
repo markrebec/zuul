@@ -15,7 +15,7 @@ describe "Allowables::ActiveRecord" do
     end
   end
 
-  context "acts_as_authorization_*" do
+  describe "acts_as_authorization_*" do
     it "should extend the model with Allowables::ActiveRecord::AuthorizationMethods" do
       User.acts_as_authorization_subject
       Role.acts_as_authorization_role
@@ -42,7 +42,7 @@ describe "Allowables::ActiveRecord" do
     end
   end
   
-  context "acts_as_authorization_*?" do
+  describe "acts_as_authorization_*?" do
     it "should return false by default" do
       [User, Role, Permission, Context].each do |model|
         [:subject, :role, :permission, :context].each do |type|
@@ -83,7 +83,7 @@ describe "Allowables::ActiveRecord" do
     end
   end
 
-  context "acts_as_authorization_subject" do
+  describe "acts_as_authorization_subject" do
     it "should extend the model with Allowables::ActiveRecord::Subject" do
       User.acts_as_authorization_subject
       User.ancestors.include?(Allowables::ActiveRecord::Subject).should be_true
@@ -105,7 +105,7 @@ describe "Allowables::ActiveRecord" do
     end
   end
 
-  context "acts_as_authorization_role" do
+  describe "acts_as_authorization_role" do
     it "should extend the model with Allowables::ActiveRecord::Role" do
       Role.acts_as_authorization_role
       Role.ancestors.include?(Allowables::ActiveRecord::Role).should be_true
@@ -122,14 +122,14 @@ describe "Allowables::ActiveRecord" do
     end
   end
 
-  context "acts_as_authorization_permission" do
+  describe "acts_as_authorization_permission" do
     it "should extend the model with Allowables::ActiveRecord::Permission" do
       Permission.acts_as_authorization_permission
       Permission.ancestors.include?(Allowables::ActiveRecord::Permission).should be_true
     end
   end
 
-  context "acts_as_authorization_context" do
+  describe "acts_as_authorization_context" do
     it "should extend the model with Allowables::ActiveRecord::Context" do
       Context.acts_as_authorization_context
       Context.ancestors.include?(Allowables::ActiveRecord::Context).should be_true
@@ -143,7 +143,7 @@ describe "Allowables::ActiveRecord" do
       Dummy.ancestors.include?(Allowables::ActiveRecord::Reflection).should be_true
     end
 
-    context "with_permissions methods" do
+    describe "with_permissions methods" do
       it "should be available to models that acts_as_authorization_*" do
         User.acts_as_authorization_subject
         Role.acts_as_authorization_role
@@ -190,16 +190,60 @@ describe "Allowables::ActiveRecord" do
       end
     end
 
-    context "target_role" do
+    describe "target_role" do
+      pending "should require a role and a context"
+      pending "should accept a role object"
+      pending "should just return the role object if one is passed"
+      pending "should accept a string or symbol"
+      
+      context "when looking up a role" do
+        pending "should use the defined role_class for the lookup"
+        pending "should use the provided slug for the lookup"
+        
+        context "within a context" do
+          pending "should go up the context chain to find roles"
+          pending "should use the closest contextual match"
+        end
+      end
     end
     
-    context "target_permission" do
+    describe "target_permission" do
+      pending "should require a permission and a context"
+      pending "should accept a permission object"
+      pending "should just return the permission object if one is passed"
+      pending "should accept a string or symbol"
+      
+      context "when looking up a permission" do
+        pending "should use the defined permission_class for the lookup"
+        pending "should use the provided slug for the lookup"
+        
+        context "within a context" do
+          pending "should go up the context chain to find permissions"
+          pending "should prefer the closest contextual match"
+        end
+      end
     end
 
-    context "parse_context" do
+    describe "parse_context" do
+      pending "should require a context"
+      pending "should allow a class"
+      pending "should allow an instance"
+      pending "should allow a nil context"
+      pending "should return an array with the context broken into it's two parts"
+      pending "should return [TheClass, nil] for class context"
+      pending "should return [TheClass, id] for an instance context"
+      pending "should return [nil, nil] for a nil context"
     end
 
-    context "verify_target_context" do
+    describe "verify_target_context" do
+      pending "should require a target role or permission and a context"
+      pending "should accept a role or a permission as the target"
+      pending "should return false if a nil target is provided"
+      pending "should allow nil context targets to be used within any other context"
+      pending "should allow class context targets to be used within the context of their class or any instances of their class"
+      pending "should allow instance targets to be used within their own instance context"
+      pending "should not allow class context targets to be used within any other class or nil contexts"
+      pending "should not allow instance context targets to be used within any other class or instance contexts or a nil context"
     end
   end
 
