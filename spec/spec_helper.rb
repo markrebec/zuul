@@ -9,7 +9,11 @@ Dir[File.join(File.dirname(__FILE__), '..', "spec/support/**/*.rb")].each { |f| 
 RSpec.configure do |config|
   config.before(:suite) do
     ActiveRecord::Base.establish_connection adapter: "sqlite3", database: ":memory:"
-    capture_stdout { load "spec/db/schema.rb" }
+    capture_stdout { load "db/schema.rb" }
+  end
+
+  config.before(:each) do
+    load 'support/models.rb'
   end
 
   config.around(:each) do |example|
