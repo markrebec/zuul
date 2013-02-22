@@ -2,6 +2,7 @@
 
 - error classes and messages
 - i18n error messages
+- move DEFAULT_CLASS stuff to configuration (and create a configuration class to manage global config - Allowables.configure do |config| end)
 
 - account for namespaces when setting classes (or test if it just works as is?)
 - maybe rework some of the method and association names to use the provided values instead of the keys (like :user instead of :subject). alternately maybe figure out a way to namespace acts_as_*? would allow something to behave with many acts_as_* without a conflict (i.e. possess Roles and SpecialRoles)
