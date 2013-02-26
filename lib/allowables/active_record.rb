@@ -115,9 +115,9 @@ module Allowables
           return role if role.is_a?(role_class)
           
           context_type, context_id = *parse_context(context)
-          target_role = role_class.where(:slug => role.to_s, :context_type => context_type, :context_id => context_id).first
-          target_role ||= role_class.where(:slug => role.to_s, :context_type => context_type, :context_id => nil).first unless context_id.nil?
-          target_role ||= role_class.where(:slug => role.to_s, :context_type => nil, :context_id => nil).first unless context_type.nil?
+          target_role = role_class.where(:slug => role.to_s.underscore, :context_type => context_type, :context_id => context_id).first
+          target_role ||= role_class.where(:slug => role.to_s.underscore, :context_type => context_type, :context_id => nil).first unless context_id.nil?
+          target_role ||= role_class.where(:slug => role.to_s.underscore, :context_type => nil, :context_id => nil).first unless context_type.nil?
           target_role
         end
         
@@ -133,9 +133,9 @@ module Allowables
           return permission if permission.is_a?(permission_class)
           
           context_type, context_id = *parse_context(context)
-          target_permission = permission_class.where(:slug => permission.to_s, :context_type => context_type, :context_id => context_id).first
-          target_permission ||= permission_class.where(:slug => permission.to_s, :context_type => context_type, :context_id => nil).first unless context_id.nil?
-          target_permission ||= permission_class.where(:slug => permission.to_s, :context_type => nil, :context_id => nil).first unless context_type.nil?
+          target_permission = permission_class.where(:slug => permission.to_s.underscore, :context_type => context_type, :context_id => context_id).first
+          target_permission ||= permission_class.where(:slug => permission.to_s.underscore, :context_type => context_type, :context_id => nil).first unless context_id.nil?
+          target_permission ||= permission_class.where(:slug => permission.to_s.underscore, :context_type => nil, :context_id => nil).first unless context_type.nil?
           target_permission
         end
         

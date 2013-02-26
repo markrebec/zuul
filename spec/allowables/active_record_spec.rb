@@ -191,39 +191,157 @@ describe "Allowables::ActiveRecord" do
     end
 
     describe "target_role" do
-      pending "should require a role and a context"
-      pending "should accept a role object"
-      pending "should just return the role object if one is passed"
-      pending "should accept a string or symbol"
+      before(:each) do
+        Dummy.send :include, Allowables::ActiveRecord
+        Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
+      end
+
+      it "should require a role object or slug and a context" do
+        expect { Dummy.new.target_role }.to raise_exception
+        expect { Dummy.new.target_role(:role) }.to raise_exception
+        expect { Dummy.new.target_role(:role, nil) }.to_not raise_exception
+      end
+
+      it "should accept a role object" do
+        expect { Dummy.new.target_role(Role.new, nil) }.to_not raise_exception
+      end
+
+      it "should accept a string or symbol" do
+        expect { Dummy.new.target_role(:role, nil) }.to_not raise_exception
+        expect { Dummy.new.target_role('role', nil) }.to_not raise_exception
+      end
       
       context "when looking up a role" do
-        pending "should use the defined role_class for the lookup"
-        pending "should use the provided slug for the lookup"
-        
-        context "within a context" do
-          pending "should go up the context chain to find roles"
-          pending "should use the closest contextual match"
+        it "should just return the role object if one is passed" do
+          role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+          Dummy.new.target_role(role, nil).should === role
         end
-      end
-    end
-    
-    describe "target_permission" do
-      pending "should require a permission and a context"
-      pending "should accept a permission object"
-      pending "should just return the permission object if one is passed"
-      pending "should accept a string or symbol"
-      
-      context "when looking up a permission" do
-        pending "should use the defined permission_class for the lookup"
-        pending "should use the provided slug for the lookup"
+
+        it "should use the defined role_class for the lookup" do
+          role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+          Dummy.new.target_role(:admin, nil).should be_an_instance_of(Role)
+          # TODO add another example that uses different role class
+        end
+
+        it "should use the provided slug for the lookup" do
+          role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+          Dummy.new.target_role(:admin, nil).slug.should == 'admin'
+          Dummy.new.target_role('admin', nil).slug.should == 'admin'
+        end
+
+        it "should normalize symbols and strings to lowercase and underscored" do
+          role = Role.create(:name => 'My Cool Role', :slug => 'my_cool_role', :level => 40)
+          Dummy.new.target_role('MyCoolRole', nil).should == role
+          Dummy.new.target_role(:MyCoolRole, nil).should == role
+        end
         
         context "within a context" do
-          pending "should go up the context chain to find permissions"
-          pending "should prefer the closest contextual match"
+          it "should go up the context chain to find roles" do
+            context = Context.create(:name => "Test Context")
+            nil_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+            Dummy.new.target_role(:admin, nil).should == nil_role
+            Dummy.new.target_role(:admin, Context).should == nil_role
+            Dummy.new.target_role(:admin, context).should == nil_role
+          end
+
+          pending "should use the closest contextual match" do
+            context = Context.create(:name => "Test Context")
+            
+            nil_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+            Dummy.new.target_role(:admin, nil).should == nil_role
+            Dummy.new.target_role(:admin, Context).should == nil_role
+            Dummy.new.target_role(:admin, context).should == nil_role
+            
+            class_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context')
+            Dummy.new.target_role(:admin, nil).should == nil_role
+            Dummy.new.target_role(:admin, Context).should == class_role
+            Dummy.new.target_role(:admin, context).should == class_role
+            
+            inst_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context', :context_id => context.id)
+            Dummy.new.target_role(:admin, nil).should == nil_role
+            Dummy.new.target_role(:admin, Context).should == class_role
+            Dummy.new.target_role(:admin, context).should == inst_role
+          end
         end
       end
     end
 
+    describe "target_permission" do
+      before(:each) do
+        Dummy.send :include, Allowables::ActiveRecord
+        Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
+      end
+
+      it "should require a permission object or slug and a context" do
+        expect { Dummy.new.target_permission }.to raise_exception
+        expect { Dummy.new.target_permission(:permission) }.to raise_exception
+        expect { Dummy.new.target_permission(:permission, nil) }.to_not raise_exception
+      end
+
+      it "should accept a permission object" do
+        expect { Dummy.new.target_permission(Permission.new, nil) }.to_not raise_exception
+      end
+
+      it "should accept a string or symbol" do
+        expect { Dummy.new.target_permission(:permission, nil) }.to_not raise_exception
+        expect { Dummy.new.target_permission('permission', nil) }.to_not raise_exception
+      end
+      
+      context "when looking up a permission" do
+        it "should just return the permission object if one is passed" do
+          permission = Permission.create(:name => 'Admin', :slug => 'admin')
+          Dummy.new.target_permission(permission, nil).should === permission
+        end
+
+        it "should use the defined permission_class for the lookup" do
+          permission = Permission.create(:name => 'Admin', :slug => 'admin')
+          Dummy.new.target_permission(:admin, nil).should be_an_instance_of(Permission)
+          # TODO add another example that uses different permission class
+        end
+
+        it "should use the provided slug for the lookup" do
+          permission = Permission.create(:name => 'Admin', :slug => 'admin')
+          Dummy.new.target_permission(:admin, nil).slug.should == 'admin'
+          Dummy.new.target_permission('admin', nil).slug.should == 'admin'
+        end
+
+        it "should normalize symbols and strings to lowercase and underscored" do
+          permission = Permission.create(:name => 'My Cool Permission', :slug => 'my_cool_permission')
+          Dummy.new.target_permission('MyCoolPermission', nil).should == permission
+          Dummy.new.target_permission(:MyCoolPermission, nil).should == permission
+        end
+        
+        context "within a context" do
+          it "should go up the context chain to find permissions" do
+            context = Context.create(:name => "Test Context")
+            nil_permission = Permission.create(:name => 'Admin', :slug => 'admin')
+            Dummy.new.target_permission(:admin, nil).should == nil_permission
+            Dummy.new.target_permission(:admin, Context).should == nil_permission
+            Dummy.new.target_permission(:admin, context).should == nil_permission
+          end
+
+          pending "should use the closest contextual match" do
+            context = Context.create(:name => "Test Context")
+            
+            nil_permission = Permission.create(:name => 'Admin', :slug => 'admin')
+            Dummy.new.target_permission(:admin, nil).should == nil_permission
+            Dummy.new.target_permission(:admin, Context).should == nil_permission
+            Dummy.new.target_permission(:admin, context).should == nil_permission
+            
+            class_permission = Permission.create(:name => 'Admin', :slug => 'admin', :context_type => 'Context')
+            Dummy.new.target_permission(:admin, nil).should == nil_permission
+            Dummy.new.target_permission(:admin, Context).should == class_permission
+            Dummy.new.target_permission(:admin, context).should == class_permission
+            
+            inst_permission = Permission.create(:name => 'Admin', :slug => 'admin', :context_type => 'Context', :context_id => context.id)
+            Dummy.new.target_permission(:admin, nil).should == nil_permission
+            Dummy.new.target_permission(:admin, Context).should == class_permission
+            Dummy.new.target_permission(:admin, context).should == inst_permission
+          end
+        end
+      end
+    end
+    
     describe "parse_context" do
       pending "should require a context"
       pending "should allow a class"
