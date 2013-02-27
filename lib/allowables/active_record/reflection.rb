@@ -8,6 +8,7 @@ module Allowables
 
       module ClassMethods
         # Set the classes to be used for subjects, roles, permissions and their associations
+        # NOTE: Doesn't actually "set" any variables, but defines methods like role_class_name
         def set_authorization_class_names(classes={})
           auth_classes = DEFAULT_AUTHORIZATION_CLASSES.merge(classes.select { |k,v| DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) })
           [[:role, :subject], [:permission, :subject], [:permission, :role]].each do |join_types|
@@ -47,11 +48,6 @@ module Allowables
           class_name.constantize.table_name
         end
         
-        def authorization_join_table_name(*classes)
-          classes.sort!
-          "#{classes[0]}#{classes[1].pluralize}".constantize.table_name
-        end
-
         def subjects_table_name
           authorization_table_name(subject_class_name)
         end
@@ -92,6 +88,7 @@ module Allowables
       module InstanceMethods
         # Defines the TYPE_class, TYPE_class_name, TYPES_table_name and TYPE_foreign_key
         # methods for the default authorization class types.
+        # TODO could probably just use method_missing here? might be a little less efficient
         def self.included(base)
           DEFAULT_AUTHORIZATION_CLASSES.keys.each do |method_class|
             methods = ["#{method_class.to_s}", "#{method_class.to_s}_name", "#{method_class.to_s.gsub(/_class$/,'').pluralize}_table_name"]
