@@ -244,7 +244,7 @@ describe "Allowables::ActiveRecord" do
             Dummy.new.target_role(:admin, context).should == nil_role
           end
 
-          pending "should use the closest contextual match" do
+          it "should use the closest contextual match" do
             context = Context.create(:name => "Test Context")
             
             nil_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
@@ -289,20 +289,20 @@ describe "Allowables::ActiveRecord" do
       
       context "when looking up a permission" do
         it "should just return the permission object if one is passed" do
-          permission = Permission.create(:name => 'Admin', :slug => 'admin')
+          permission = Permission.create(:name => 'Do Something', :slug => 'do_something')
           Dummy.new.target_permission(permission, nil).should === permission
         end
 
         it "should use the defined permission_class for the lookup" do
-          permission = Permission.create(:name => 'Admin', :slug => 'admin')
-          Dummy.new.target_permission(:admin, nil).should be_an_instance_of(Permission)
+          permission = Permission.create(:name => 'Do Something', :slug => 'do_something')
+          Dummy.new.target_permission(:do_something, nil).should be_an_instance_of(Permission)
           # TODO add another example that uses different permission class
         end
 
         it "should use the provided slug for the lookup" do
-          permission = Permission.create(:name => 'Admin', :slug => 'admin')
-          Dummy.new.target_permission(:admin, nil).slug.should == 'admin'
-          Dummy.new.target_permission('admin', nil).slug.should == 'admin'
+          permission = Permission.create(:name => 'Do Something', :slug => 'do_something')
+          Dummy.new.target_permission(:do_something, nil).slug.should == 'do_something'
+          Dummy.new.target_permission('do_something', nil).slug.should == 'do_something'
         end
 
         it "should normalize symbols and strings to lowercase and underscored" do
@@ -314,54 +314,152 @@ describe "Allowables::ActiveRecord" do
         context "within a context" do
           it "should go up the context chain to find permissions" do
             context = Context.create(:name => "Test Context")
-            nil_permission = Permission.create(:name => 'Admin', :slug => 'admin')
-            Dummy.new.target_permission(:admin, nil).should == nil_permission
-            Dummy.new.target_permission(:admin, Context).should == nil_permission
-            Dummy.new.target_permission(:admin, context).should == nil_permission
+            nil_permission = Permission.create(:name => 'Do Something', :slug => 'do_something')
+            Dummy.new.target_permission(:do_something, nil).should == nil_permission
+            Dummy.new.target_permission(:do_something, Context).should == nil_permission
+            Dummy.new.target_permission(:do_something, context).should == nil_permission
           end
 
-          pending "should use the closest contextual match" do
+          it "should use the closest contextual match" do
             context = Context.create(:name => "Test Context")
             
-            nil_permission = Permission.create(:name => 'Admin', :slug => 'admin')
-            Dummy.new.target_permission(:admin, nil).should == nil_permission
-            Dummy.new.target_permission(:admin, Context).should == nil_permission
-            Dummy.new.target_permission(:admin, context).should == nil_permission
+            nil_permission = Permission.create(:name => 'Do Something', :slug => 'do_something')
+            Dummy.new.target_permission(:do_something, nil).should == nil_permission
+            Dummy.new.target_permission(:do_something, Context).should == nil_permission
+            Dummy.new.target_permission(:do_something, context).should == nil_permission
             
-            class_permission = Permission.create(:name => 'Admin', :slug => 'admin', :context_type => 'Context')
-            Dummy.new.target_permission(:admin, nil).should == nil_permission
-            Dummy.new.target_permission(:admin, Context).should == class_permission
-            Dummy.new.target_permission(:admin, context).should == class_permission
+            class_permission = Permission.create(:name => 'Do Something', :slug => 'do_something', :context_type => 'Context')
+            Dummy.new.target_permission(:do_something, nil).should == nil_permission
+            Dummy.new.target_permission(:do_something, Context).should == class_permission
+            Dummy.new.target_permission(:do_something, context).should == class_permission
             
-            inst_permission = Permission.create(:name => 'Admin', :slug => 'admin', :context_type => 'Context', :context_id => context.id)
-            Dummy.new.target_permission(:admin, nil).should == nil_permission
-            Dummy.new.target_permission(:admin, Context).should == class_permission
-            Dummy.new.target_permission(:admin, context).should == inst_permission
+            inst_permission = Permission.create(:name => 'Do Something', :slug => 'do_something', :context_type => 'Context', :context_id => context.id)
+            Dummy.new.target_permission(:do_something, nil).should == nil_permission
+            Dummy.new.target_permission(:do_something, Context).should == class_permission
+            Dummy.new.target_permission(:do_something, context).should == inst_permission
           end
         end
       end
     end
     
     describe "parse_context" do
-      pending "should require a context"
-      pending "should allow a class"
-      pending "should allow an instance"
-      pending "should allow a nil context"
-      pending "should return an array with the context broken into it's two parts"
-      pending "should return [TheClass, nil] for class context"
-      pending "should return [TheClass, id] for an instance context"
-      pending "should return [nil, nil] for a nil context"
+      before(:each) do
+        Dummy.send :include, Allowables::ActiveRecord
+        Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
+      end
+      
+      it "should require a context" do
+        expect { Dummy.new.parse_context }.to raise_exception
+      end
+      
+      it "should allow a nil context" do
+        expect { Dummy.new.parse_context(nil) }.to_not raise_exception
+      end
+
+      it "should allow a class" do
+        expect { Dummy.new.parse_context(Context) }.to_not raise_exception
+      end
+
+      it "should allow an instance" do
+        context = Context.create(:name => "Test Context")
+        expect { Dummy.new.parse_context(context) }.to_not raise_exception
+      end
+
+      it "should return an array with the context broken into it's two parts" do
+        context = Dummy.new.parse_context(nil)
+        context.should be_an_instance_of(Array)
+        context.length.should == 2
+      end
+      
+      it "should return [nil, nil] for a nil context" do
+        Dummy.new.parse_context(nil).should == [nil, nil]
+      end
+
+      it "should return ['ClassName', nil] for class context" do
+        Dummy.new.parse_context(Context).should == ['Context', nil]
+      end
+      
+      it "should return ['ClassName', id] for an instance context" do
+        context = Context.create(:name => "Test Context")
+        Dummy.new.parse_context(context).should == ['Context', context.id]
+      end
     end
 
     describe "verify_target_context" do
-      pending "should require a target role or permission and a context"
-      pending "should accept a role or a permission as the target"
-      pending "should return false if a nil target is provided"
-      pending "should allow nil context targets to be used within any other context"
-      pending "should allow class context targets to be used within the context of their class or any instances of their class"
-      pending "should allow instance targets to be used within their own instance context"
-      pending "should not allow class context targets to be used within any other class or nil contexts"
-      pending "should not allow instance context targets to be used within any other class or instance contexts or a nil context"
+      before(:each) do
+        Dummy.send :include, Allowables::ActiveRecord
+        Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
+      end
+      
+      it "should require a target role or permission and a context" do
+        expect { Dummy.new.verify_target_context }.to raise_exception
+        expect { Dummy.new.verify_target_context(nil) }.to raise_exception
+      end
+
+      it "should accept a role or a permission as the target" do
+        role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+        permission = Permission.create(:name => 'Do Something', :slug => 'do_something')
+        Dummy.new.verify_target_context(role, nil).should == true
+        Dummy.new.verify_target_context(permission, nil).should == true
+      end
+
+      it "should return false if a nil target is provided" do
+        Dummy.new.verify_target_context(nil, nil).should == false
+      end
+
+      it "should allow nil context targets to be used within any other context" do
+        context = Context.create(:name => "Test Context")
+        role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+        permission = Permission.create(:name => 'Do Something', :slug => 'do_something')
+        Dummy.new.verify_target_context(role, nil).should == true
+        Dummy.new.verify_target_context(role, Context).should == true
+        Dummy.new.verify_target_context(role, context).should == true
+        Dummy.new.verify_target_context(permission, nil).should == true
+        Dummy.new.verify_target_context(permission, Context).should == true
+        Dummy.new.verify_target_context(permission, context).should == true
+      end
+
+      it "should allow class context targets to be used within the context of their class or any instances of their class" do
+        context = Context.create(:name => "Test Context")
+        role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context')
+        permission = Permission.create(:name => 'Do Something', :slug => 'do_something', :context_type => 'Context')
+        Dummy.new.verify_target_context(role, Context).should == true
+        Dummy.new.verify_target_context(role, context).should == true
+        Dummy.new.verify_target_context(permission, Context).should == true
+        Dummy.new.verify_target_context(permission, context).should == true
+      end
+
+      it "should allow instance targets to be used within their own instance context" do
+        context = Context.create(:name => "Test Context")
+        role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context', :context_id => context.id)
+        permission = Permission.create(:name => 'Do Something', :slug => 'do_something', :context_type => 'Context', :context_id => context.id)
+        Dummy.new.verify_target_context(role, context).should == true
+        Dummy.new.verify_target_context(permission, context).should == true
+      end
+      
+      it "should not allow class context targets to be used within any other class or nil contexts" do
+        role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context')
+        permission = Permission.create(:name => 'Do Something', :slug => 'do_something', :context_type => 'Context')
+        Dummy.new.verify_target_context(role, nil).should == false
+        Dummy.new.verify_target_context(role, Weapon).should == false
+        Dummy.new.verify_target_context(permission, nil).should == false
+        Dummy.new.verify_target_context(permission, Weapon).should == false
+      end
+      
+      it "should not allow instance context targets to be used within any other class or instance contexts or a nil context" do
+        context = Context.create(:name => "Test Context")
+        other_context = Context.create(:name => "Another Test Context")
+        role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context', :context_id => context.id)
+        permission = Permission.create(:name => 'Do Something', :slug => 'do_something', :context_type => 'Context', :context_id => context.id)
+        Dummy.new.verify_target_context(role, nil).should == false
+        Dummy.new.verify_target_context(role, Context).should == false
+        Dummy.new.verify_target_context(role, Weapon).should == false
+        Dummy.new.verify_target_context(role, other_context).should == false
+        Dummy.new.verify_target_context(permission, nil).should == false
+        Dummy.new.verify_target_context(permission, Context).should == false
+        Dummy.new.verify_target_context(permission, Weapon).should == false
+        Dummy.new.verify_target_context(permission, other_context).should == false
+      end
     end
   end
 
