@@ -25,6 +25,12 @@ class RoleUser < ActiveRecord::Base
   belongs_to :role
 end
 
+Object.send(:remove_const, :SpecialRoleUser) if defined?(SpecialRoleUser)
+class SpecialRoleUser < ActiveRecord::Base
+  belongs_to :user
+  belongs_to :role
+end
+
 Object.send(:remove_const, :PermissionUser) if defined?(PermissionUser)
 class PermissionUser < ActiveRecord::Base
   belongs_to :user
@@ -70,6 +76,12 @@ end
 
 Object.send(:remove_const, :SkillSoldier) if defined?(SkillSoldier)
 class SkillSoldier < ActiveRecord::Base
+  belongs_to :soldier
+  belongs_to :skill
+end
+
+Object.send(:remove_const, :CustomSkillSoldier) if defined?(CustomSkillSoldier)
+class CustomSkillSoldier < ActiveRecord::Base
   belongs_to :soldier
   belongs_to :skill
 end

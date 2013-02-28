@@ -8,6 +8,7 @@
 - maybe rework some of the method and association names to use the provided values instead of the keys (like :user instead of :subject). alternately maybe figure out a way to namespace acts_as_*? would allow something to behave with many acts_as_* without a conflict (i.e. possess Roles and SpecialRoles)
 - make sure context excludes permission methods when not used
 - allow restricting contexts (so subject can only be assigned permissions within that context)
+- add mixins to join models to add validations and associations
 
 - include a default Role and Permission model + generator for migration?
 - generators for Role, Permission, RolePermission, SubjectRole, SubjectPermission models?
