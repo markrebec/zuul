@@ -4,16 +4,16 @@ require "allowables/version"
 Gem::Specification.new do |s|
   s.name        = "allowables"
   s.version     = Allowables::VERSION
-  s.date        = "2012-01-04"
-  s.summary     = "Access Control for Rails."
-  s.description = "Flexible and easy to use authorization system for Rails."
+  s.date        = "2013-02-19"
+  s.summary     = "Authorizaion for Activerecord and Access Control for ActionController."
+  s.description = "Flexible and easy to use authorization system for ActiveRecord and ActionController."
   s.authors     = ["Mark Rebec"]
   s.email       = ["mark@markrebec.com"]
   s.files       = Dir["lib/**/*"]
   s.test_files  = Dir["spec/**/*"]
   s.homepage    = "http://github.com/markrebec/allowables"
 
-  s.add_dependency "active_support"
+  s.add_dependency "activesupport"
   s.add_dependency "activerecord"
   s.add_dependency "actionpack"
 
