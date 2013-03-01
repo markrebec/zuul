@@ -86,19 +86,19 @@ describe "Allowables::ActiveRecord::Subject" do
         nil_role_user.id.should_not be_nil
         nil_role_user.context_type.should be_nil
         nil_role_user.context_id.should be_nil
-        nil_role_user.role.should == nil_role
+        nil_role_user.role.id.should == nil_role.id
         
         class_role_user = @user.assign_role(:admin, Context)
         class_role_user.id.should_not be_nil
         class_role_user.context_type.should == 'Context'
         class_role_user.context_id.should be_nil
-        class_role_user.role.should == class_role
+        class_role_user.role.id.should == class_role.id
         
         inst_role_user = @user.assign_role(:admin, context)
         inst_role_user.id.should_not be_nil
         inst_role_user.context_type.should == 'Context'
         inst_role_user.context_id.should == context.id
-        inst_role_user.role.should == inst_role
+        inst_role_user.role.id.should == inst_role.id
       end
 
       it "should use the role object when one is provided" do
@@ -654,19 +654,19 @@ describe "Allowables::ActiveRecord::Subject" do
         nil_permission_user.id.should_not be_nil
         nil_permission_user.context_type.should be_nil
         nil_permission_user.context_id.should be_nil
-        nil_permission_user.permission.should == nil_permission
+        nil_permission_user.permission.id.should == nil_permission.id
         
         class_permission_user = @user.assign_permission(:edit, Context)
         class_permission_user.id.should_not be_nil
         class_permission_user.context_type.should == 'Context'
         class_permission_user.context_id.should be_nil
-        class_permission_user.permission.should == class_permission
+        class_permission_user.permission.id.should == class_permission.id
         
         inst_permission_user = @user.assign_permission(:edit, context)
         inst_permission_user.id.should_not be_nil
         inst_permission_user.context_type.should == 'Context'
         inst_permission_user.context_id.should == context.id
-        inst_permission_user.permission.should == inst_permission
+        inst_permission_user.permission.id.should == inst_permission.id
       end
 
       it "should use the permission object when one is provided" do
