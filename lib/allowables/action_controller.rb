@@ -12,15 +12,36 @@ module Allowables
       end
 
       def access_control(*args, &block)
-        before_filter(*args) do |controller|
-          controller.authorization_dsl ||= DSL::Base.new(controller)
+        opts = {:default => :deny, :actions => [], :roles => [], :permissions => [], :force_context => false, :context => nil}
+        opts = opts.merge(args[0]) if args.length > 0
+        filter_args = {}.merge(opts.select { |k,v| [:except, :only].include?(k) })
+        opts.delete(:only)
+        opts.delete(:except)
+        
+        before_filter(filter_args) do |controller|
           puts "----------------------------"
           puts "START EXECUTING ACCESS CONTROL BLOCK"
-          dsl.instance_eval(&block) if block_given?
+          
+          controller.authorization_dsl = DSL::Base.new(controller, opts)
+          puts controller.authorization_dsl.options[:context].context.to_yaml
+
+
+          if block_given?
+            controller.authorization_dsl.instance_eval(&block)
+          else
+            controller.authorization_dsl.instance_eval do
+              puts "EXECUTE WITHOUT BLOCK"
+            end
+          end
+          
+          
           puts "DONE EXECUTING ACCESS CONTROL BLOCK"
           puts "----------------------------"
+          
+          
           puts "ACCESS CONTROL RESULTS"
-          puts dsl.results.to_yaml
+          puts controller.authorization_dsl.results.to_yaml
+          puts controller.authorization_dsl.allowed? ? "ALLOWED" : "NOT ALLOWED"
           puts "----------------------------"
         end
       end
