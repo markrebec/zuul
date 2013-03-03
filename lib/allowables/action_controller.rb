@@ -47,14 +47,9 @@ module Allowables
                   auth_actions.concat(opts[auth_type][:actions])
                 end
                 actions auth_actions do
-                  if opts[auth_type].has_key?(:roles)
-                    roles opts[auth_type][:roles] do
-                      eval(auth_type.to_s)
-                    end
-                  end
-                  if opts[auth_type].has_key?(:permissions)
-                    permissions opts[auth_type][:permissions] do
-                      eval(auth_type.to_s)
+                  [:roles, :permissions].each do |type|
+                    if opts[auth_type].has_key?(type)
+                      send "#{auth_type.to_s}_#{type.to_s}", opts[auth_type][type]
                     end
                   end
                 end
