@@ -9,6 +9,7 @@ module Allowables
           actions = actions[0] if actions.length == 1 && actions[0].is_a?(Array)
           opts = options
           opts[:actions].concat(actions)
+          return unless opts[:actions].map(&:to_sym).include?(@controller.params[:action].to_sym)
           dsl = Actions.new(@controller, opts)
           dsl.instance_eval(&block) if block_given?
           
@@ -85,6 +86,10 @@ module Allowables
         end
         alias_method :deny_permission, :deny_permissions
 
+        def all_actions
+          @controller.class.action_methods.select { |act| !act.match(/^_callback_before_[\d]*$/) }.map(&:to_sym)
+        end
+
         def logged_out
           :_allowables_logged_out
         end
@@ -94,34 +99,35 @@ module Allowables
           :_allowables_logged_in
         end
 
-        def all_actions
-          @controller.class.action_methods.select { |act| !act.match(/^_callback_before_[\d]*$/) }.map(&:to_sym)
+        def anyone(context=false)
+          [logged_in, logged_out]
         end
 
         def all_roles(context=false)
           subject = @controller.send(:current_user)
           return [] if subject.nil?
           context = (context == false) ? @context : parse_context(context)
-          roles = subject.role_class.where(:context_type => context.type, :context_id => context.id).to_a
-          roles.concat(subject.role_class.where(:context_type => context.type, :context_id => nil).to_a) unless context.id.nil?
-          roles.concat(subject.role_class.where(:context_type => nil, :context_id => nil).to_a) unless context.type.nil?
-          roles
+          found_roles = subject.role_class.where(:context_type => context.type, :context_id => context.id).to_a
+          found_roles.concat(subject.role_class.where(:context_type => context.type, :context_id => nil).to_a) unless context.id.nil?
+          found_roles.concat(subject.role_class.where(:context_type => nil, :context_id => nil).to_a) unless context.type.nil?
+          found_roles
         end
 
         def all_permissions(context=false)
           subject = @controller.send(:current_user)
           return [] if subject.nil?
           context = (context == false) ? @context : parse_context(context)
-          permissions = subject.permission_class.where(:context_type => context.type, :context_id => context.id).to_a
-          permissions.concat(subject.permission_class.where(:context_type => context.type, :context_id => nil).to_a) unless context.id.nil?
-          permissions.concat(subject.permission_class.where(:context_type => nil, :context_id => nil).to_a) unless context.type.nil?
-          permissions
+          found_permissions = subject.permission_class.where(:context_type => context.type, :context_id => context.id).to_a
+          found_permissions.concat(subject.permission_class.where(:context_type => context.type, :context_id => nil).to_a) unless context.id.nil?
+          found_permissions.concat(subject.permission_class.where(:context_type => nil, :context_id => nil).to_a) unless context.type.nil?
+          found_permissions
         end
 
         def contextual_role(slug, context=false)
           subject = @controller.send(:current_user)
           return nil if subject.nil?
           context = (context == false) ? @context : parse_context(context)
+          return subject.target_role(slug, context.context)
           role = subject.role_class.where(:slug => slug, :context_type => context.type, :context_id => context.id).first
           role ||= subject.role_class.where(:slug => slug, :context_type => context.type, :context_id => nil).first unless context.id.nil?
           role ||= subject.role_class.where(:slug => slug, :context_type => nil, :context_id => nil).first unless context.type.nil?
@@ -133,6 +139,7 @@ module Allowables
           subject = @controller.send(:current_user)
           return nil if subject.nil?
           context = (context == false) ? @context : parse_context(context)
+          return subject.target_permission(slug, context.context)
           permission = subject.permission_class.where(:slug => slug, :context_type => context.type, :context_id => context.id).first
           permission ||= subject.permission_class.where(:slug => slug, :context_type => context.type, :context_id => nil).first unless context.id.nil?
           permission ||= subject.permission_class.where(:slug => slug, :context_type => nil, :context_id => nil).first unless context.type.nil?
@@ -205,27 +212,21 @@ module Allowables
       end
 
       class Actions < Base
-        # DSL for the actions do; blocks
-        #
-        # alias allow_roles_with_actions, set actions option, call original
       end
 
       class Actionable < Base
-        # DSL for roles/permissions
-        #
-        # def allow, deny for actions
-
         def all
           all_actions
         end
       end
 
       class Roles < Actionable
-        # DSL for the roles do; blocks
         
         def allow(*actions)
           actions = actions[0] if actions.length == 1 && actions[0].is_a?(Array)
+          actions.concat(@actions)
           subject = @controller.send(:current_user)
+          return if @roles.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @roles.each do |role|
               if (role == :_allowables_logged_out && subject.nil?) ||
@@ -235,14 +236,8 @@ module Allowables
               end
               
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
-              if @force_context && !role.is_a?(subject.role_class)
-                check_role = contextual_role(role, @context)
-              else
-                check_role = role
-              end
-              puts "checking role (allow):"
-              puts check_role.is_a?(subject.role_class) ? "#{check_role.slug} (#{check_role.context_type},#{check_role.context_id})" : check_role
-              if subject.has_role?(check_role, @context.context)
+              puts "checking role (allow): #{role.is_a?(subject.role_class) ? "#{role.slug} (#{role.context_type},#{role.context_id})" : role}"
+              if (@or_higher && subject.has_role_or_higher?(role, @context.context)) || (!@or_higher && subject.has_role?(role, @context.context))
                 puts "matched"
                 @results << true
                 return
@@ -254,7 +249,9 @@ module Allowables
         
         def deny(*actions)
           actions = actions[0] if actions.length == 1 && actions[0].is_a?(Array)
+          actions.concat(@actions)
           subject = @controller.send(:current_user)
+          return if @roles.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @roles.each do |role|
               if (role == :_allowables_logged_out && subject.nil?) ||
@@ -264,14 +261,8 @@ module Allowables
               end
               
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
-              if @force_context && !role.is_a?(subject.role_class)
-                check_role = contextual_role(role, @context)
-              else
-                check_role = role
-              end
-              puts "checking role (deny):"
-              puts check_role.to_yaml
-              if subject.has_role?(check_role, @context.context)
+              puts "checking role (deny): #{role.is_a?(subject.role_class) ? "#{role.slug} (#{role.context_type},#{role.context_id})" : role}"
+              if (@or_higher && subject.has_role_or_higher?(role, @context.context)) || (!@or_higher && subject.has_role?(role, @context.context))
                 puts "matched"
                 @results << false
                 return
@@ -281,54 +272,56 @@ module Allowables
           end
         end
 
-        #def or_higher(&block)
-          # pass block to new Roles object with :or_higher flag
-        #end
+        def or_higher(&block)
+          opts = options.merge(:or_higher => true)
+          dsl = self.class.new(@controller, opts)
+          dsl.instance_eval(&block) if block_given?
+          
+          @results.concat dsl.results
+        end
 
         protected
 
-        # TODO allow setting :or_higher flag
         def initialize(controller, opts={})
           super
+          opts = {:or_higher => false}.merge(opts)
+          @or_higher = opts[:or_higher]
         end
       end
 
       class Permissions < Actionable
-        # DSL for the permissions do; blocks
         
         def allow(*actions)
           actions = actions[0] if actions.length == 1 && actions[0].is_a?(Array)
+          actions.concat(@actions)
           subject = @controller.send(:current_user)
+          return if subject.nil? || @permissions.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
-            unless subject.nil?
-              @permissions.each do |permission|
-                puts "checking permission: #{permission} (allow)"
-                if subject.has_permission?(permission, @context.context)
-                  puts "matched"
-                  @results << true
-                  return
-                end
+            @permissions.each do |permission|
+              puts "checking permission (allow): #{permission.is_a?(subject.permission_class) ? "#{permission.slug} (#{permission.context_type},#{permission.context_id})" : permission}"
+              if subject.has_permission?(permission, @context.context)
+                puts "matched"
+                @results << true
+                return
               end
             end
-            #@results << false
           end
         end
         
         def deny(*actions)
           actions = actions[0] if actions.length == 1 && actions[0].is_a?(Array)
+          actions.concat(@actions)
           subject = @controller.send(:current_user)
+          return if subject.nil? || @permissions.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
-            unless subject.nil?
-              @permissions.each do |permission|
-                puts "checking permission: #{permission} (deny)"
-                if subject.has_permission?(permission, @context.context)
-                  puts "matched"
-                  @results << false
-                  return
-                end
+            @permissions.each do |permission|
+              puts "checking permission (deny): #{permission.is_a?(subject.permission_class) ? "#{permission.slug} (#{permission.context_type},#{permission.context_id})" : permission}"
+              if subject.has_permission?(permission, @context.context)
+                puts "matched"
+                @results << false
+                return
               end
             end
-            #@results << true
           end
         end
         
