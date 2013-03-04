@@ -8,6 +8,7 @@ module Allowables
 
       module ClassMethods
         def self.extended(base)
+          base.send :attr_accessible, :context, :context_id, :context_type, :level, :name, :slug
           add_validations base
           add_associations base
         end
