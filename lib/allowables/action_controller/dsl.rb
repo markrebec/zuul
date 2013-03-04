@@ -188,6 +188,10 @@ module Allowables
           set_options opts
           @results = []
         end
+
+        def logger
+          @controller.logger
+        end
       end
 
       class Actions < Base
@@ -215,9 +219,10 @@ module Allowables
               end
               
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
-              puts "checking role (allow): #{role.is_a?(subject.role_class) ? "#{role.slug} (#{role.context_type},#{role.context_id})" : role}"
+              
+              logger.debug "checking role (allow): #{role.is_a?(subject.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
               if (@or_higher && subject.has_role_or_higher?(role, @context.to_context)) || (!@or_higher && subject.has_role?(role, @context.to_context))
-                puts "matched"
+                logger.debug "matched"
                 @results << true
                 return
               end
@@ -240,9 +245,10 @@ module Allowables
               end
               
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
-              puts "checking role (deny): #{role.is_a?(subject.role_class) ? "#{role.slug} (#{role.context_type},#{role.context_id})" : role}"
+              
+              logger.debug "checking role (deny): #{role.is_a?(subject.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
               if (@or_higher && subject.has_role_or_higher?(role, @context.to_context)) || (!@or_higher && subject.has_role?(role, @context.to_context))
-                puts "matched"
+                logger.debug "matched"
                 @results << false
                 return
               end
@@ -277,9 +283,9 @@ module Allowables
           return if subject.nil? || @permissions.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @permissions.each do |permission|
-              puts "checking permission (allow): #{permission.is_a?(subject.permission_class) ? "#{permission.slug} (#{permission.context_type},#{permission.context_id})" : permission}"
+              logger.debug "checking permission (allow): #{permission.is_a?(subject.permission_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
               if subject.has_permission?(permission, @context.to_context)
-                puts "matched"
+                logger.debug "matched"
                 @results << true
                 return
               end
@@ -294,9 +300,9 @@ module Allowables
           return if subject.nil? || @permissions.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @permissions.each do |permission|
-              puts "checking permission (deny): #{permission.is_a?(subject.permission_class) ? "#{permission.slug} (#{permission.context_type},#{permission.context_id})" : permission}"
+              logger.debug "checking permission (deny): #{permission.is_a?(subject.permission_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
               if subject.has_permission?(permission, @context.to_context)
-                puts "matched"
+                logger.debug "matched"
                 @results << false
                 return
               end

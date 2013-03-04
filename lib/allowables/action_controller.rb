@@ -27,16 +27,17 @@ module Allowables
         opts.delete(:except)
         
         before_filter(filter_args) do |controller|
-          puts "----------------------------"
-          puts "START EXECUTING ACCESS CONTROL BLOCK"
+          logger = controller.logger
+          logger.debug "----------------------------"
+          logger.debug "ACCESS CONTROL BLOCK START"
           
           
-          controller.authorization_dsl = DSL::Base.new(controller, opts)
+          auth_dsl = controller.authorization_dsl = DSL::Base.new(controller, opts)
           
           if block_given?
-            controller.authorization_dsl.instance_eval(&block)
+            auth_dsl.instance_eval(&block)
           else
-            controller.authorization_dsl.instance_eval do
+            auth_dsl.instance_eval do
               [:allow, :deny].each do |auth_type|
                 next unless opts.has_key?(auth_type)
                 auth_actions = opts[:actions]
@@ -57,14 +58,13 @@ module Allowables
           end
           
           
-          puts "DONE EXECUTING ACCESS CONTROL BLOCK"
-          puts "----------------------------"
-          
-          
-          puts "ACCESS CONTROL RESULTS"
-          puts controller.authorization_dsl.results.to_yaml
-          puts controller.authorization_dsl.allowed? ? "ALLOWED" : "NOT ALLOWED"
-          puts "----------------------------"
+          logger.debug "ACCESS CONTROL BLOCK END"
+          logger.debug "----------------------------"
+          logger.debug "----------------------------"
+          logger.debug "ACCESS CONTROL RESULTS"
+          logger.debug auth_dsl.results.to_yaml
+          logger.debug auth_dsl.allowed? ? "ALLOWED" : "NOT ALLOWED"
+          logger.debug "----------------------------"
         end
       end
 
