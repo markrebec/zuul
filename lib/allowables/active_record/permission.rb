@@ -29,6 +29,11 @@ module Allowables
       module InstanceMethods
         def self.included(base)
         end
+
+        # Return a Allowables::Context object representing the context for the permission
+        def context
+          Allowables::Context.new(context_type, context_id)
+        end
       end
     end
   end

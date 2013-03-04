@@ -97,6 +97,11 @@ module Allowables
         def permissions_for?(context=nil)
           permissions_for(context).count > 0
         end
+
+        # Return a Allowables::Context object representing the context for the role
+        def context
+          Allowables::Context.new(context_type, context_id)
+        end
       end
     end
   end

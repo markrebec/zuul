@@ -513,5 +513,23 @@ describe "Allowables::ActiveRecord::Role" do
         @role.permissions_for?(Context).should be_true
       end
     end
+
+    describe "#context" do
+      it "should return a Allowables::Context object" do
+        role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+        role.context.should be_a(Allowables::Context)
+      end
+
+      it "should return a Allowables::Context object that represents the context of the role" do
+        context = Context.create(:name => "Test Context")
+        nil_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+        class_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context')
+        inst_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context', :context_id => context.id)
+        nil_role.context.to_context.should be_nil
+        class_role.context.to_context.should == Context
+        inst_role.context.to_context.should be_a(Context)
+        inst_role.context.to_context.id.should == context.id
+      end
+    end
   end
 end

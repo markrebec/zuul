@@ -85,4 +85,26 @@ describe "Allowables::ActiveRecord::Permission" do
     skill.should respond_to(:rank_skills)
     skill.should respond_to(:ranks)
   end
+
+  describe "#context" do
+    before(:each) do
+      Permission.acts_as_authorization_permission
+    end
+    
+    it "should return a Allowables::Context object" do
+      permission = Permission.create(:name => 'Admin', :slug => 'admin')
+      permission.context.should be_a(Allowables::Context)
+    end
+
+    it "should return a Allowables::Context object that represents the context of the permission" do
+      context = Context.create(:name => "Test Context")
+      nil_permission = Permission.create(:name => 'Edit', :slug => 'edit')
+      class_permission = Permission.create(:name => 'Edit', :slug => 'edit', :context_type => 'Context')
+      inst_permission = Permission.create(:name => 'Edit', :slug => 'edit', :context_type => 'Context', :context_id => context.id)
+      nil_permission.context.to_context.should be_nil
+      class_permission.context.to_context.should == Context
+      inst_permission.context.to_context.should be_a(Context)
+      inst_permission.context.to_context.id.should == context.id
+    end
+  end
 end
