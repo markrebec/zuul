@@ -342,6 +342,7 @@ describe "Allowables::ActiveRecord" do
       end
     end
     
+    # TODO parse_context is deprecated, move these tests over to the Allowables::Context object
     describe "parse_context" do
       before(:each) do
         Dummy.send :include, Allowables::ActiveRecord

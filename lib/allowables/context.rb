@@ -1,17 +1,17 @@
 module Allowables
   class Context < Struct.new(:class_name, :id)
 
-    def self.new(*args)
+    def self.parse(*args)
       if args.length >= 2
-        super(*args)
+        new(*args)
       elsif args[0].is_a?(self)
         return args[0]
       elsif args[0].is_a?(Class)
-        super(args[0].name)
+        new(args[0].name)
       elsif args[0].class.ancestors.include?(::ActiveRecord::Base) && args[0].respond_to?(:id)
-        super(args[0].class.name, args[0].id)
+        new(args[0].class.name, args[0].id)
       else
-        super()
+        new
       end
     end
     

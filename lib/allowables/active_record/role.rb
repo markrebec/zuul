@@ -41,11 +41,11 @@ module Allowables
         # permission slug is provided, the permission is looked up in the context 
         # chain by target_permission.
         def assign_permission(permission, context=nil)
-          context_type, context_id = *parse_context(context)
+          context = Allowables::Context.parse(context)
           target = target_permission(permission, context)
-          return false unless verify_target_context(target, context) && permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context_type, :context_id => context_id).limit(1).first.nil?
+          return false unless verify_target_context(target, context) && permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).limit(1).first.nil?
 
-          return permission_role_class.create(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context_type, :context_id => context_id)
+          return permission_role_class.create(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id)
         end
 
         # Removes a permission from a role within the provided context.
@@ -54,11 +54,11 @@ module Allowables
         # permission slug is provided, the permission is looked up in the context 
         # chain by target_permission.
         def unassign_permission(permission, context=nil)
-          context_type, context_id = *parse_context(context)
+          context = Allowables::Context.parse(context)
           target = target_permission(permission, context)
           return false if target.nil?
 
-          assigned_permission = permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context_type, :context_id => context_id).limit(1).first
+          assigned_permission = permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).limit(1).first
           return false if assigned_permission.nil?
           assigned_permission.destroy
         end
@@ -75,12 +75,12 @@ module Allowables
         #
         # TODO add options to force context, not go up the chain
         def has_permission?(permission, context=nil)
-          context_type, context_id = *parse_context(context)
+          context = Allowables::Context.parse(context)
           target = target_permission(permission, context)
           return false if target.nil?
 
-          return true unless context_id.nil? || permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context_type, :context_id => context_id).first.nil?
-          return true unless context_type.nil? || permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context_type, :context_id => nil).first.nil?
+          return true unless context.id.nil? || permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).first.nil?
+          return true unless context.class_name.nil? || permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => nil).first.nil?
           !permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => nil, :context_id => nil).first.nil?
         end
         alias_method :permission?, :has_permission?
@@ -89,8 +89,8 @@ module Allowables
         
         # Returns all permissions possessed by the role within the provided context.
         def permissions_for(context=nil)
-          context_type, context_id = *parse_context(context)
-          permission_class.joins(permission_roles_table_name.to_sym).where(permission_roles_table_name.to_sym => {role_foreign_key.to_sym => id, :context_type => context_type, :context_id => context_id})
+          context = Allowables::Context.parse(context)
+          permission_class.joins(permission_roles_table_name.to_sym).where(permission_roles_table_name.to_sym => {role_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => context.id})
         end
         
         # Check whether the role possesses any permissions within the specified context.

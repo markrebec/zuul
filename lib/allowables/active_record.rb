@@ -114,10 +114,10 @@ module Allowables
         def target_role(role, context)
           return role if role.is_a?(role_class)
           
-          context_type, context_id = *parse_context(context)
-          target_role = role_class.where(:slug => role.to_s.underscore, :context_type => context_type, :context_id => context_id).first
-          target_role ||= role_class.where(:slug => role.to_s.underscore, :context_type => context_type, :context_id => nil).first unless context_id.nil?
-          target_role ||= role_class.where(:slug => role.to_s.underscore, :context_type => nil, :context_id => nil).first unless context_type.nil?
+          context = Allowables::Context.parse(context)
+          target_role = role_class.where(:slug => role.to_s.underscore, :context_type => context.class_name, :context_id => context.id).first
+          target_role ||= role_class.where(:slug => role.to_s.underscore, :context_type => context.class_name, :context_id => nil).first unless context.id.nil?
+          target_role ||= role_class.where(:slug => role.to_s.underscore, :context_type => nil, :context_id => nil).first unless context.class_name.nil?
           target_role
         end
         
@@ -132,10 +132,10 @@ module Allowables
         def target_permission(permission, context)
           return permission if permission.is_a?(permission_class)
           
-          context_type, context_id = *parse_context(context)
-          target_permission = permission_class.where(:slug => permission.to_s.underscore, :context_type => context_type, :context_id => context_id).first
-          target_permission ||= permission_class.where(:slug => permission.to_s.underscore, :context_type => context_type, :context_id => nil).first unless context_id.nil?
-          target_permission ||= permission_class.where(:slug => permission.to_s.underscore, :context_type => nil, :context_id => nil).first unless context_type.nil?
+          context = Allowables::Context.parse(context)
+          target_permission = permission_class.where(:slug => permission.to_s.underscore, :context_type => context.class_name, :context_id => context.id).first
+          target_permission ||= permission_class.where(:slug => permission.to_s.underscore, :context_type => context.class_name, :context_id => nil).first unless context.id.nil?
+          target_permission ||= permission_class.where(:slug => permission.to_s.underscore, :context_type => nil, :context_id => nil).first unless context.class_name.nil?
           target_permission
         end
         
@@ -145,8 +145,11 @@ module Allowables
         # 'id' is the id of a specific model record, indicating context is an actual record when provided
         #
         # A context can be for a specific record [SomeThing, 1], at the class level [SomeThing, nil], or globally [nil, nil].
+        #
+        # DEPRECATED
+        # TODO: move the tests for this over to the context object
         def parse_context(context)
-          return Allowables::Context.new(context)
+          return Allowables::Context.parse(context)
         end
 
         # Verifies whether a role or permission (target) is "allowed" to be used within the provided context.
@@ -158,9 +161,9 @@ module Allowables
         #
         # TODO add some options to control whether we go up the chain or not (or how far up)
         def verify_target_context(target, context)
-          context_type, context_id = *parse_context(context)
           return false if target.nil?
-          (target.context_type.nil? || target.context_type == context_type) && (target.context_id.nil? || target.context_id == context_id)
+          context = Allowables::Context.parse(context)
+          (target.context_type.nil? || target.context_type == context.class_name) && (target.context_id.nil? || target.context_id == context.id)
         end
 
         def with_permissions(bool)
