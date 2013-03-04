@@ -1,1 +1,8 @@
+# Ignore Gemfile.lock
+Gemfile.lock
+
+# Ignore rspec args
+.rspec
+
+# Ignore vim swap files
 *.swp
