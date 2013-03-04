@@ -372,20 +372,20 @@ describe "Allowables::ActiveRecord" do
       
       it "should return a nil context context for nil" do
         parsed = Dummy.new.parse_context(nil)
-        parsed.type.should be_nil
+        parsed.class_name.should be_nil
         parsed.id.should be_nil
       end
 
-      it "should return a context with type set to the class name for class context" do
+      it "should return a context with class_name set to the class name for class context" do
         parsed = Dummy.new.parse_context(Context)
-        parsed.type.should == 'Context'
+        parsed.class_name.should == 'Context'
         parsed.id.should be_nil
       end
       
-      it "should return a context with type and id set for an instance context" do
+      it "should return a context with class_name and id set for an instance context" do
         context = Context.create(:name => "Test Context")
         parsed = Dummy.new.parse_context(context)
-        parsed.type.should == 'Context'
+        parsed.class_name.should == 'Context'
         parsed.id.should == context.id
       end
     end
