@@ -365,23 +365,28 @@ describe "Allowables::ActiveRecord" do
         expect { Dummy.new.parse_context(context) }.to_not raise_exception
       end
 
-      it "should return an array with the context broken into it's two parts" do
-        context = Dummy.new.parse_context(nil)
-        context.should be_an_instance_of(Array)
-        context.length.should == 2
+      it "should return an Allowables::Context object with the context broken into it's two parts" do
+        parsed = Dummy.new.parse_context(nil)
+        parsed.should be_an_instance_of(Allowables::Context)
       end
       
-      it "should return [nil, nil] for a nil context" do
-        Dummy.new.parse_context(nil).should == [nil, nil]
+      it "should return a nil context context for nil" do
+        parsed = Dummy.new.parse_context(nil)
+        parsed.type.should be_nil
+        parsed.id.should be_nil
       end
 
-      it "should return ['ClassName', nil] for class context" do
-        Dummy.new.parse_context(Context).should == ['Context', nil]
+      it "should return a context with type set to the class name for class context" do
+        parsed = Dummy.new.parse_context(Context)
+        parsed.type.should == 'Context'
+        parsed.id.should be_nil
       end
       
-      it "should return ['ClassName', id] for an instance context" do
+      it "should return a context with type and id set for an instance context" do
         context = Context.create(:name => "Test Context")
-        Dummy.new.parse_context(context).should == ['Context', context.id]
+        parsed = Dummy.new.parse_context(context)
+        parsed.type.should == 'Context'
+        parsed.id.should == context.id
       end
     end
 

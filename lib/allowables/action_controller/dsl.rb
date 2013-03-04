@@ -127,7 +127,7 @@ module Allowables
           subject = @controller.send(:current_user)
           return nil if subject.nil?
           context = (context == false) ? @context : parse_context(context)
-          return subject.target_role(slug, context.context)
+          return subject.target_role(slug, context.to_context)
           role = subject.role_class.where(:slug => slug, :context_type => context.type, :context_id => context.id).first
           role ||= subject.role_class.where(:slug => slug, :context_type => context.type, :context_id => nil).first unless context.id.nil?
           role ||= subject.role_class.where(:slug => slug, :context_type => nil, :context_id => nil).first unless context.type.nil?
@@ -139,7 +139,7 @@ module Allowables
           subject = @controller.send(:current_user)
           return nil if subject.nil?
           context = (context == false) ? @context : parse_context(context)
-          return subject.target_permission(slug, context.context)
+          return subject.target_permission(slug, context.to_context)
           permission = subject.permission_class.where(:slug => slug, :context_type => context.type, :context_id => context.id).first
           permission ||= subject.permission_class.where(:slug => slug, :context_type => context.type, :context_id => nil).first unless context.id.nil?
           permission ||= subject.permission_class.where(:slug => slug, :context_type => nil, :context_id => nil).first unless context.type.nil?
@@ -161,8 +161,8 @@ module Allowables
         end
 
         def parse_context(context=nil)
-          parsed = Struct.new(:type, :id).new
-          if context.is_a?(Struct)
+          parsed = ::Allowables::Context.new
+          if context.is_a?(::Allowables::Context)
             parsed = context
           elsif context.is_a?(Class)
             parsed.type = context.name
@@ -183,13 +183,6 @@ module Allowables
             end
           end
 
-          parsed.instance_eval do
-            def context
-              return nil if type.nil?
-              return type.constantize if id.nil?
-              type.constantize.find(id)
-            end
-          end
           parsed
         end
 
@@ -237,7 +230,7 @@ module Allowables
               
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
               puts "checking role (allow): #{role.is_a?(subject.role_class) ? "#{role.slug} (#{role.context_type},#{role.context_id})" : role}"
-              if (@or_higher && subject.has_role_or_higher?(role, @context.context)) || (!@or_higher && subject.has_role?(role, @context.context))
+              if (@or_higher && subject.has_role_or_higher?(role, @context.to_context)) || (!@or_higher && subject.has_role?(role, @context.to_context))
                 puts "matched"
                 @results << true
                 return
@@ -262,7 +255,7 @@ module Allowables
               
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
               puts "checking role (deny): #{role.is_a?(subject.role_class) ? "#{role.slug} (#{role.context_type},#{role.context_id})" : role}"
-              if (@or_higher && subject.has_role_or_higher?(role, @context.context)) || (!@or_higher && subject.has_role?(role, @context.context))
+              if (@or_higher && subject.has_role_or_higher?(role, @context.to_context)) || (!@or_higher && subject.has_role?(role, @context.to_context))
                 puts "matched"
                 @results << false
                 return
@@ -299,7 +292,7 @@ module Allowables
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @permissions.each do |permission|
               puts "checking permission (allow): #{permission.is_a?(subject.permission_class) ? "#{permission.slug} (#{permission.context_type},#{permission.context_id})" : permission}"
-              if subject.has_permission?(permission, @context.context)
+              if subject.has_permission?(permission, @context.to_context)
                 puts "matched"
                 @results << true
                 return
@@ -316,7 +309,7 @@ module Allowables
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @permissions.each do |permission|
               puts "checking permission (deny): #{permission.is_a?(subject.permission_class) ? "#{permission.slug} (#{permission.context_type},#{permission.context_id})" : permission}"
-              if subject.has_permission?(permission, @context.context)
+              if subject.has_permission?(permission, @context.to_context)
                 puts "matched"
                 @results << false
                 return

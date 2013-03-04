@@ -146,11 +146,11 @@ module Allowables
         #
         # A context can be for a specific record [SomeThing, 1], at the class level [SomeThing, nil], or globally [nil, nil].
         def parse_context(context)
-          return [nil,nil] if context.nil?
+          return Allowables::Context.new(nil,nil) if context.nil?
           if context.class.name == "Class"
-            return [context.name, nil]
+            return Allowables::Context.new(context.name, nil)
           elsif context.class.ancestors.include?(::ActiveRecord::Base) && context.respond_to?(:id)
-            return [context.class.name, context.id]
+            return Allowables::Context.new(context.class.name, context.id)
           end
 
           raise "Invalid context" # TODO make and use error classes and better messages

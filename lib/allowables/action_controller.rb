@@ -22,7 +22,6 @@ module Allowables
       def access_control(*args, &block)
         opts = {:default => :deny, :force_context => false, :context => nil, :actions => [], :roles => [], :permissions => []}
         opts = opts.merge(args[0]) if args.length > 0
-        #[:allow, :deny].each { |auth_type| opts.merge!({auth_type => {:actions => [], :roles => [], :permissions => []}.merge(opts[auth_type])}) }
         filter_args = {}.merge(opts.select { |k,v| [:except, :only].include?(k) })
         opts.delete(:only)
         opts.delete(:except)
