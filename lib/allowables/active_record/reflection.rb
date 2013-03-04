@@ -10,7 +10,7 @@ module Allowables
         # Set the classes to be used for subjects, roles, permissions and their associations
         # NOTE: Doesn't actually "set" any variables, but defines methods like role_class_name
         def set_authorization_class_names(classes={})
-          auth_classes = DEFAULT_AUTHORIZATION_CLASSES.merge(classes.select { |k,v| DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) })
+          auth_classes = Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.merge(classes.select { |k,v| Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) })
           [[:role, :subject], [:permission, :subject], [:permission, :role]].each do |join_types|
             join_key = "#{join_types[0].to_s}_#{join_types[1].to_s}_class".to_sym
             next if classes.has_key?(join_key) # don't override join table if it was provided
@@ -90,9 +90,9 @@ module Allowables
         # methods for the default authorization class types.
         # TODO could probably just use method_missing here? might be a little less efficient
         def self.included(base)
-          DEFAULT_AUTHORIZATION_CLASSES.keys.each do |method_class|
+          Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.each do |method_class|
             methods = ["#{method_class.to_s}", "#{method_class.to_s}_name", "#{method_class.to_s.gsub(/_class$/,'').pluralize}_table_name"]
-            methods << "#{method_class.to_s.gsub(/_class$/,'')}_foreign_key" if PRIMARY_AUTHORIZATION_CLASSES.keys.include?(method_class)
+            methods << "#{method_class.to_s.gsub(/_class$/,'')}_foreign_key" if Allowables::Configuration::PRIMARY_AUTHORIZATION_CLASSES.keys.include?(method_class)
             methods.each do |method_name|
               define_method method_name do
                 self.class.send method_name

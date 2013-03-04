@@ -6,18 +6,6 @@ require 'allowables/active_record/subject'
 
 module Allowables
   module ActiveRecord
-    PRIMARY_AUTHORIZATION_CLASSES = {
-      :subject_class => :user,
-      :role_class => :role,
-      :permission_class => :permission
-    }
-    AUTHORIZATION_JOIN_CLASSES = {
-      :role_subject_class => :role_user,
-      :permission_role_class => :permission_role,
-      :permission_subject_class => :permission_user
-    }
-    DEFAULT_AUTHORIZATION_CLASSES = PRIMARY_AUTHORIZATION_CLASSES.merge(AUTHORIZATION_JOIN_CLASSES)
-
     def self.included(base)
       base.send :extend, ClassMethods
       base.send :include, InstanceMethods
@@ -26,10 +14,10 @@ module Allowables
     module ClassMethods
       def acts_as_authorization_role(args={})
         include AuthorizationMethods
-        args = {:with_permissions => true}.merge(args)
+        args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args)
         
         with_permissions args[:with_permissions]
-        auth_classes = args.select { |k,v| DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) }
+        auth_classes = args.select { |k,v| Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) }
         auth_classes = auth_classes.merge({:role_class => self.name})
         set_authorization_class_names auth_classes 
         
@@ -39,7 +27,7 @@ module Allowables
       def acts_as_authorization_permission(args={})
         include AuthorizationMethods
         
-        auth_classes = args.select { |k,v| DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) }
+        auth_classes = args.select { |k,v| Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) }
         auth_classes = auth_classes.merge({:permission_class => self.name})
         set_authorization_class_names auth_classes 
         
@@ -48,10 +36,10 @@ module Allowables
 
       def acts_as_authorization_context(args={})
         include AuthorizationMethods
-        args = {:with_permissions => true}.merge(args)
+        args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args)
         
         with_permissions args[:with_permissions]
-        auth_classes = args.select { |k,v| DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) }
+        auth_classes = args.select { |k,v| Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) }
         set_authorization_class_names auth_classes 
         
         include Context
@@ -59,10 +47,10 @@ module Allowables
 
       def acts_as_authorization_subject(args={})
         include AuthorizationMethods
-        args = {:with_permissions => true}.merge(args)
+        args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args)
         
         with_permissions args[:with_permissions]
-        auth_classes = args.select { |k,v| DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) }
+        auth_classes = args.select { |k,v| Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) }
         auth_classes = auth_classes.merge({:subject_class => self.name})
         set_authorization_class_names auth_classes 
         
