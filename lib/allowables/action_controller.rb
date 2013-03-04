@@ -30,9 +30,9 @@ module Allowables
           puts "----------------------------"
           puts "START EXECUTING ACCESS CONTROL BLOCK"
           
+          
           controller.authorization_dsl = DSL::Base.new(controller, opts)
-
-
+          
           if block_given?
             controller.authorization_dsl.instance_eval(&block)
           else
@@ -46,9 +46,9 @@ module Allowables
                   auth_actions.concat(opts[auth_type][:actions])
                 end
                 actions auth_actions do
-                  [:roles, :permissions].each do |type|
-                    if opts[auth_type].has_key?(type)
-                      send "#{auth_type.to_s}_#{type.to_s}", opts[auth_type][type]
+                  [:roles, :permissions].each do |allowable_type|
+                    if opts[auth_type].has_key?(allowable_type)
+                      send "#{auth_type.to_s}_#{allowable_type.to_s}", opts[auth_type][allowable_type]
                     end
                   end
                 end

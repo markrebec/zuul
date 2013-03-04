@@ -161,29 +161,15 @@ module Allowables
         end
 
         def parse_context(context=nil)
-          parsed = ::Allowables::Context.new
-          if context.is_a?(::Allowables::Context)
-            parsed = context
-          elsif context.is_a?(Class)
-            parsed.type = context.name
-          elsif !context.nil?
-            if context.is_a?(String) || context.is_a?(Symbol)
-              if context.to_s.match(/^@.*$/)
-                context = @controller.send(:instance_variable_get, context)
-              elsif @controller.respond_to?(context.to_sym)
-                context = @controller.send(context)
-              end
-            end
-            
-            if context.class.ancestors.include?(::ActiveRecord::Base) && context.respond_to?(:id)
-              parsed.type = context.class.name
-              parsed.id = context.id
-            else
-              raise "Invalid Authorization Context: #{context.to_s}"
+          if context.is_a?(String) || context.is_a?(Symbol)
+            if context.to_s.match(/^@.*$/)
+              context = @controller.send(:instance_variable_get, context)
+            elsif @controller.respond_to?(context.to_sym)
+              context = @controller.send(context)
             end
           end
 
-          parsed
+          Allowables::Context.parse(context)
         end
 
         def allowed?
