@@ -44,9 +44,9 @@ module Allowables
     protected
 
     def initialize(class_name=nil, id=nil)
-      raise "Invalid Context Class" unless class_name.nil? || class_name.is_a?(String)
-      raise "Invalid Context ID" unless id.nil? || id.is_a?(Integer)
-      raise "Invalid Context" if !id.nil? && class_name.nil?
+      raise Exceptions::InvalidContext, "Invalid Context Class" unless class_name.nil? || class_name.is_a?(String)
+      raise Exceptions::InvalidContext, "Invalid Context ID" unless id.nil? || id.is_a?(Integer)
+      raise Exceptions::InvalidContext if !id.nil? && class_name.nil?
       super
     end
   end

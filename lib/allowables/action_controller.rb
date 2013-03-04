@@ -65,6 +65,8 @@ module Allowables
           logger.debug auth_dsl.results.to_yaml
           logger.debug auth_dsl.authorized? ? "ALLOWED" : "NOT ALLOWED"
           logger.debug "----------------------------"
+
+          raise Exceptions::AccessDenied unless auth_dsl.authorized?
         end
       end
 
