@@ -16,22 +16,28 @@ module Allowables
     end
     
     def instance?
-      !@class_name.nil? && !@id.nil?
+      !class_name.nil? && !id.nil?
     end
     alias_method :object?, :instance?
 
     def class?
-      !@class_name.nil? && @id.nil?
+      !class_name.nil? && id.nil?
     end
 
     def nil?
-      @class_name.nil? && @id.nil?
+      class_name.nil? && id.nil?
+    end
+
+    def type
+      return :nil if class_name.nil?
+      return :class if id.nil?
+      :instance
     end
 
     def to_context
-      return nil if @class_name.nil?
-      return @class_name.constantize if @id.nil?
-      @class_name.constantize.find(@id)
+      return nil if class_name.nil?
+      return class_name.constantize if id.nil?
+      class_name.constantize.find(id)
     end
     alias_method :context, :to_context
     

@@ -341,55 +341,6 @@ describe "Allowables::ActiveRecord" do
         end
       end
     end
-    
-    # TODO parse_context is deprecated, move these tests over to the Allowables::Context object
-    describe "parse_context" do
-      before(:each) do
-        Dummy.send :include, Allowables::ActiveRecord
-        Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
-      end
-      
-      it "should require a context" do
-        expect { Dummy.new.parse_context }.to raise_exception
-      end
-      
-      it "should allow a nil context" do
-        expect { Dummy.new.parse_context(nil) }.to_not raise_exception
-      end
-
-      it "should allow a class" do
-        expect { Dummy.new.parse_context(Context) }.to_not raise_exception
-      end
-
-      it "should allow an instance" do
-        context = Context.create(:name => "Test Context")
-        expect { Dummy.new.parse_context(context) }.to_not raise_exception
-      end
-
-      it "should return an Allowables::Context object with the context broken into it's two parts" do
-        parsed = Dummy.new.parse_context(nil)
-        parsed.should be_an_instance_of(Allowables::Context)
-      end
-      
-      it "should return a nil context context for nil" do
-        parsed = Dummy.new.parse_context(nil)
-        parsed.class_name.should be_nil
-        parsed.id.should be_nil
-      end
-
-      it "should return a context with class_name set to the class name for class context" do
-        parsed = Dummy.new.parse_context(Context)
-        parsed.class_name.should == 'Context'
-        parsed.id.should be_nil
-      end
-      
-      it "should return a context with class_name and id set for an instance context" do
-        context = Context.create(:name => "Test Context")
-        parsed = Dummy.new.parse_context(context)
-        parsed.class_name.should == 'Context'
-        parsed.id.should == context.id
-      end
-    end
 
     describe "verify_target_context" do
       before(:each) do
