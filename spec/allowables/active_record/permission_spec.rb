@@ -1,6 +1,40 @@
 require 'spec_helper'
 
 describe "Allowables::ActiveRecord::Permission" do
+  
+  describe "accessible attributes" do
+    before(:each) do
+      Permission.acts_as_authorization_permission
+    end
+    
+    it "should allow mass assignment of :name" do
+      permission = Permission.new(:name => 'Edit')
+      permission.name.should == 'Edit'
+    end
+    
+    it "should allow mass assignment of :slug" do
+      permission = Permission.new(:slug => 'edit')
+      permission.slug.should == 'edit'
+    end
+    
+    it "should allow mass assignment of :context" do
+      context = Context.create(:name => "Test Context")
+      permission = Permission.new(:context => context)
+      permission.context_type.should == 'Context'
+      permission.context_id.should == context.id
+    end
+    
+    it "should allow mass assignment of :context_type" do
+      permission = Permission.new(:context_type => 'Context')
+      permission.context_type.should == 'Context'
+    end
+    
+    it "should allow mass assignment of :context_id" do
+      permission = Permission.new(:context_id => 1)
+      permission.context_id.should == 1
+    end
+  end
+  
   context "validations for core permission fields" do
     before(:each) do
       Permission.acts_as_authorization_permission
@@ -92,7 +126,7 @@ describe "Allowables::ActiveRecord::Permission" do
     end
     
     it "should return a Allowables::Context object" do
-      permission = Permission.create(:name => 'Admin', :slug => 'admin')
+      permission = Permission.create(:name => 'Edit', :slug => 'edit')
       permission.context.should be_a(Allowables::Context)
     end
 

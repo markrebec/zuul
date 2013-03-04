@@ -2,6 +2,44 @@ require 'spec_helper'
 
 describe "Allowables::ActiveRecord::Role" do
 
+  describe "accessible attributes" do
+    before(:each) do
+      Role.acts_as_authorization_role
+    end
+    
+    it "should allow mass assignment of :name" do
+      role = Role.new(:name => 'Admin')
+      role.name.should == 'Admin'
+    end
+    
+    it "should allow mass assignment of :slug" do
+      role = Role.new(:slug => 'admin')
+      role.slug.should == 'admin'
+    end
+    
+    it "should allow mass assignment of :level" do
+      role = Role.new(:level => 100)
+      role.level.should == 100
+    end
+    
+    it "should allow mass assignment of :context" do
+      context = Context.create(:name => "Test Context")
+      role = Role.new(:context => context)
+      role.context_type.should == 'Context'
+      role.context_id.should == context.id
+    end
+    
+    it "should allow mass assignment of :context_type" do
+      role = Role.new(:context_type => 'Context')
+      role.context_type.should == 'Context'
+    end
+    
+    it "should allow mass assignment of :context_id" do
+      role = Role.new(:context_id => 1)
+      role.context_id.should == 1
+    end
+  end
+
   context "validations for core role fields" do
     before(:each) do
       Role.acts_as_authorization_role
