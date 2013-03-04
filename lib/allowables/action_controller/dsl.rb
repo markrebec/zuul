@@ -172,7 +172,7 @@ module Allowables
           Allowables::Context.parse(context)
         end
 
-        def allowed?
+        def authorized?
           if @default == :deny
             !(@results.empty? || @results.any? { |result| result == false })
           else

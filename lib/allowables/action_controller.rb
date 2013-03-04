@@ -8,9 +8,9 @@ module Allowables
     end
 
     module InstanceMethods
-      def allowed?
+      def authorized?
         return true if @authorization_dsl.nil?
-        @authorization_dsl.allowed?
+        @authorization_dsl.authorized?
       end
     end
     
@@ -63,7 +63,7 @@ module Allowables
           logger.debug "----------------------------"
           logger.debug "ACCESS CONTROL RESULTS"
           logger.debug auth_dsl.results.to_yaml
-          logger.debug auth_dsl.allowed? ? "ALLOWED" : "NOT ALLOWED"
+          logger.debug auth_dsl.authorized? ? "ALLOWED" : "NOT ALLOWED"
           logger.debug "----------------------------"
         end
       end
