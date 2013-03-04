@@ -107,4 +107,40 @@ describe "Allowables::ActiveRecord::Permission" do
       inst_permission.context.to_context.id.should == context.id
     end
   end
+
+  describe "#context=" do
+    before(:each) do
+      Permission.acts_as_authorization_permission
+      @permission = Permission.create(:name => 'Edit', :slug => 'edit')
+    end
+
+    it "should allow passing a nil context" do
+      expect { @permission.context = nil }.to_not raise_exception
+    end
+
+    it "should allow passing a class context" do
+      expect { @permission.context = Context }.to_not raise_exception
+    end
+    
+    it "should allow passing an instance context" do
+      context = Context.create(:name => "Test Context")
+      expect { @permission.context = context }.to_not raise_exception
+    end
+    
+    it "should allow passing an existing Allowables::Context" do
+      expect { @permission.context = Allowables::Context.new }.to_not raise_exception
+    end
+
+    it "should accept a context and set the context_type and context_id based on the passed context" do
+      context = Context.create(:name => "Test Context")
+      @permission.context_type.should be_nil
+      @permission.context_id.should be_nil
+      @permission.context = Context
+      @permission.context_type.should == "Context"
+      @permission.context_id.should be_nil
+      @permission.context = context
+      @permission.context_type.should == "Context"
+      @permission.context_id.should == context.id
+    end
+  end
 end

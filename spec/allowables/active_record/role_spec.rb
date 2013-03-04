@@ -531,5 +531,40 @@ describe "Allowables::ActiveRecord::Role" do
         inst_role.context.to_context.id.should == context.id
       end
     end
+
+    describe "#context=" do
+      before(:each) do
+        @role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+      end
+
+      it "should allow passing a nil context" do
+        expect { @role.context = nil }.to_not raise_exception
+      end
+
+      it "should allow passing a class context" do
+        expect { @role.context = Context }.to_not raise_exception
+      end
+      
+      it "should allow passing an instance context" do
+        context = Context.create(:name => "Test Context")
+        expect { @role.context = context }.to_not raise_exception
+      end
+      
+      it "should allow passing an existing Allowables::Context" do
+        expect { @role.context = Allowables::Context.new }.to_not raise_exception
+      end
+
+      it "should accept a context and set the context_type and context_id based on the passed context" do
+        context = Context.create(:name => "Test Context")
+        @role.context_type.should be_nil
+        @role.context_id.should be_nil
+        @role.context = Context
+        @role.context_type.should == "Context"
+        @role.context_id.should be_nil
+        @role.context = context
+        @role.context_type.should == "Context"
+        @role.context_id.should == context.id
+      end
+    end
   end
 end

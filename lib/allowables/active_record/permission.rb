@@ -34,6 +34,13 @@ module Allowables
         def context
           Allowables::Context.new(context_type, context_id)
         end
+        
+        # Parse a context into an Allowables::Context and set the type and id
+        def context=(context)
+          context = Allowables::Context.parse(context)
+          self.context_type = context.class_name
+          self.context_id = context.id
+        end
       end
     end
   end
