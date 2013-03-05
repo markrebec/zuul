@@ -1,5 +1,6 @@
 Controller DSL
   - helpers for views like --  <% requires_role(:role) do %>HTML HERE<% end %>
+  - specs
 
 
 
@@ -19,4 +20,3 @@ ActiveRecord Authorization
 General
   - error/exception classes and messages
   - i18n error messages
-  - move DEFAULT_CLASS stuff to configuration (and create a configuration class to manage global config - Allowables.configure do |config| end)

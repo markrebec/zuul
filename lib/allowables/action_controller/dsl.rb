@@ -2,8 +2,7 @@ module Allowables
   module ActionController
     module DSL
       class Base
-        attr_reader :results
-        attr_accessor :default, :actions, :roles, :permissions
+        attr_reader :default, :context, :force_context, :actions, :roles, :permissions, :results
 
         def actions(*actions, &block)
           actions = actions[0] if actions.length == 1 && actions[0].is_a?(Array)
@@ -152,12 +151,10 @@ module Allowables
         end
 
         def set_options(opts)
-          @default = opts[:default]
-          @actions = opts[:actions]
-          @roles = opts[:roles]
-          @permissions = opts[:permissions]
-          @force_context = opts[:force_context]
-          @context = parse_context(opts[:context])
+          [:default, :actions, :roles, :permissions, :force_context, :mode].each do |key|
+            instance_variable_set "@#{key.to_s}", opts[key] if opts.has_key?(key)
+          end
+          @context = parse_context(opts[:context]) if opts.has_key?(:context)
         end
 
         def parse_context(context=nil)
@@ -180,10 +177,14 @@ module Allowables
           end
         end
 
+        def collect_results
+          @results = [authorized?]
+        end
+
         protected
 
         def initialize(controller, opts={})
-          opts = {:default => :deny, :actions => [], :roles => [], :permissions => [], :force_context => false, :context => nil}.merge(opts)
+          opts = {:default => Allowables.configuration.acl_default, :force_context => Allowables.configuration.force_context, :context => nil, :mode => :raise, :actions => [], :roles => [], :permissions => []}.merge(opts)
           @controller = controller
           set_options opts
           @results = []

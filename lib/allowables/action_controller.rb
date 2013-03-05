@@ -16,23 +16,28 @@ module Allowables
     
     module ClassMethods
       def self.extended(base)
+        base.send :cattr_accessor, :acl_filters
+        base.send :class_variable_set, :@@acl_filters, []
         base.send :attr_accessor, :authorization_dsl
       end
 
       def access_control(*args, &block)
-        opts = {:default => :deny, :force_context => false, :context => nil, :actions => [], :roles => [], :permissions => []}
+        # :mode => :raise, :quiet
+        opts = {:default => Allowables.configuration.acl_default, :force_context => Allowables.configuration.force_context, :context => nil, :mode => :raise, :actions => [], :roles => [], :permissions => []}
         opts = opts.merge(args[0]) if args.length > 0
         filter_args = {}.merge(opts.select { |k,v| [:except, :only].include?(k) })
         opts.delete(:only)
         opts.delete(:except)
         
-        before_filter(filter_args) do |controller|
+        acl_filters << append_before_filter(filter_args) do |controller|
           logger = controller.logger
           logger.debug "----------------------------"
           logger.debug "ACCESS CONTROL BLOCK START"
           
+          this_block = self.class.acl_filters.slice!(0)
           
-          auth_dsl = controller.authorization_dsl = DSL::Base.new(controller, opts)
+          auth_dsl = controller.authorization_dsl ||= DSL::Base.new(controller)
+          auth_dsl.set_options(opts)
           
           if block_given?
             auth_dsl.instance_eval(&block)
@@ -57,16 +62,18 @@ module Allowables
             end
           end
           
-          
           logger.debug "ACCESS CONTROL BLOCK END"
           logger.debug "----------------------------"
-          logger.debug "----------------------------"
           logger.debug "ACCESS CONTROL RESULTS"
-          logger.debug auth_dsl.results.to_yaml
-          logger.debug auth_dsl.authorized? ? "ALLOWED" : "NOT ALLOWED"
+          logger.debug "#{(auth_dsl.authorized? ? "ALLOWED" : "DENIED")} using #{auth_dsl.default.to_s.upcase}(#{auth_dsl.results.join(",")})"
           logger.debug "----------------------------"
 
-          raise Exceptions::AccessDenied unless auth_dsl.authorized?
+          if self.class.acl_filters.length > 0
+            logger.debug "COLLECTING ACCESS CONTROL RESULTS FOR CHAIN"
+            auth_dsl.collect_results
+          elsif opts[:mode] == :raise
+            raise Exceptions::AccessDenied unless auth_dsl.authorized?
+          end
         end
       end
 
@@ -86,7 +93,6 @@ module Allowables
       end
       alias_method :deny_permission, :deny_permissions
     end
-
   end
 end
 
