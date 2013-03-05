@@ -3,7 +3,7 @@ module Allowables
     module Role
       def self.included(base)
         base.send :extend, ClassMethods
-        base.send :include, InstanceMethods if base.with_permissions? # TODO move the permissions methods to a sub-module? (don't NEED to until there are other instance methods added besides the permissions stuff)
+        base.send :include, InstanceMethods if base.auth_config.with_permissions # TODO move the permissions methods to a sub-module? (don't NEED to until there are other instance methods added besides the permissions stuff)
       end
 
       module ClassMethods
@@ -25,7 +25,7 @@ module Allowables
         def self.add_associations(base)
           base.send :has_many, base.role_subjects_table_name.to_sym
           base.send :has_many, base.subjects_table_name.to_sym, :through => base.role_subjects_table_name.to_sym
-          if base.with_permissions?
+          if base.auth_config.with_permissions
             base.send :has_many, base.permission_roles_table_name.to_sym
             base.send :has_many, base.permissions_table_name.to_sym, :through => base.permission_roles_table_name.to_sym
           end

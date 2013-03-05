@@ -3,7 +3,7 @@ module Allowables
     module Subject
       def self.included(base)
         base.send :include, RoleMethods
-        base.send(:include, PermissionMethods) if base.with_permissions?
+        base.send(:include, PermissionMethods) if base.auth_config.with_permissions
       end
 
       module RoleMethods

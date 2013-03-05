@@ -13,47 +13,30 @@ module Allowables
 
     module ClassMethods
       def acts_as_authorization_role(args={})
+        args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args).merge({:role_class => self.name})
+        @auth_config = Allowables.configuration.clone.configure(args)
         include AuthorizationMethods
-        args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args)
-        
-        with_permissions args[:with_permissions]
-        auth_classes = args.select { |k,v| Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) }
-        auth_classes = auth_classes.merge({:role_class => self.name})
-        set_authorization_class_names auth_classes 
-        
         include Role 
       end
 
       def acts_as_authorization_permission(args={})
+        args = args.merge({:permission_class => self.name})
+        @auth_config = Allowables.configuration.clone.configure(args)
         include AuthorizationMethods
-        
-        auth_classes = args.select { |k,v| Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) }
-        auth_classes = auth_classes.merge({:permission_class => self.name})
-        set_authorization_class_names auth_classes 
-        
         include Permission
       end
 
       def acts_as_authorization_context(args={})
-        include AuthorizationMethods
         args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args)
-        
-        with_permissions args[:with_permissions]
-        auth_classes = args.select { |k,v| Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) }
-        set_authorization_class_names auth_classes 
-        
+        @auth_config = Allowables.configuration.clone.configure(args)
+        include AuthorizationMethods
         include Context
       end
 
       def acts_as_authorization_subject(args={})
+        args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args).merge({:subject_class => self.name})
+        @auth_config = Allowables.configuration.clone.configure(args)
         include AuthorizationMethods
-        args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args)
-        
-        with_permissions args[:with_permissions]
-        auth_classes = args.select { |k,v| Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) }
-        auth_classes = auth_classes.merge({:subject_class => self.name})
-        set_authorization_class_names auth_classes 
-        
         include Subject
       end
       
@@ -85,12 +68,18 @@ module Allowables
 
     module AuthorizationMethods
       def self.included(base)
+        base.class.send :attr_reader, :auth_config
         base.send :extend, ClassMethods
         base.send :include, InstanceMethods
         base.send :include, Reflection
       end
 
       module InstanceMethods
+        # Convenience method for accessing the @auth_config class-level instance variable
+        def auth_config
+          self.class.auth_config
+        end
+
         # Looks for the role slug with the closest contextual match, working it's way up the context chain.
         #
         # If the provided role is already a Role, just return it without checking for a match.
@@ -154,14 +143,6 @@ module Allowables
           (target.context_type.nil? || target.context_type == context.class_name) && (target.context_id.nil? || target.context_id == context.id)
         end
 
-        def with_permissions(bool)
-          self.class.with_permissions(bool)
-        end
-        
-        def with_permissions?
-          self.class.with_permissions?
-        end
-
         # Simple helper for "IS NULL" vs "= 'VALUE'" SQL syntax
         # (this *must* already exist somewhere in AREL? can't find it though...)
         def sql_is_or_equal(value)
@@ -170,17 +151,6 @@ module Allowables
       end
 
       module ClassMethods
-        # Set a flag that controls whether this authorization subject or role is using permissions
-        def with_permissions(bool)
-          @with_permissions = bool
-        end
-
-        # Check whether this authorization subject or role is using permissions. Defaults to true unless
-        # set with with_permissions(false). If false, only subjects and roles will be used.
-        def with_permissions?
-          @with_permissions = true if @with_permissions.nil?
-          @with_permissions
-        end
       end
     end
   end

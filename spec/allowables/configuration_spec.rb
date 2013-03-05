@@ -91,25 +91,159 @@ describe "Allowables::Configuration" do
   end
 
   describe "#configure" do
-    it "should allow setting config vars via the passed config object" do
-      @config.configure do |config|
-        config.subject_method = :config_current_user
+    context "with a hash" do
+      it "should use the hash keys/vals to set instance variables" do
+        @config.configure(:subject_class => :custom_subject, :acl_default => :allow)
+        @config.subject_class.should == :custom_subject
+        @config.acl_default.should == :allow
       end
-      @config.subject_method.should == :config_current_user
+
+      it "should not allow setting instance variables that are not defined as defaults" do
+        @config.configure(:bad_key => :bad_value)
+        @config.should_not respond_to(:bad_key)
+        @config.instance_eval do
+          @bad_key.should == nil
+        end
+      end
     end
 
-    it "should allow setting config vars via instance variables" do
-      @config.configure do
-        @subject_method = :ivar_current_user
+    context "with a block" do
+      it "should allow setting config vars via the passed config object" do
+        @config.configure do |config|
+          config.subject_method = :config_current_user
+        end
+        @config.subject_method.should == :config_current_user
       end
-      @config.subject_method.should == :ivar_current_user
+
+      it "should allow setting config vars via instance variables" do
+        @config.configure do
+          @subject_method = :ivar_current_user
+        end
+        @config.subject_method.should == :ivar_current_user
+      end
+
+      it "should allow setting config vars via self" do
+        @config.configure do
+          self.subject_method = :self_current_user
+        end
+        @config.subject_method.should == :self_current_user
+      end
     end
 
-    it "should allow setting config vars via self" do
-      @config.configure do
-        self.subject_method = :self_current_user
+    context "with a hash and a block" do
+      it "should use both the hash and block for configuration" do
+        @config.configure(:subject_class => :custom_subject) do |config|
+          config.role_class = :custom_role
+        end
+        @config.subject_class.should == :custom_subject
+        @config.role_class.should == :custom_role
       end
-      @config.subject_method.should == :self_current_user
+
+      it "should override hash values with values set in the block" do
+        @config.configure(:role_class => :hash_role) do |config|
+          config.role_class = :block_role
+        end
+        @config.role_class.should == :block_role
+      end
+    end
+    
+    it "should redefine the join classes when custom classes are provided" do
+      @config.configure(:subject_class => :soldier, :role_class => :rank, :permission_class => :skill)
+      @config.role_subject_class.should == :rank_soldier
+      @config.permission_subject_class.should == :skill_soldier
+      @config.permission_role_class.should == :rank_skill
+    end
+
+    it "should not override join classes if they were provided" do
+      @config.configure(:role_subject_class => :special_role_user, :role_class => :rank)
+      @config.role_subject_class.should == :special_role_user
+    end
+  end
+
+  describe "#to_hash" do
+    it "should return a hash with all the configuration keys" do
+      [Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES, Allowables::Configuration::DEFAULT_CONFIGURATION_OPTIONS].each do |opts|
+        opts.keys.each do |key|
+          @config.to_hash.has_key?(key).should be_true
+        end
+      end
+    end
+
+    it "should populate values with the current configuration values" do
+      [Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES, Allowables::Configuration::DEFAULT_CONFIGURATION_OPTIONS].each do |opts|
+        opts.keys.each do |key|
+          @config.to_hash[key].should == @config.send(key)
+        end
+      end
+    end
+  end
+
+  describe "#classes" do
+    it "should return a ClassStruct" do
+      @config.classes.class.ancestors.should include(Allowables::Configuration::ClassStruct)
+    end
+
+    it "should return a ClassStruct of all the default configuration classes" do
+      Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.each do |key|
+        @config.classes.should respond_to(key)
+      end
+      @config.classes.keys.each do |key|
+        Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.has_key?(key).should be_true
+      end
+    end
+  end
+
+  describe "#primary_classes" do
+    it "should return a ClassStruct" do
+      @config.classes.class.ancestors.should include(Allowables::Configuration::ClassStruct)
+    end
+
+    it "should return a ClassStruct of all the default configuration classes" do
+      Allowables::Configuration::PRIMARY_AUTHORIZATION_CLASSES.keys.each do |key|
+        @config.primary_classes.should respond_to(key)
+      end
+      @config.primary_classes.keys.each do |key|
+        Allowables::Configuration::PRIMARY_AUTHORIZATION_CLASSES.has_key?(key).should be_true
+      end
+    end
+  end
+
+  describe "#join_classes" do
+    it "should return a ClassStruct" do
+      @config.join_classes.class.ancestors.should include(Allowables::Configuration::ClassStruct)
+    end
+
+    it "should return a ClassStruct of all the default configuration join classes" do
+      Allowables::Configuration::AUTHORIZATION_JOIN_CLASSES.keys.each do |key|
+        @config.join_classes.should respond_to(key)
+      end
+      @config.join_classes.keys.each do |key|
+        Allowables::Configuration::AUTHORIZATION_JOIN_CLASSES.has_key?(key).should be_true
+      end
+    end
+  end
+
+  describe "Allowables::Configuration::ClassStruct" do
+    it "should inherit from Struct" do
+      Allowables::Configuration::ClassStruct.ancestors.should include(Struct)
+    end
+
+    describe "#keys" do
+      it "should return an array of keys" do
+        Allowables::Configuration::ClassStruct.new(:key1, :key2, :key3).new.keys.should == [:key1, :key2, :key3]
+      end
+    end
+
+    describe "#to_array" do
+      it "should return an array of values" do
+        Allowables::Configuration::ClassStruct.new(:key1, :key2, :key3).new(:val1, :val2, :val3).to_array.should == [:val1, :val2, :val3]
+      end
+    end
+
+    describe "#to_hash" do
+      it "should return a hash of key/value pairs" do
+        Allowables::Configuration::ClassStruct.new(:key1, :key2, :key3).new(:val1, :val2, :val3).to_hash.should == {:key1 => :val1, :key2 => :val2, :key3 => :val3}
+      end
     end
   end
 end

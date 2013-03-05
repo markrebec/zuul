@@ -7,28 +7,12 @@ module Allowables
       end
 
       module ClassMethods
-        # Set the classes to be used for subjects, roles, permissions and their associations
-        # NOTE: Doesn't actually "set" any variables, but defines methods like role_class_name
-        def set_authorization_class_names(classes={})
-          auth_classes = Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.merge(classes.select { |k,v| Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.include?(k) })
-          [[:role, :subject], [:permission, :subject], [:permission, :role]].each do |join_types|
-            join_key = "#{join_types[0].to_s}_#{join_types[1].to_s}_class".to_sym
-            next if classes.has_key?(join_key) # don't override join table if it was provided
-
-            join_classes = join_types.map do |class_type|
-              type_class = auth_classes["#{class_type.to_s}_class".to_sym]
-              if type_class.is_a?(Class)
-                type_class.name.underscore
-              else
-                type_class.to_s.singularize.underscore
-              end
-            end
-            join_classes.sort!
-            auth_classes[join_key] = join_classes.map(&:to_s).map(&:singularize).map(&:underscore).join("_")
-          end
-          
-          self.class.instance_eval do
-            auth_classes.each do |class_type,c|
+        def self.extended(base)
+          # Set the classes to be used for subjects, roles, permissions and their associations
+          # NOTE: Doesn't actually "set" any variables, but defines methods like role_class_name
+          # NOTE: Should maybe rework this to use method_missing and define methods dynamically as they're accessed?
+          base.class.instance_eval do
+            base.auth_config.classes.to_h.each do |class_type,c|
               define_method "#{class_type.to_s}_name" do
                 if c.is_a?(Class)
                   c.name
@@ -41,6 +25,8 @@ module Allowables
                 "::#{send("#{class_type.to_s}_name")}".constantize
               end
             end
+
+            # TODO define *_table_name methods, *_foreign_key methods for primary classes
           end
         end
 
@@ -86,9 +72,8 @@ module Allowables
       end
 
       module InstanceMethods
-        # Defines the TYPE_class, TYPE_class_name, TYPES_table_name and TYPE_foreign_key
-        # methods for the default authorization class types.
-        # TODO could probably just use method_missing here? might be a little less efficient
+        # Defines the TYPE_class, TYPE_class_name, TYPES_table_name and TYPE_foreign_key methods for the default authorization class types.
+        # TODO could probably just use method_missing here? might be a little less efficient, maybe define the methods as they're accessed
         def self.included(base)
           Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.each do |method_class|
             methods = ["#{method_class.to_s}", "#{method_class.to_s}_name", "#{method_class.to_s.gsub(/_class$/,'').pluralize}_table_name"]

@@ -2,6 +2,13 @@ require 'spec_helper'
 
 describe "Allowables::ActiveRecord" do
 
+  def prep_dummy
+    Dummy.send :include, Allowables::ActiveRecord
+    Dummy.class.send :attr_reader, :auth_config
+    Dummy.send :instance_variable_set, :@auth_config, Allowables::Configuration.new
+    Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
+  end
+
   it "should extend ActiveRecord::Base with Allowables::ActiveRecord" do
     ActiveRecord::Base.ancestors.include?(Allowables::ActiveRecord).should be_true
   end
@@ -138,62 +145,13 @@ describe "Allowables::ActiveRecord" do
 
   describe "AuthorizationMethods" do
     it "should extend the model with Allowables::ActiveRecord::Reflection" do
-      Dummy.send :include, Allowables::ActiveRecord
-      Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
+      prep_dummy
       Dummy.ancestors.include?(Allowables::ActiveRecord::Reflection).should be_true
-    end
-
-    describe "with_permissions methods" do
-      it "should be available to models that acts_as_authorization_*" do
-        User.acts_as_authorization_subject
-        Role.acts_as_authorization_role
-        Permission.acts_as_authorization_permission
-        Context.acts_as_authorization_context
-        [User, Role, Permission, Context].each do |model|
-          model.respond_to?(:with_permissions).should be_true
-          model.respond_to?(:with_permissions?).should be_true
-          model.new.respond_to?(:with_permissions).should be_true
-          model.new.respond_to?(:with_permissions?).should be_true
-        end
-      end
-
-      it "should allow setting the with_permissions flag with the setter" do
-        Dummy.send :include, Allowables::ActiveRecord
-        Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
-        Dummy.send(:instance_variable_get, :@with_permissions).should be_nil
-        Dummy.with_permissions(false)
-        Dummy.send(:instance_variable_get, :@with_permissions).should be_false
-      end
-
-      it "should allow reading the with_permissions flag with the query method" do
-        Dummy.send :include, Allowables::ActiveRecord
-        Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
-        Dummy.with_permissions?.should be_true
-        Dummy.with_permissions(false)
-        Dummy.with_permissions?.should be_false
-      end
-
-      it "should default to true" do
-        Dummy.send :include, Allowables::ActiveRecord
-        Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
-        Dummy.send(:instance_variable_get, :@with_permissions).should be_nil
-        Dummy.with_permissions?.should be_true
-      end
-
-      it "should return the same value from an instance and it's class" do
-        User.acts_as_authorization_subject :with_permissions => false
-        Role.acts_as_authorization_role
-        Context.acts_as_authorization_context :with_permissions => false
-        [User, Role, Context].each do |model|
-          model.with_permissions?.should == model.new.with_permissions?
-        end
-      end
     end
 
     describe "target_role" do
       before(:each) do
-        Dummy.send :include, Allowables::ActiveRecord
-        Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
+        prep_dummy
       end
 
       it "should require a role object or slug and a context" do
@@ -268,8 +226,7 @@ describe "Allowables::ActiveRecord" do
 
     describe "target_permission" do
       before(:each) do
-        Dummy.send :include, Allowables::ActiveRecord
-        Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
+        prep_dummy
       end
 
       it "should require a permission object or slug and a context" do
@@ -344,8 +301,7 @@ describe "Allowables::ActiveRecord" do
 
     describe "verify_target_context" do
       before(:each) do
-        Dummy.send :include, Allowables::ActiveRecord
-        Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
+        prep_dummy
       end
       
       it "should require a target role or permission and a context" do
