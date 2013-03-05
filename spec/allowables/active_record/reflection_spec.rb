@@ -20,19 +20,6 @@ describe "Allowables::ActiveRecord::Reflection" do
     end
   end
 
-  describe "authorization_table_name" do
-    it "should require a string class name" do
-      expect { Dummy.authorization_table_name(Role) }.to raise_exception
-      expect { Dummy.authorization_table_name('Role') }.to_not raise_exception
-    end
-
-    it "should use the Model.table_name to retrieve table names" do
-      Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.each do |ckey,cname|
-        Dummy.authorization_table_name(Dummy.send("#{ckey}_name")).should == Dummy.send(ckey).table_name
-      end
-    end
-  end
-
   describe "*_table_name methods" do
     it "should provide *_table_name methods for each of the authorization classes" do
       Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.each do |ckey,cname|
