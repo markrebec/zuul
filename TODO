@@ -1,12 +1,13 @@
 Controller DSL
   - helpers for views like --  <% requires_role(:role) do %>HTML HERE<% end %>
-  - specs
+  - specs (test dsl in isolation, test controller implementations)
+  - move the default block stuff into a default_block method for dsl
+  - verfity/decide whether actions/roles/perms are tacked on, validated within the parents or completely override parents
 
 
 
 ActiveRecord Authorization
   - account for namespaces when setting classes like Publishers::Role (or test if it just works as is?)
-  - maybe rework some of the method and association names to use the provided values instead of the keys (like :user instead of :subject). alternately maybe figure out a way to namespace acts_as_*? would allow something to behave with many acts_as_* without a conflict (i.e. possess Roles AND SpecialRoles)
   - make sure context excludes permission methods when not used
   - allow forcing/restricting contexts (so subject can only be assigned permissions within that context and lookups don't go up the chain)
   - create mixins for join models to add validations and associations, etc.
@@ -14,6 +15,10 @@ ActiveRecord Authorization
   - include a default Role and Permission model + generator for migration?
   - generators for Role, Permission, RolePermission, SubjectRole, SubjectPermission models?
   - generators for migrations to add fields to custom Role, Permission models?
+
+  - maybe rework some of the method and association names to use the provided values instead of the keys (like :user instead of :subject). alternately maybe figure out a way to namespace acts_as_*? would allow something to behave with many acts_as_* without a conflict (i.e. possess Roles AND SpecialRoles)
+  - look into defining scopes, use :default scope by default, allow naming acts_as_authorization_* :name => 'my_scope'
+  - genericize the active record stuff for objects (just check if responds to :authorization_find or something), create activerecord datasource and move the table-related stuff there
 
 
 
