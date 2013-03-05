@@ -15,7 +15,8 @@ module Allowables
     DEFAULT_CONFIGURATION_OPTIONS = {
       :acl_default => :deny,
       :subject_method => :current_user,
-      :with_permissions => true
+      :with_permissions => true,
+      :force_context => false
     }
 
     attr_reader *DEFAULT_AUTHORIZATION_CLASSES.keys
@@ -66,7 +67,7 @@ module Allowables
           end
         end
         join_classes.sort!
-        instance_variable_set "@#{join_key.to_s}", join_classes.map(&:to_s).map(&:singularize).map(&:underscore).join("_").to_sym
+        instance_variable_set "@#{join_key.to_s}", join_classes.join("_").to_sym
       end
     end
 

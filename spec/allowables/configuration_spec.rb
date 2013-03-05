@@ -88,6 +88,11 @@ describe "Allowables::Configuration" do
       Allowables::Configuration::DEFAULT_CONFIGURATION_OPTIONS.has_key?(:with_permissions).should be_true
       Allowables::Configuration::DEFAULT_CONFIGURATION_OPTIONS[:with_permissions].should == true
     end
+
+    it "should define the :force_context option" do
+      Allowables::Configuration::DEFAULT_CONFIGURATION_OPTIONS.has_key?(:force_context).should be_true
+      Allowables::Configuration::DEFAULT_CONFIGURATION_OPTIONS[:force_context].should == false
+    end
   end
 
   describe "#configure" do
