@@ -56,19 +56,20 @@ module Allowables
 
     def configure_join_classes
       [[:role, :subject], [:permission, :subject], [:permission, :role]].each do |join_types|
-        join_key = "#{join_types[0].to_s}_#{join_types[1].to_s}_class".to_sym
+        join_key = "#{join_types.sort[0].to_s}_#{join_types.sort[1].to_s}_class".to_sym
         next if changed.has_key?(join_key) # don't override join table if it was provided
 
-        join_classes = join_types.map do |class_type|
+        namespaces = []
+        join_class = join_types.map do |class_type|
           type_class = instance_variable_get "@#{class_type.to_s}_class"
-          if type_class.is_a?(Class)
-            type_class.name.underscore
-          else
-            type_class.to_s.singularize.underscore
-          end
-        end
-        join_classes.sort!
-        instance_variable_set "@#{join_key.to_s}", join_classes.join("_").to_sym
+          namespace = (type_class.is_a?(Class) ? type_class.name : type_class.to_s.camelize).split("::")
+          class_name = namespace.slice!(namespace.length-1)
+          namespaces << namespace.join("::") if namespace.length > 0
+          class_name
+        end.sort!.join("")
+        
+        join_class = "#{namespaces[0]}::#{join_class}" if namespaces.length > 0 && namespaces.all? { |ns| ns == namespaces[0] }
+        instance_variable_set "@#{join_key.to_s}", join_class
       end
     end
 

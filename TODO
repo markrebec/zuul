@@ -6,7 +6,6 @@ Controller DSL
 
 
 ActiveRecord Authorization
-  - account for namespaces when setting classes like Publishers::Role (or test if it just works as is?)
   - allow forcing/restricting contexts (so subject can only be assigned permissions within that context and lookups don't go up the chain)
   - create mixins for join models to add validations and associations, etc.
   - allow block for configuring acts_as_authorization_*

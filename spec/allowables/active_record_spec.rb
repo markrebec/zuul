@@ -36,17 +36,58 @@ describe "Allowables::ActiveRecord" do
     # TODO maybe move these into 4 different specs for each method?
     it "should allow passing class arguments to be used with reflections" do
       Soldier.acts_as_authorization_subject :role_class => Rank, :permission_class => Skill
+      Soldier.role_class.should == Rank
+      Soldier.permission_class.should == Skill
+
       Rank.acts_as_authorization_role :subject_class => Soldier, :permission_class => Skill
+      Rank.subject_class.should == Soldier
+      Rank.permission_class.should == Skill
+
       Skill.acts_as_authorization_permission :subject_class => Soldier, :role_class => Rank
+      Skill.subject_class.should == Soldier
+      Skill.role_class.should == Rank
+
       Weapon.acts_as_authorization_context :permission_class => Skill
+      Weapon.permission_class.should == Skill
     end
 
     it "should allow class arguments to be provided as classes, strings or symbols" do
       Soldier.acts_as_authorization_subject :role_class => Rank, :permission_class => "Skill"
+      Soldier.role_class.should == Rank
+      Soldier.permission_class.should == Skill
       Rank.acts_as_authorization_role :subject_class => :soldier, :permission_class => "skill"
+      Rank.subject_class.should == Soldier
+      Rank.permission_class.should == Skill
       Skill.acts_as_authorization_permission :subject_class => Soldier, :role_class => :Rank
+      Skill.subject_class.should == Soldier
+      Skill.role_class.should == Rank
       Weapon.acts_as_authorization_context :permission_class => Skill
+      Weapon.permission_class.should == Skill
     end
+
+    it "should allow using namespaced classes" do
+      AllowablesModels::User.acts_as_authorization_subject :role_class => AllowablesModels::Role, :permission_class => "AllowablesModels::Permission"
+      AllowablesModels::User.role_class.should == AllowablesModels::Role
+      AllowablesModels::User.permission_class.should == AllowablesModels::Permission
+      AllowablesModels::User.role_subject_class.should == AllowablesModels::RoleUser
+      AllowablesModels::User.permission_subject_class.should == AllowablesModels::PermissionUser
+      AllowablesModels::User.permission_role_class.should == AllowablesModels::PermissionRole
+
+      AllowablesModels::Role.acts_as_authorization_role :subject_class => AllowablesModels::User, :permission_class => AllowablesModels::Permission
+      AllowablesModels::Role.subject_class.should == AllowablesModels::User
+      AllowablesModels::Role.permission_class.should == AllowablesModels::Permission
+      AllowablesModels::Role.role_subject_class.should == AllowablesModels::RoleUser
+      AllowablesModels::Role.permission_subject_class.should == AllowablesModels::PermissionUser
+      AllowablesModels::Role.permission_role_class.should == AllowablesModels::PermissionRole
+      
+      AllowablesModels::Permission.acts_as_authorization_permission :subject_class => "AllowablesModels::User", :role_class => AllowablesModels::Role
+      AllowablesModels::Permission.subject_class.should == AllowablesModels::User
+      AllowablesModels::Permission.role_class.should == AllowablesModels::Role
+      AllowablesModels::Permission.role_subject_class.should == AllowablesModels::RoleUser
+      AllowablesModels::Permission.permission_subject_class.should == AllowablesModels::PermissionUser
+      AllowablesModels::Permission.permission_role_class.should == AllowablesModels::PermissionRole
+    end
+
   end
   
   describe "acts_as_authorization_*?" do
@@ -101,12 +142,12 @@ describe "Allowables::ActiveRecord" do
       User.ancestors.include?(Allowables::ActiveRecord::Subject::RoleMethods).should be_true
     end
     
-    it "should extend the model with Allowables::ActiveRecord::Subject:PermissionMethods" do
+    it "should extend the model with Allowables::ActiveRecord::Subject:PermissionMethods if permissions enabled" do
       User.acts_as_authorization_subject
       User.ancestors.include?(Allowables::ActiveRecord::Subject::PermissionMethods).should be_true
     end
     
-    it "should not extend the model with Allowables::ActiveRecord::Subject:PermissionMethods if :with_permissions => false" do
+    it "should not extend the model with Allowables::ActiveRecord::Subject:PermissionMethods if permissions disabled" do
       User.acts_as_authorization_subject :with_permissions => false
       User.ancestors.include?(Allowables::ActiveRecord::Subject::PermissionMethods).should be_false
     end
@@ -123,9 +164,14 @@ describe "Allowables::ActiveRecord" do
       Role.ancestors.include?(Allowables::ActiveRecord::Role::InstanceMethods).should be_true
     end
     
-    it "should not extend the model with Allowables::ActiveRecord::Role::InstanceMethods if :with_permissions => false" do
+    it "should extend the model with Allowables::ActiveRecord::Role::PermissionMethods if permissions enabled" do
+      Role.acts_as_authorization_role
+      Role.ancestors.include?(Allowables::ActiveRecord::Role::PermissionMethods).should be_true
+    end
+    
+    it "should not extend the model with Allowables::ActiveRecord::Role::PermissionMethods if permissions disabled" do
       Role.acts_as_authorization_role :with_permissions => false
-      Role.ancestors.include?(Allowables::ActiveRecord::Role::InstanceMethods).should be_false
+      Role.ancestors.include?(Allowables::ActiveRecord::Role::PermissionMethods).should be_false
     end
   end
 

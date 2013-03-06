@@ -154,9 +154,9 @@ describe "Allowables::Configuration" do
     
     it "should redefine the join classes when custom classes are provided" do
       @config.configure(:subject_class => :soldier, :role_class => :rank, :permission_class => :skill)
-      @config.role_subject_class.should == :rank_soldier
-      @config.permission_subject_class.should == :skill_soldier
-      @config.permission_role_class.should == :rank_skill
+      @config.role_subject_class.should == "RankSoldier"
+      @config.permission_subject_class.should == "SkillSoldier"
+      @config.permission_role_class.should == "RankSkill"
     end
 
     it "should not override join classes if they were provided" do
