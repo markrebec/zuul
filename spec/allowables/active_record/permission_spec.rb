@@ -84,7 +84,7 @@ describe "Allowables::ActiveRecord::Permission" do
     end
   end
   
-  it "should provide the model with has_many relationships for permission_subjects and subjects" do
+  it "should provide the model with has_many associations for permission_subjects and subjects" do
     Permission.acts_as_authorization_permission
     Permission.reflections.keys.should include(:permission_users)
     Permission.reflections.keys.should include(:users)
@@ -93,7 +93,7 @@ describe "Allowables::ActiveRecord::Permission" do
     permission.should respond_to(:users)
   end
   
-  it "should use the reflection classes to create the has_many relationships" do
+  it "should use the reflection classes to create the has_many associations" do
     Skill.acts_as_authorization_permission :subject_class => :soldier, :role_class => :rank
     Skill.reflections.keys.should include(:skill_soldiers)
     Skill.reflections.keys.should include(:soldiers)
@@ -102,7 +102,7 @@ describe "Allowables::ActiveRecord::Permission" do
     skill.should respond_to(:soldiers)
   end
   
-  it "should provide the model with has_many relationships for permission_roles and roles" do
+  it "should provide the model with has_many associations for permission_roles and roles" do
     Permission.acts_as_authorization_permission
     Permission.reflections.keys.should include(:permission_roles)
     Permission.reflections.keys.should include(:roles)
@@ -111,7 +111,7 @@ describe "Allowables::ActiveRecord::Permission" do
     permission.should respond_to(:roles)
   end
   
-  it "should use the reflection classes to create the has_many relationships" do
+  it "should use the reflection classes to create the has_many associations" do
     Skill.acts_as_authorization_permission :subject_class => :soldier, :role_class => :rank
     Skill.reflections.keys.should include(:rank_skills)
     Skill.reflections.keys.should include(:ranks)

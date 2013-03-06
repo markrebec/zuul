@@ -3,6 +3,9 @@ require 'allowables/active_record/role'
 require 'allowables/active_record/permission'
 require 'allowables/active_record/context'
 require 'allowables/active_record/subject'
+require 'allowables/active_record/role_subject'
+require 'allowables/active_record/permission_role'
+require 'allowables/active_record/permission_subject'
 
 module Allowables
   module ActiveRecord
@@ -16,6 +19,7 @@ module Allowables
         args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args).merge({:role_class => self.name})
         @auth_config = Allowables.configuration.clone.configure(args, &block)
         include AuthorizationMethods
+        prepare_join_classes
         include Role 
       end
 
@@ -23,7 +27,16 @@ module Allowables
         args = args.merge({:permission_class => self.name})
         @auth_config = Allowables.configuration.clone.configure(args, &block)
         include AuthorizationMethods
+        prepare_join_classes
         include Permission
+      end
+
+      def acts_as_authorization_subject(args={}, &block)
+        args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args).merge({:subject_class => self.name})
+        @auth_config = Allowables.configuration.clone.configure(args, &block)
+        include AuthorizationMethods
+        prepare_join_classes
+        include Subject
       end
 
       def acts_as_authorization_context(args={}, &block)
@@ -33,13 +46,28 @@ module Allowables
         include Context
       end
 
-      def acts_as_authorization_subject(args={}, &block)
-        args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args).merge({:subject_class => self.name})
-        @auth_config = Allowables.configuration.clone.configure(args, &block)
-        include AuthorizationMethods
-        include Subject
+      # TODO Maybe rethink how to do this a bit, especially once scopes are introduced. Right now if the same
+      # join class is used in two different cases, one with_permissions and one without, they'll step on each
+      # other's feet.
+      def prepare_join_classes
+        role_subject_class.send :include, RoleSubject unless role_subject_class.ancestors.include?(RoleSubject)
+        if @auth_config.with_permissions
+          permission_subject_class.send :include, PermissionSubject unless role_subject_class.ancestors.include?(PermissionSubject)
+          permission_role_class.send :include, PermissionRole unless role_subject_class.ancestors.include?(PermissionRole)
+        end
       end
-      
+
+      #def acts_as_authorization_joiner(args={}, &block)
+      #  args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args)
+      #  @auth_config = Allowables.configuration.clone.configure(args, &block)
+      #  include AuthorizationMethods
+      #  include RoleSubject unless ancestors.include?(RoleSubject)
+      #  if @auth_config.with_permissions
+      #    include PermissionSubject unless ancestors.include?(PermissionSubject)
+      #    include PermissionRole unless ancestors.include?(PermissionRole)
+      #  end
+      #end
+
       def acts_as_authorization_role?
         ancestors.include?(Allowables::ActiveRecord::Role)
       end

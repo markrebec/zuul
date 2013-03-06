@@ -8,7 +8,7 @@ Controller DSL
 ActiveRecord Authorization
   - allow forcing/restricting contexts (so subject can only be assigned permissions within that context and lookups don't go up the chain)
   - create mixins for join models to add validations and associations, etc.
-  - allow block for configuring acts_as_authorization_*
+  - DRY up some of the shared stuff like #context and #context=
   
   - include a default Role and Permission model + generator for migration?
   - generators for Role, Permission, RolePermission, SubjectRole, SubjectPermission models?

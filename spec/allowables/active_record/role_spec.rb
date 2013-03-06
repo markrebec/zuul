@@ -121,7 +121,7 @@ describe "Allowables::ActiveRecord::Role" do
     end
   end
 
-  it "should provide the model with has_many relationships for role_subjects and subjects" do
+  it "should provide the model with has_many associations for role_subjects and subjects" do
     Role.acts_as_authorization_role
     Role.reflections.keys.should include(:role_users)
     Role.reflections.keys.should include(:users)
@@ -130,7 +130,7 @@ describe "Allowables::ActiveRecord::Role" do
     role.should respond_to(:users)
   end
   
-  it "should use the reflection classes to create the has_many relationships" do
+  it "should use the reflection classes to create the has_many associations" do
     Rank.acts_as_authorization_role :subject_class => :soldier, :with_permissions => false
     Rank.reflections.keys.should include(:rank_soldiers)
     Rank.reflections.keys.should include(:soldiers)
@@ -202,7 +202,7 @@ describe "Allowables::ActiveRecord::Role" do
       Role.acts_as_authorization_role :with_permissions => false
     end
 
-    it "should not provide the model with has_many relationships for permission_roles and permissions" do
+    it "should not provide the model with has_many associations for permission_roles and permissions" do
       Role.reflections.keys.should_not include(:permission_roles)
       Role.reflections.keys.should_not include(:permissions)
       role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
@@ -226,7 +226,7 @@ describe "Allowables::ActiveRecord::Role" do
       Permission.acts_as_authorization_permission
     end
     
-    it "should provide the model with has_many relationships for permission_roles and permissions" do
+    it "should provide the model with has_many associations for permission_roles and permissions" do
       Role.reflections.keys.should include(:permission_roles)
       Role.reflections.keys.should include(:permissions)
       role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
@@ -234,7 +234,7 @@ describe "Allowables::ActiveRecord::Role" do
       role.should respond_to(:permissions)
     end
     
-    it "should use the reflection classes to create the has_many relationships" do
+    it "should use the reflection classes to create the has_many associations" do
       Rank.acts_as_authorization_role :subject_class => :soldier, :permission_class => :skill
       Rank.reflections.keys.should include(:rank_skills)
       Rank.reflections.keys.should include(:skills)

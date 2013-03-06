@@ -22,7 +22,7 @@ describe "Allowables::ActiveRecord::Subject" do
       Role.acts_as_authorization_role
     end
 
-    it "should provide the model with has_many relationships for role_subjects and roles" do
+    it "should provide the model with has_many associations for role_subjects and roles" do
       user = User.create(:name => "Test User")
       User.reflections.keys.should include(:role_users)
       User.reflections.keys.should include(:roles)
@@ -30,7 +30,7 @@ describe "Allowables::ActiveRecord::Subject" do
       user.should respond_to(:roles)
     end
 
-    it "should use the reflection classes to create the has_many relationships" do
+    it "should use the reflection classes to create the has_many associations" do
       Soldier.acts_as_authorization_subject :role_class => :rank, :with_permissions => false
       Rank.acts_as_authorization_role :subject_class => :soldier, :with_permissions => false
       soldier = Soldier.create(:name => "Test User")
@@ -590,7 +590,7 @@ describe "Allowables::ActiveRecord::Subject" do
       Permission.acts_as_authorization_permission
     end
 
-    it "should provide the model with has_many relationships for permission_subjects and permissions" do
+    it "should provide the model with has_many associations for permission_subjects and permissions" do
       user = User.create(:name => "Test User")
       User.reflections.keys.should include(:permission_users)
       User.reflections.keys.should include(:permissions)
@@ -598,7 +598,7 @@ describe "Allowables::ActiveRecord::Subject" do
       user.should respond_to(:permissions)
     end
 
-    it "should use the reflection classes to create the has_many relationships" do
+    it "should use the reflection classes to create the has_many associations" do
       Soldier.acts_as_authorization_subject :permission_class => :skill, :role_class => :rank
       Skill.acts_as_authorization_permission :subject_class => :soldier, :role_class => :rank
       soldier = Soldier.create(:name => "Test User")
