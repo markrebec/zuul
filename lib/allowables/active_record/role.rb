@@ -3,7 +3,8 @@ module Allowables
     module Role
       def self.included(base)
         base.send :extend, ClassMethods
-        base.send :include, InstanceMethods if base.auth_config.with_permissions # TODO move the permissions methods to a sub-module? (don't NEED to until there are other instance methods added besides the permissions stuff)
+        base.send :include, InstanceMethods
+        base.send :include, PermissionMethods if base.auth_config.with_permissions
       end
 
       module ClassMethods
@@ -21,7 +22,6 @@ module Allowables
           base.send :validates_numericality_of, :level, :only_integer => true
         end
 
-        # TODO figure out best way to make this dynamic based on subject class
         def self.add_associations(base)
           base.send :has_many, base.role_subjects_table_name.to_sym
           base.send :has_many, base.subjects_table_name.to_sym, :through => base.role_subjects_table_name.to_sym
@@ -33,9 +33,20 @@ module Allowables
       end
 
       module InstanceMethods
-        def self.included(base)
+        # Return a Allowables::Context object representing the context for the role
+        def context
+          Allowables::Context.new(context_type, context_id)
         end
-        
+
+        # Parse a context into an Allowables::Context and set the type and id
+        def context=(context)
+          context = Allowables::Context.parse(context)
+          self.context_type = context.class_name
+          self.context_id = context.id
+        end
+      end
+
+      module PermissionMethods
         # Assigns a permission to a role within the provided context.
         #
         # If a Permission object is provided it's used directly, otherwise if a
@@ -97,18 +108,6 @@ module Allowables
         # Check whether the role possesses any permissions within the specified context.
         def permissions_for?(context=nil)
           permissions_for(context).count > 0
-        end
-
-        # Return a Allowables::Context object representing the context for the role
-        def context
-          Allowables::Context.new(context_type, context_id)
-        end
-
-        # Parse a context into an Allowables::Context and set the type and id
-        def context=(context)
-          context = Allowables::Context.parse(context)
-          self.context_type = context.class_name
-          self.context_id = context.id
         end
       end
     end

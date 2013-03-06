@@ -138,6 +138,64 @@ describe "Allowables::ActiveRecord::Role" do
     rank.should respond_to(:rank_soldiers)
     rank.should respond_to(:soldiers)
   end
+
+  describe "#context" do
+    before(:each) do
+      Role.acts_as_authorization_role
+    end
+    
+    it "should return a Allowables::Context object" do
+      role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+      role.context.should be_a(Allowables::Context)
+    end
+
+    it "should return a Allowables::Context object that represents the context of the role" do
+      context = Context.create(:name => "Test Context")
+      nil_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+      class_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context')
+      inst_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context', :context_id => context.id)
+      nil_role.context.to_context.should be_nil
+      class_role.context.to_context.should == Context
+      inst_role.context.to_context.should be_a(Context)
+      inst_role.context.to_context.id.should == context.id
+    end
+  end
+
+  describe "#context=" do
+    before(:each) do
+      Role.acts_as_authorization_role
+      @role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+    end
+
+    it "should allow passing a nil context" do
+      expect { @role.context = nil }.to_not raise_exception
+    end
+
+    it "should allow passing a class context" do
+      expect { @role.context = Context }.to_not raise_exception
+    end
+    
+    it "should allow passing an instance context" do
+      context = Context.create(:name => "Test Context")
+      expect { @role.context = context }.to_not raise_exception
+    end
+    
+    it "should allow passing an existing Allowables::Context" do
+      expect { @role.context = Allowables::Context.new }.to_not raise_exception
+    end
+
+    it "should accept a context and set the context_type and context_id based on the passed context" do
+      context = Context.create(:name => "Test Context")
+      @role.context_type.should be_nil
+      @role.context_id.should be_nil
+      @role.context = Context
+      @role.context_type.should == "Context"
+      @role.context_id.should be_nil
+      @role.context = context
+      @role.context_type.should == "Context"
+      @role.context_id.should == context.id
+    end
+  end
   
   context "with permissions disabled" do
     before(:each) do
@@ -549,59 +607,6 @@ describe "Allowables::ActiveRecord::Role" do
         @role.assign_permission(class_edit, Context)
         @role.assign_permission(class_view, Context)
         @role.permissions_for?(Context).should be_true
-      end
-    end
-
-    describe "#context" do
-      it "should return a Allowables::Context object" do
-        role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
-        role.context.should be_a(Allowables::Context)
-      end
-
-      it "should return a Allowables::Context object that represents the context of the role" do
-        context = Context.create(:name => "Test Context")
-        nil_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
-        class_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context')
-        inst_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context', :context_id => context.id)
-        nil_role.context.to_context.should be_nil
-        class_role.context.to_context.should == Context
-        inst_role.context.to_context.should be_a(Context)
-        inst_role.context.to_context.id.should == context.id
-      end
-    end
-
-    describe "#context=" do
-      before(:each) do
-        @role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
-      end
-
-      it "should allow passing a nil context" do
-        expect { @role.context = nil }.to_not raise_exception
-      end
-
-      it "should allow passing a class context" do
-        expect { @role.context = Context }.to_not raise_exception
-      end
-      
-      it "should allow passing an instance context" do
-        context = Context.create(:name => "Test Context")
-        expect { @role.context = context }.to_not raise_exception
-      end
-      
-      it "should allow passing an existing Allowables::Context" do
-        expect { @role.context = Allowables::Context.new }.to_not raise_exception
-      end
-
-      it "should accept a context and set the context_type and context_id based on the passed context" do
-        context = Context.create(:name => "Test Context")
-        @role.context_type.should be_nil
-        @role.context_id.should be_nil
-        @role.context = Context
-        @role.context_type.should == "Context"
-        @role.context_id.should be_nil
-        @role.context = context
-        @role.context_type.should == "Context"
-        @role.context_id.should == context.id
       end
     end
   end
