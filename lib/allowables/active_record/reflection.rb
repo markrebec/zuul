@@ -27,13 +27,13 @@ module Allowables
               end
 
               define_method "#{class_type.to_s.gsub(/_class$/,"").pluralize}_table_name" do
-                eval("#{class_type.to_s}_name").constantize.table_name
+                send("#{class_type.to_s}_name").constantize.table_name
               end
             end
 
             base.auth_config.primary_classes.to_h.each do |class_type,class_name|
               define_method "#{class_type.to_s.gsub(/_class$/,"")}_foreign_key" do
-                "#{eval(class_type.to_s).table_name.singularize}_#{eval(class_type.to_s).primary_key}"
+                "#{send(class_type.to_s).table_name.singularize}_#{send(class_type.to_s).primary_key}"
               end
             end
           end

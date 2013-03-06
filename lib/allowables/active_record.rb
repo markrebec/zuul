@@ -12,30 +12,30 @@ module Allowables
     end
 
     module ClassMethods
-      def acts_as_authorization_role(args={})
+      def acts_as_authorization_role(args={}, &block)
         args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args).merge({:role_class => self.name})
-        @auth_config = Allowables.configuration.clone.configure(args)
+        @auth_config = Allowables.configuration.clone.configure(args, &block)
         include AuthorizationMethods
         include Role 
       end
 
-      def acts_as_authorization_permission(args={})
+      def acts_as_authorization_permission(args={}, &block)
         args = args.merge({:permission_class => self.name})
-        @auth_config = Allowables.configuration.clone.configure(args)
+        @auth_config = Allowables.configuration.clone.configure(args, &block)
         include AuthorizationMethods
         include Permission
       end
 
-      def acts_as_authorization_context(args={})
+      def acts_as_authorization_context(args={}, &block)
         args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args)
-        @auth_config = Allowables.configuration.clone.configure(args)
+        @auth_config = Allowables.configuration.clone.configure(args, &block)
         include AuthorizationMethods
         include Context
       end
 
-      def acts_as_authorization_subject(args={})
+      def acts_as_authorization_subject(args={}, &block)
         args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args).merge({:subject_class => self.name})
-        @auth_config = Allowables.configuration.clone.configure(args)
+        @auth_config = Allowables.configuration.clone.configure(args, &block)
         include AuthorizationMethods
         include Subject
       end
