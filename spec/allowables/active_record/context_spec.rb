@@ -29,6 +29,11 @@ describe "Allowables::ActiveRecord::Context" do
   end
 
   describe "allowed_to?" do
+    it "should not be available if permissions are disabled" do
+      Weapon.acts_as_authorization_context :with_permissions => false
+      Weapon.new.should_not respond_to(:allowed_to?)
+    end
+
     it "should require a subject and a permission object or slug" do
       context = Context.create(:name => "Test Context")
       user = User.create(:name => "Test User")

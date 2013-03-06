@@ -8,22 +8,26 @@ module Allowables
 
       module ClassMethods
         def self.extended(base)
-          base.send :extend, SharedMethods
+          base.send :extend, RoleMethods
+          base.send :extend, PermissionMethods if base.auth_config.with_permissions
         end
       end
 
       module InstanceMethods
         def self.included(base)
-          base.send :include, SharedMethods
+          base.send :include, RoleMethods
+          base.send :include, PermissionMethods if base.auth_config.with_permissions
         end
       end
       
-      module SharedMethods
+      module RoleMethods
         # Checks whether the subject possesses the specified role within the context of self
         def allowed?(subject, role)
           subject.has_role?(role, self)
         end
+      end
 
+      module PermissionMethods
         # Checks whether the subject possesses the specified permission within the context of self
         # TODO define this dynamically depending on with_permissions
         def allowed_to?(subject, permission)
