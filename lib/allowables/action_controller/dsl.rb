@@ -89,6 +89,10 @@ module Allowables
           @controller.class.action_methods.select { |act| !act.match(/^_callback_before_[\d]*$/) }.map(&:to_sym)
         end
 
+        def subject
+          @controller.send(:current_user)
+        end
+
         def logged_out
           :_allowables_logged_out
         end
@@ -103,7 +107,6 @@ module Allowables
         end
 
         def all_roles(context=false)
-          subject = @controller.send(:current_user)
           return [] if subject.nil?
           context = (context == false) ? @context : parse_context(context)
           found_roles = subject.role_class.where(:context_type => context.type, :context_id => context.id).to_a
@@ -113,7 +116,6 @@ module Allowables
         end
 
         def all_permissions(context=false)
-          subject = @controller.send(:current_user)
           return [] if subject.nil?
           context = (context == false) ? @context : parse_context(context)
           found_permissions = subject.permission_class.where(:context_type => context.type, :context_id => context.id).to_a
@@ -123,7 +125,6 @@ module Allowables
         end
 
         def contextual_role(slug, context=false)
-          subject = @controller.send(:current_user)
           return nil if subject.nil?
           context = (context == false) ? @context : parse_context(context)
           return subject.target_role(slug, context.to_context)
@@ -135,7 +136,6 @@ module Allowables
         alias_method :role, :contextual_role
         
         def contextual_permission(slug, context=false)
-          subject = @controller.send(:current_user)
           return nil if subject.nil?
           context = (context == false) ? @context : parse_context(context)
           return subject.target_permission(slug, context.to_context)
@@ -247,25 +247,24 @@ module Allowables
           all_actions
         end
 
-        def allow?(subject, role_or_perm)
-          match? subject, role_or_perm
+        def allow?(role_or_perm)
+          match? role_or_perm
         end
         
-        def deny?(subject, role_or_perm)
-          match? subject, role_or_perm
+        def deny?(role_or_perm)
+          match? role_or_perm
         end
       end
 
       class Roles < Actionable
         
-        def match?(subject, role)
+        def match?(role)
           (@or_higher && subject.has_role_or_higher?(role, @context.to_context)) || (!@or_higher && subject.has_role?(role, @context.to_context))
         end
         
         def allow(*actions)
           actions = actions[0] if actions.length == 1 && actions[0].is_a?(Array)
           actions.concat(@actions)
-          subject = @controller.send(:current_user)
           return if @roles.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @roles.each do |role|
@@ -277,9 +276,9 @@ module Allowables
               
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
               
-              logger.debug "  \e[1;34mACL\e[0m  Checking role (\e[32mallow\e[0m): #{role.is_a?(subject.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
-              if allow?(subject, role)
-                logger.debug "  \e[1;34mACL\e[0m  \e[1;32mmatched\e[0m"
+              logger.debug "  \e[1;33mACL\e[0m  Checking role (\e[32mallow\e[0m): #{role.is_a?(subject.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
+              if allow?(role)
+                logger.debug "  \e[1;33mACL\e[0m  \e[1;32mmatched\e[0m"
                 @results << true
                 return
               end
@@ -291,7 +290,6 @@ module Allowables
         def deny(*actions)
           actions = actions[0] if actions.length == 1 && actions[0].is_a?(Array)
           actions.concat(@actions)
-          subject = @controller.send(:current_user)
           return if @roles.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @roles.each do |role|
@@ -303,9 +301,9 @@ module Allowables
               
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
               
-              logger.debug "  \e[1;34mACL\e[0m  Checking role (\e[31mdeny\e[0m): #{role.is_a?(subject.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
-              if deny?(subject, role)
-                logger.debug "  \e[1;34mACL\e[0m  \e[1;31mmatched\e[0m"
+              logger.debug "  \e[1;33mACL\e[0m  Checking role (\e[31mdeny\e[0m): #{role.is_a?(subject.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
+              if deny?(role)
+                logger.debug "  \e[1;33mACL\e[0m  \e[1;31mmatched\e[0m"
                 @results << false
                 return
               end
@@ -333,20 +331,19 @@ module Allowables
 
       class Permissions < Actionable
 
-        def match?(subject, permission)
+        def match?(permission)
           subject.has_permission?(permission, @context.to_context)
         end
         
         def allow(*actions)
           actions = actions[0] if actions.length == 1 && actions[0].is_a?(Array)
           actions.concat(@actions)
-          subject = @controller.send(:current_user)
           return if subject.nil? || @permissions.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @permissions.each do |permission|
-              logger.debug "  \e[1;34mACL\e[0m  Checking permission (\e[32mallow\e[0m): #{permission.is_a?(subject.role_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
-              if allow?(subject, permission)
-                logger.debug "  \e[1;34mACL\e[0m  \e[1;32mmatched\e[0m"
+              logger.debug "  \e[1;33mACL\e[0m  Checking permission (\e[32mallow\e[0m): #{permission.is_a?(subject.role_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
+              if allow?(permission)
+                logger.debug "  \e[1;33mACL\e[0m  \e[1;32mmatched\e[0m"
                 @results << true
                 return
               end
@@ -357,13 +354,12 @@ module Allowables
         def deny(*actions)
           actions = actions[0] if actions.length == 1 && actions[0].is_a?(Array)
           actions.concat(@actions)
-          subject = @controller.send(:current_user)
           return if subject.nil? || @permissions.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @permissions.each do |permission|
-              logger.debug "  \e[1;34mACL\e[0m  Checking permission (\e[31mdeny\e[0m): #{permission.is_a?(subject.role_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
-              if deny?(subject, permission)
-                logger.debug "  \e[1;34mACL\e[0m  \e[1;31mmatched\e[0m"
+              logger.debug "  \e[1;33mACL\e[0m  Checking permission (\e[31mdeny\e[0m): #{permission.is_a?(subject.role_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
+              if deny?(permission)
+                logger.debug "  \e[1;33mACL\e[0m  \e[1;31mmatched\e[0m"
                 @results << false
                 return
               end

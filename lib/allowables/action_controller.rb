@@ -26,7 +26,7 @@ module Allowables
         
         acl_filters << append_before_filter(filter_args) do |controller|
           logger = controller.logger
-          logger.debug "  \e[1;34mACL\e[0m  Starting Access Control Block"
+          logger.debug "  \e[1;33mACL\e[0m  Starting Access Control Block"
           
           this_block = self.class.acl_filters.slice!(0)
           
@@ -34,10 +34,10 @@ module Allowables
           controller.acl_dsl.configure opts
           controller.acl_dsl.execute &block
           
-          logger.debug "  \e[1;34mACL\e[0m  Access Control Results: #{(controller.acl_dsl.authorized? ? "\e[1;32mALLOWED\e[0m" : "\3[1;31mDENIED\e[0m")} using \e[1m#{controller.acl_dsl.default.to_s.upcase}\e[0m(#{controller.acl_dsl.results.join(",")})"
+          logger.debug "  \e[1;33mACL\e[0m  Access Control Results: #{(controller.acl_dsl.authorized? ? "\e[1;32mALLOWED\e[0m" : "\3[1;31mDENIED\e[0m")} using \e[1m#{controller.acl_dsl.default.to_s.upcase}\e[0m(#{controller.acl_dsl.results.join(",")})"
 
           if self.class.acl_filters.length > 0
-            logger.debug "  \e[1;34mACL\e[0m  Collecting ACL Results to carry through the chain..."
+            logger.debug "  \e[1;33mACL\e[0m  Collecting ACL Results to carry through the chain..."
             controller.acl_dsl.collect_results
           elsif controller.acl_dsl.mode == :raise
             raise Exceptions::AccessDenied unless controller.acl_dsl.authorized?
@@ -45,21 +45,22 @@ module Allowables
         end
       end
 
-      def allow_roles(roles, *args, &block)
-      end
-      alias_method :allow_role, :allow_roles
+      # TODO maybe implement these to be used as simple wrappers for access_control
+      #def allow_roles(roles, *args, &block)
+      #end
+      #alias_method :allow_role, :allow_roles
 
-      def allow_permissions(permissions, *args, &block)
-      end
-      alias_method :allow_permission, :allow_permissions
+      #def allow_permissions(permissions, *args, &block)
+      #end
+      #alias_method :allow_permission, :allow_permissions
 
-      def deny_roles(roles, *args, &block)
-      end
-      alias_method :deny_role, :deny_roles
+      #def deny_roles(roles, *args, &block)
+      #end
+      #alias_method :deny_role, :deny_roles
 
-      def deny_permissions(permissions, *args, &block)
-      end
-      alias_method :deny_permission, :deny_permissions
+      #def deny_permissions(permissions, *args, &block)
+      #end
+      #alias_method :deny_permission, :deny_permissions
 
       def parse_acl_args(*args)
         args = args[0] if args.is_a?(Array)

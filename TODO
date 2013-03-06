@@ -1,16 +1,12 @@
 Controller DSL
   - helpers for views like --  <% requires_role(:role) do %>HTML HERE<% end %>
-  - specs (test dsl in isolation, test controller implementations)
-  - verfity/decide whether actions/roles/perms are tacked on, validated within the parents or completely override parents
+  - specs - test dsl in isolation with dummy controller object, test controller implementations
   - clean up logging (create logger class that prefixes with ACL)
-  
-  + moved role/permission checks into #allow?, #deny? and #match? - allows decoupling ACL DSL from ActiveRecord Authorization by overriding those methods in the DSL block or in a monkeypatch
 
 
 
 ActiveRecord Authorization
   - account for namespaces when setting classes like Publishers::Role (or test if it just works as is?)
-  - make sure context excludes permission methods when not used
   - allow forcing/restricting contexts (so subject can only be assigned permissions within that context and lookups don't go up the chain)
   - create mixins for join models to add validations and associations, etc.
   - allow block for configuring acts_as_authorization_*
@@ -29,3 +25,10 @@ General
   - error/exception classes and messages
   - i18n error messages
   - add :debug config, create logger class, log activerecord stuff as well
+
+
+
+NOTES
+  ACL DSL
+    + actions, roles and permissions are tacked on to any default/parent :actions, :roles or :permissions
+    + moved role/permission checks into #allow?, #deny? and #match? - allows decoupling ACL DSL from ActiveRecord Authorization by overriding those methods in the DSL block or in a monkeypatch
