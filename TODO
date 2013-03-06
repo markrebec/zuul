@@ -9,14 +9,14 @@ ActiveRecord Authorization
   - allow forcing/restricting contexts (so subject can only be assigned permissions within that context and lookups don't go up the chain)
   - create mixins for join models to add validations and associations, etc.
   - DRY up some of the shared stuff like #context and #context=
-  
-  - include a default Role and Permission model + generator for migration?
-  - generators for Role, Permission, RolePermission, SubjectRole, SubjectPermission models?
-  - generators for migrations to add fields to custom Role, Permission models?
 
   - maybe rework some of the method and association names to use the provided values instead of the keys (like :user instead of :subject). alternately maybe figure out a way to namespace acts_as_*? would allow something to behave with many acts_as_* without a conflict (i.e. possess Roles AND SpecialRoles)
   - look into defining scopes, use :default scope by default, allow naming acts_as_authorization_* :name => 'my_scope'
   - genericize the active record stuff for objects (just check if responds to :authorization_find or something), create activerecord datasource and move the table-related stuff there
+  
+  - include a default Role and Permission model + generator for migration?
+  - generators for Role, Permission, RolePermission, SubjectRole, SubjectPermission models?
+  - generators for migrations to add fields to custom Role, Permission models?
 
 
 

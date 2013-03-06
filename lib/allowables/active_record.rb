@@ -15,34 +15,32 @@ module Allowables
     end
 
     module ClassMethods
-      def acts_as_authorization_role(args={}, &block)
-        args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args).merge({:role_class => self.name})
+      def acts_as_authorization_model(args={}, &block)
+        args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args)
         @auth_config = Allowables.configuration.clone.configure(args, &block)
         include AuthorizationMethods
+      end
+
+      def acts_as_authorization_role(args={}, &block)
+        acts_as_authorization_model(args.merge({:role_class => self.name}), &block)
         prepare_join_classes
         include Role 
       end
 
       def acts_as_authorization_permission(args={}, &block)
-        args = args.merge({:permission_class => self.name})
-        @auth_config = Allowables.configuration.clone.configure(args, &block)
-        include AuthorizationMethods
+        acts_as_authorization_model(args.merge({:permission_class => self.name}), &block)
         prepare_join_classes
         include Permission
       end
 
       def acts_as_authorization_subject(args={}, &block)
-        args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args).merge({:subject_class => self.name})
-        @auth_config = Allowables.configuration.clone.configure(args, &block)
-        include AuthorizationMethods
+        acts_as_authorization_model(args.merge({:subject_class => self.name}), &block)
         prepare_join_classes
         include Subject
       end
 
       def acts_as_authorization_context(args={}, &block)
-        args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args)
-        @auth_config = Allowables.configuration.clone.configure(args, &block)
-        include AuthorizationMethods
+        acts_as_authorization_model(args, &block)
         include Context
       end
 
@@ -56,17 +54,6 @@ module Allowables
           permission_role_class.send :include, PermissionRole unless role_subject_class.ancestors.include?(PermissionRole)
         end
       end
-
-      #def acts_as_authorization_joiner(args={}, &block)
-      #  args = {:with_permissions => Allowables.configuration.with_permissions}.merge(args)
-      #  @auth_config = Allowables.configuration.clone.configure(args, &block)
-      #  include AuthorizationMethods
-      #  include RoleSubject unless ancestors.include?(RoleSubject)
-      #  if @auth_config.with_permissions
-      #    include PermissionSubject unless ancestors.include?(PermissionSubject)
-      #    include PermissionRole unless ancestors.include?(PermissionRole)
-      #  end
-      #end
 
       def acts_as_authorization_role?
         ancestors.include?(Allowables::ActiveRecord::Role)
@@ -144,19 +131,6 @@ module Allowables
           target_permission
         end
         
-        # Parses a context into it's two parts: 'type' and 'id'
-        #
-        # 'type' is a class name (generally an AR model, but can be any class)
-        # 'id' is the id of a specific model record, indicating context is an actual record when provided
-        #
-        # A context can be for a specific record [SomeThing, 1], at the class level [SomeThing, nil], or globally [nil, nil].
-        #
-        # DEPRECATED
-        # TODO: move the tests for this over to the context object
-        def parse_context(context)
-          return Allowables::Context.parse(context)
-        end
-
         # Verifies whether a role or permission (target) is "allowed" to be used within the provided context.
         # The target's context must either match the one provided or be higher up the context chain.
         # 
@@ -168,7 +142,7 @@ module Allowables
         def verify_target_context(target, context)
           return false if target.nil?
           context = Allowables::Context.parse(context)
-          (target.context_type.nil? || target.context_type == context.class_name) && (target.context_id.nil? || target.context_id == context.id)
+          (target.context.class_name.nil? || target.context.class_name == context.class_name) && (target.context.id.nil? || target.context.id == context.id)
         end
 
         # Simple helper for "IS NULL" vs "= 'VALUE'" SQL syntax
