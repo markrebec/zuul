@@ -2,7 +2,7 @@ module Allowables
   module ActionController
     module DSL
       class Base
-        attr_reader :default, :context, :force_context, :actions, :roles, :permissions, :results
+        attr_reader :default, :context, :force_context, :mode, :default_block_allow_rules, :default_block_deny_rules, :actions, :roles, :permissions, :results
 
         def actions(*actions, &block)
           actions = actions[0] if actions.length == 1 && actions[0].is_a?(Array)
@@ -147,15 +147,30 @@ module Allowables
         alias_method :permission, :contextual_permission
 
         def options
-          {:default => @default, :actions => @actions.clone, :roles => @roles.clone, :permissions => @permissions.clone, :force_context => @force_context, :context => @context.clone}
+          {
+            :default => @default,
+            :actions => @actions.clone,
+            :roles => @roles.clone,
+            :permissions => @permissions.clone,
+            :force_context => @force_context,
+            :context => @context.clone,
+            :mode => @mode,
+            :allow => (@default_block_allow_rules.nil? ? @default_block_allow_rules : @default_block_allow_rules.clone),
+            :deny => (@default_block_deny_rules.nil? ? @default_block_deny_rules : @default_block_deny_rules.clone),
+          }
         end
 
         def set_options(opts)
           [:default, :actions, :roles, :permissions, :force_context, :mode].each do |key|
             instance_variable_set "@#{key.to_s}", opts[key] if opts.has_key?(key)
           end
+          [:allow, :deny].each do |key|
+            instance_variable_set "@default_block_#{key.to_s}_rules", opts[key] if opts.has_key?(key)
+          end
           @context = parse_context(opts[:context]) if opts.has_key?(:context)
+          self
         end
+        alias_method :configure, :set_options
 
         def parse_context(context=nil)
           if context.is_a?(String) || context.is_a?(Symbol)
@@ -167,6 +182,35 @@ module Allowables
           end
 
           Allowables::Context.parse(context)
+        end
+
+        def execute(&block)
+          if block_given?
+            instance_eval(&block)
+          else
+            instance_eval do
+              [:allow, :deny].each do |auth_type|
+                auth_opts = instance_variable_get("@default_block_#{auth_type.to_s}_rules")
+                next if auth_opts.nil?
+                
+                auth_actions = @actions
+                auth_opts[:actions] = [auth_opts[:actions]] if auth_opts.has_key?(:actions) && !auth_opts[:actions].is_a?(Array)
+                if !auth_opts.has_key?(:actions) || auth_opts[:actions].empty?
+                  auth_actions << @controller.params[:action].to_sym if auth_actions.empty?
+                else
+                  auth_actions.concat(auth_opts[:actions])
+                end
+                
+                actions auth_actions do
+                  [:roles, :permissions].each do |allowable_type|
+                    if auth_opts.has_key?(allowable_type)
+                      send "#{auth_type.to_s}_#{allowable_type.to_s}", auth_opts[allowable_type]
+                    end
+                  end
+                end
+              end
+            end
+          end
         end
 
         def authorized?
@@ -184,7 +228,7 @@ module Allowables
         protected
 
         def initialize(controller, opts={})
-          opts = {:default => Allowables.configuration.acl_default, :force_context => Allowables.configuration.force_context, :context => nil, :mode => :raise, :actions => [], :roles => [], :permissions => []}.merge(opts)
+          opts = {:default => Allowables.configuration.acl_default, :force_context => Allowables.configuration.force_context, :context => nil, :mode => Allowables.configuration.acl_mode, :allow => nil, :deny => nil, :actions => [], :roles => [], :permissions => []}.merge(opts)
           @controller = controller
           set_options opts
           @results = []
@@ -221,9 +265,9 @@ module Allowables
               
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
               
-              logger.debug "checking role (allow): #{role.is_a?(subject.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
+              logger.debug "  \e[1;34mACL\e[0m  Checking role (\e[32mallow\e[0m): #{role.is_a?(subject.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
               if (@or_higher && subject.has_role_or_higher?(role, @context.to_context)) || (!@or_higher && subject.has_role?(role, @context.to_context))
-                logger.debug "matched"
+                logger.debug "  \e[1;34mACL\e[0m  \e[1;32mmatched\e[0m"
                 @results << true
                 return
               end
@@ -247,9 +291,9 @@ module Allowables
               
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
               
-              logger.debug "checking role (deny): #{role.is_a?(subject.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
+              logger.debug "  \e[1;34mACL\e[0m  Checking role (\e[31mdeny\e[0m): #{role.is_a?(subject.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
               if (@or_higher && subject.has_role_or_higher?(role, @context.to_context)) || (!@or_higher && subject.has_role?(role, @context.to_context))
-                logger.debug "matched"
+                logger.debug "  \e[1;34mACL\e[0m  \e[1;31mmatched\e[0m"
                 @results << false
                 return
               end
@@ -284,9 +328,9 @@ module Allowables
           return if subject.nil? || @permissions.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @permissions.each do |permission|
-              logger.debug "checking permission (allow): #{permission.is_a?(subject.permission_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
+              logger.debug "  \e[1;34mACL\e[0m  Checking permission (\e[32mallow\e[0m): #{permission.is_a?(subject.role_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
               if subject.has_permission?(permission, @context.to_context)
-                logger.debug "matched"
+                logger.debug "  \e[1;34mACL\e[0m  \e[1;32mmatched\e[0m"
                 @results << true
                 return
               end
@@ -301,9 +345,9 @@ module Allowables
           return if subject.nil? || @permissions.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @permissions.each do |permission|
-              logger.debug "checking permission (deny): #{permission.is_a?(subject.permission_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
+              logger.debug "  \e[1;34mACL\e[0m  Checking permission (\e[31mdeny\e[0m): #{permission.is_a?(subject.role_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
               if subject.has_permission?(permission, @context.to_context)
-                logger.debug "matched"
+                logger.debug "  \e[1;34mACL\e[0m  \e[1;31mmatched\e[0m"
                 @results << false
                 return
               end

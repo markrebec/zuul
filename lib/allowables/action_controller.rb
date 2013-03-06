@@ -9,8 +9,8 @@ module Allowables
 
     module InstanceMethods
       def authorized?
-        return true if @authorization_dsl.nil?
-        @authorization_dsl.authorized?
+        return true if @acl_dsl.nil?
+        @acl_dsl.authorized?
       end
     end
     
@@ -18,61 +18,29 @@ module Allowables
       def self.extended(base)
         base.send :cattr_accessor, :acl_filters
         base.send :class_variable_set, :@@acl_filters, []
-        base.send :attr_accessor, :authorization_dsl
+        base.send :attr_accessor, :acl_dsl
       end
 
       def access_control(*args, &block)
-        # :mode => :raise, :quiet
-        opts = {:default => Allowables.configuration.acl_default, :force_context => Allowables.configuration.force_context, :context => nil, :mode => :raise, :actions => [], :roles => [], :permissions => []}
-        opts = opts.merge(args[0]) if args.length > 0
-        filter_args = {}.merge(opts.select { |k,v| [:except, :only].include?(k) })
-        opts.delete(:only)
-        opts.delete(:except)
+        opts, filter_args = parse_acl_args(*args)
         
         acl_filters << append_before_filter(filter_args) do |controller|
           logger = controller.logger
-          logger.debug "----------------------------"
-          logger.debug "ACCESS CONTROL BLOCK START"
+          logger.debug "  \e[1;34mACL\e[0m  Starting Access Control Block"
           
           this_block = self.class.acl_filters.slice!(0)
           
-          auth_dsl = controller.authorization_dsl ||= DSL::Base.new(controller)
-          auth_dsl.set_options(opts)
+          controller.acl_dsl ||= DSL::Base.new(controller)
+          controller.acl_dsl.configure opts
+          controller.acl_dsl.execute &block
           
-          if block_given?
-            auth_dsl.instance_eval(&block)
-          else
-            auth_dsl.instance_eval do
-              [:allow, :deny].each do |auth_type|
-                next unless opts.has_key?(auth_type)
-                auth_actions = opts[:actions]
-                if !opts[auth_type].has_key?(:actions) || opts[auth_type][:actions].empty?
-                  auth_actions << controller.params[:action].to_sym if auth_actions.empty?
-                else
-                  auth_actions.concat(opts[auth_type][:actions])
-                end
-                actions auth_actions do
-                  [:roles, :permissions].each do |allowable_type|
-                    if opts[auth_type].has_key?(allowable_type)
-                      send "#{auth_type.to_s}_#{allowable_type.to_s}", opts[auth_type][allowable_type]
-                    end
-                  end
-                end
-              end
-            end
-          end
-          
-          logger.debug "ACCESS CONTROL BLOCK END"
-          logger.debug "----------------------------"
-          logger.debug "ACCESS CONTROL RESULTS"
-          logger.debug "#{(auth_dsl.authorized? ? "ALLOWED" : "DENIED")} using #{auth_dsl.default.to_s.upcase}(#{auth_dsl.results.join(",")})"
-          logger.debug "----------------------------"
+          logger.debug "  \e[1;34mACL\e[0m  Access Control Results: #{(controller.acl_dsl.authorized? ? "\e[1;32mALLOWED\e[0m" : "\3[1;31mDENIED\e[0m")} using \e[1m#{controller.acl_dsl.default.to_s.upcase}\e[0m(#{controller.acl_dsl.results.join(",")})"
 
           if self.class.acl_filters.length > 0
-            logger.debug "COLLECTING ACCESS CONTROL RESULTS FOR CHAIN"
-            auth_dsl.collect_results
-          elsif opts[:mode] == :raise
-            raise Exceptions::AccessDenied unless auth_dsl.authorized?
+            logger.debug "  \e[1;34mACL\e[0m  Collecting ACL Results to carry through the chain..."
+            controller.acl_dsl.collect_results
+          elsif controller.acl_dsl.mode == :raise
+            raise Exceptions::AccessDenied unless controller.acl_dsl.authorized?
           end
         end
       end
@@ -92,6 +60,13 @@ module Allowables
       def deny_permissions(permissions, *args, &block)
       end
       alias_method :deny_permission, :deny_permissions
+
+      def parse_acl_args(*args)
+        args = args[0] if args.is_a?(Array)
+        filter_args = args.select { |k,v| [:except, :only].include?(k) }
+        [:except, :only].each { |k| args.delete(k) }
+        return [args, filter_args]
+      end
     end
   end
 end

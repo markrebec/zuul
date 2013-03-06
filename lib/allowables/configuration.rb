@@ -13,10 +13,11 @@ module Allowables
     DEFAULT_AUTHORIZATION_CLASSES = PRIMARY_AUTHORIZATION_CLASSES.merge(AUTHORIZATION_JOIN_CLASSES)
     
     DEFAULT_CONFIGURATION_OPTIONS = {
-      :acl_default => :deny,
+      :acl_default => :deny, # :allow, :deny
+      :acl_mode => :raise, # :raise, :quiet
       :subject_method => :current_user,
-      :with_permissions => true,
-      :force_context => false
+      :force_context => false,
+      :with_permissions => true
     }
 
     attr_reader *DEFAULT_AUTHORIZATION_CLASSES.keys
