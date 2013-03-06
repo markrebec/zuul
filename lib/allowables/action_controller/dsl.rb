@@ -246,9 +246,21 @@ module Allowables
         def all
           all_actions
         end
+
+        def allow?(subject, role_or_perm)
+          match? subject, role_or_perm
+        end
+        
+        def deny?(subject, role_or_perm)
+          match? subject, role_or_perm
+        end
       end
 
       class Roles < Actionable
+        
+        def match?(subject, role)
+          (@or_higher && subject.has_role_or_higher?(role, @context.to_context)) || (!@or_higher && subject.has_role?(role, @context.to_context))
+        end
         
         def allow(*actions)
           actions = actions[0] if actions.length == 1 && actions[0].is_a?(Array)
@@ -266,7 +278,7 @@ module Allowables
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
               
               logger.debug "  \e[1;34mACL\e[0m  Checking role (\e[32mallow\e[0m): #{role.is_a?(subject.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
-              if (@or_higher && subject.has_role_or_higher?(role, @context.to_context)) || (!@or_higher && subject.has_role?(role, @context.to_context))
+              if allow?(subject, role)
                 logger.debug "  \e[1;34mACL\e[0m  \e[1;32mmatched\e[0m"
                 @results << true
                 return
@@ -292,7 +304,7 @@ module Allowables
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
               
               logger.debug "  \e[1;34mACL\e[0m  Checking role (\e[31mdeny\e[0m): #{role.is_a?(subject.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
-              if (@or_higher && subject.has_role_or_higher?(role, @context.to_context)) || (!@or_higher && subject.has_role?(role, @context.to_context))
+              if deny?(subject, role)
                 logger.debug "  \e[1;34mACL\e[0m  \e[1;31mmatched\e[0m"
                 @results << false
                 return
@@ -320,6 +332,10 @@ module Allowables
       end
 
       class Permissions < Actionable
+
+        def match?(subject, permission)
+          subject.has_permission?(permission, @context.to_context)
+        end
         
         def allow(*actions)
           actions = actions[0] if actions.length == 1 && actions[0].is_a?(Array)
@@ -329,7 +345,7 @@ module Allowables
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @permissions.each do |permission|
               logger.debug "  \e[1;34mACL\e[0m  Checking permission (\e[32mallow\e[0m): #{permission.is_a?(subject.role_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
-              if subject.has_permission?(permission, @context.to_context)
+              if allow?(subject, permission)
                 logger.debug "  \e[1;34mACL\e[0m  \e[1;32mmatched\e[0m"
                 @results << true
                 return
@@ -346,7 +362,7 @@ module Allowables
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @permissions.each do |permission|
               logger.debug "  \e[1;34mACL\e[0m  Checking permission (\e[31mdeny\e[0m): #{permission.is_a?(subject.role_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
-              if subject.has_permission?(permission, @context.to_context)
+              if deny?(subject, permission)
                 logger.debug "  \e[1;34mACL\e[0m  \e[1;31mmatched\e[0m"
                 @results << false
                 return

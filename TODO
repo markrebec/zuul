@@ -2,8 +2,9 @@ Controller DSL
   - helpers for views like --  <% requires_role(:role) do %>HTML HERE<% end %>
   - specs (test dsl in isolation, test controller implementations)
   - verfity/decide whether actions/roles/perms are tacked on, validated within the parents or completely override parents
-  - move actual role/permission checks into #allow? and #deny? - would decouple ACL DSL from ActiveRecord Authorization
   - clean up logging (create logger class that prefixes with ACL)
+  
+  + moved role/permission checks into #allow?, #deny? and #match? - allows decoupling ACL DSL from ActiveRecord Authorization by overriding those methods in the DSL block or in a monkeypatch
 
 
 
