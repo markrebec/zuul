@@ -9,14 +9,14 @@ module Allowables
       module ClassMethods
         def self.extended(base)
           base.send :extend, RoleMethods
-          base.send :extend, PermissionMethods if base.auth_config.with_permissions
+          base.send :extend, PermissionMethods if base.auth_scope.config.with_permissions
         end
       end
 
       module InstanceMethods
         def self.included(base)
           base.send :include, RoleMethods
-          base.send :include, PermissionMethods if base.auth_config.with_permissions
+          base.send :include, PermissionMethods if base.auth_scope.config.with_permissions
         end
       end
       
@@ -29,7 +29,6 @@ module Allowables
 
       module PermissionMethods
         # Checks whether the subject possesses the specified permission within the context of self
-        # TODO define this dynamically depending on with_permissions
         def allowed_to?(subject, permission)
           subject.has_permission?(permission, self)
         end

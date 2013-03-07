@@ -17,6 +17,7 @@ module Allowables
       :acl_mode => :raise, # :raise, :quiet
       :subject_method => :current_user,
       :force_context => false,
+      :scope => :default,
       :with_permissions => true
     }
 

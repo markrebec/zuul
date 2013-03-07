@@ -20,10 +20,10 @@ module Allowables
         end
 
         def self.add_associations(base)
-          base.send :has_many, base.permission_roles_table_name.to_sym
-          base.send :has_many, base.roles_table_name.to_sym, :through => base.permission_roles_table_name.to_sym
-          base.send :has_many, base.permission_subjects_table_name.to_sym
-          base.send :has_many, base.subjects_table_name.to_sym, :through => base.permission_subjects_table_name.to_sym
+          base.send :has_many, base.auth_scope.permission_roles_table_name.to_sym
+          base.send :has_many, base.auth_scope.roles_table_name.to_sym, :through => base.auth_scope.permission_roles_table_name.to_sym
+          base.send :has_many, base.auth_scope.permission_subjects_table_name.to_sym
+          base.send :has_many, base.auth_scope.subjects_table_name.to_sym, :through => base.auth_scope.permission_subjects_table_name.to_sym
         end
       end
 

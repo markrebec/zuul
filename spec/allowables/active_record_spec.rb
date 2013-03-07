@@ -4,8 +4,8 @@ describe "Allowables::ActiveRecord" do
 
   def prep_dummy
     Dummy.send :include, Allowables::ActiveRecord
-    Dummy.class.send :attr_reader, :auth_config
     Dummy.send :instance_variable_set, :@auth_config, Allowables::Configuration.new
+    Dummy.send :instance_variable_set, :@auth_scopes, {:default => Allowables::ActiveRecord::Scope.new(Allowables::Configuration.new)}
     Dummy.send :include, Allowables::ActiveRecord::AuthorizationMethods
   end
 
@@ -36,56 +36,56 @@ describe "Allowables::ActiveRecord" do
     # TODO maybe move these into 4 different specs for each method?
     it "should allow passing class arguments to be used with reflections" do
       Soldier.acts_as_authorization_subject :role_class => Rank, :permission_class => Skill
-      Soldier.role_class.should == Rank
-      Soldier.permission_class.should == Skill
+      Soldier.auth_scope.role_class.should == Rank
+      Soldier.auth_scope.permission_class.should == Skill
 
       Rank.acts_as_authorization_role :subject_class => Soldier, :permission_class => Skill
-      Rank.subject_class.should == Soldier
-      Rank.permission_class.should == Skill
+      Rank.auth_scope.subject_class.should == Soldier
+      Rank.auth_scope.permission_class.should == Skill
 
       Skill.acts_as_authorization_permission :subject_class => Soldier, :role_class => Rank
-      Skill.subject_class.should == Soldier
-      Skill.role_class.should == Rank
+      Skill.auth_scope.subject_class.should == Soldier
+      Skill.auth_scope.role_class.should == Rank
 
       Weapon.acts_as_authorization_context :permission_class => Skill
-      Weapon.permission_class.should == Skill
+      Weapon.auth_scope.permission_class.should == Skill
     end
 
     it "should allow class arguments to be provided as classes, strings or symbols" do
       Soldier.acts_as_authorization_subject :role_class => Rank, :permission_class => "Skill"
-      Soldier.role_class.should == Rank
-      Soldier.permission_class.should == Skill
+      Soldier.auth_scope.role_class.should == Rank
+      Soldier.auth_scope.permission_class.should == Skill
       Rank.acts_as_authorization_role :subject_class => :soldier, :permission_class => "skill"
-      Rank.subject_class.should == Soldier
-      Rank.permission_class.should == Skill
+      Rank.auth_scope.subject_class.should == Soldier
+      Rank.auth_scope.permission_class.should == Skill
       Skill.acts_as_authorization_permission :subject_class => Soldier, :role_class => :Rank
-      Skill.subject_class.should == Soldier
-      Skill.role_class.should == Rank
+      Skill.auth_scope.subject_class.should == Soldier
+      Skill.auth_scope.role_class.should == Rank
       Weapon.acts_as_authorization_context :permission_class => Skill
-      Weapon.permission_class.should == Skill
+      Weapon.auth_scope.permission_class.should == Skill
     end
 
     it "should allow using namespaced classes" do
       AllowablesModels::User.acts_as_authorization_subject :role_class => AllowablesModels::Role, :permission_class => "AllowablesModels::Permission"
-      AllowablesModels::User.role_class.should == AllowablesModels::Role
-      AllowablesModels::User.permission_class.should == AllowablesModels::Permission
-      AllowablesModels::User.role_subject_class.should == AllowablesModels::RoleUser
-      AllowablesModels::User.permission_subject_class.should == AllowablesModels::PermissionUser
-      AllowablesModels::User.permission_role_class.should == AllowablesModels::PermissionRole
+      AllowablesModels::User.auth_scope.role_class.should == AllowablesModels::Role
+      AllowablesModels::User.auth_scope.permission_class.should == AllowablesModels::Permission
+      AllowablesModels::User.auth_scope.role_subject_class.should == AllowablesModels::RoleUser
+      AllowablesModels::User.auth_scope.permission_subject_class.should == AllowablesModels::PermissionUser
+      AllowablesModels::User.auth_scope.permission_role_class.should == AllowablesModels::PermissionRole
 
       AllowablesModels::Role.acts_as_authorization_role :subject_class => AllowablesModels::User, :permission_class => AllowablesModels::Permission
-      AllowablesModels::Role.subject_class.should == AllowablesModels::User
-      AllowablesModels::Role.permission_class.should == AllowablesModels::Permission
-      AllowablesModels::Role.role_subject_class.should == AllowablesModels::RoleUser
-      AllowablesModels::Role.permission_subject_class.should == AllowablesModels::PermissionUser
-      AllowablesModels::Role.permission_role_class.should == AllowablesModels::PermissionRole
+      AllowablesModels::Role.auth_scope.subject_class.should == AllowablesModels::User
+      AllowablesModels::Role.auth_scope.permission_class.should == AllowablesModels::Permission
+      AllowablesModels::Role.auth_scope.role_subject_class.should == AllowablesModels::RoleUser
+      AllowablesModels::Role.auth_scope.permission_subject_class.should == AllowablesModels::PermissionUser
+      AllowablesModels::Role.auth_scope.permission_role_class.should == AllowablesModels::PermissionRole
       
       AllowablesModels::Permission.acts_as_authorization_permission :subject_class => "AllowablesModels::User", :role_class => AllowablesModels::Role
-      AllowablesModels::Permission.subject_class.should == AllowablesModels::User
-      AllowablesModels::Permission.role_class.should == AllowablesModels::Role
-      AllowablesModels::Permission.role_subject_class.should == AllowablesModels::RoleUser
-      AllowablesModels::Permission.permission_subject_class.should == AllowablesModels::PermissionUser
-      AllowablesModels::Permission.permission_role_class.should == AllowablesModels::PermissionRole
+      AllowablesModels::Permission.auth_scope.subject_class.should == AllowablesModels::User
+      AllowablesModels::Permission.auth_scope.role_class.should == AllowablesModels::Role
+      AllowablesModels::Permission.auth_scope.role_subject_class.should == AllowablesModels::RoleUser
+      AllowablesModels::Permission.auth_scope.permission_subject_class.should == AllowablesModels::PermissionUser
+      AllowablesModels::Permission.auth_scope.permission_role_class.should == AllowablesModels::PermissionRole
     end
 
   end
@@ -190,10 +190,21 @@ describe "Allowables::ActiveRecord" do
   end
 
   describe "AuthorizationMethods" do
-    it "should extend the model with Allowables::ActiveRecord::Reflection" do
-      prep_dummy
-      Dummy.ancestors.include?(Allowables::ActiveRecord::Reflection).should be_true
-    end
+    #it "should define reflection methods for the class and instances" do
+    #  prep_dummy
+    #  Allowables::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.each do |class_type|
+    #    [class_type.to_s, "#{class_type.to_s}_name", "#{class_type.to_s.gsub(/_class$/,'').pluralize}_table_name"].each do |meth|
+    #      Dummy.should respond_to(meth)
+    #      Dummy.new.should respond_to(meth)
+    #    end
+    #  end
+    #  Allowables::Configuration::PRIMARY_AUTHORIZATION_CLASSES.keys.each do |class_type|
+    #    ["#{class_type.to_s.gsub(/_class$/,'')}_foreign_key"].each do |meth|
+    #      Dummy.should respond_to(meth)
+    #      Dummy.new.should respond_to(meth)
+    #    end
+    #  end
+    #end
 
     describe "target_role" do
       before(:each) do
@@ -347,6 +358,8 @@ describe "Allowables::ActiveRecord" do
 
     describe "verify_target_context" do
       before(:each) do
+        Role.acts_as_authorization_role # this is to enable Role#context, can remove/rework this once those context methods are broken out
+        Permission.acts_as_authorization_permission # this is to enable Permission#context, can remove/rework this once those context methods are broken out
         prep_dummy
       end
       

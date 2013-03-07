@@ -4,7 +4,7 @@ module Allowables
       def self.included(base)
         base.send :extend, ClassMethods
         base.send :include, InstanceMethods
-        base.send :include, PermissionMethods if base.auth_config.with_permissions
+        base.send :include, PermissionMethods if base.auth_scope.config.with_permissions
       end
 
       module ClassMethods
@@ -23,11 +23,11 @@ module Allowables
         end
 
         def self.add_associations(base)
-          base.send :has_many, base.role_subjects_table_name.to_sym
-          base.send :has_many, base.subjects_table_name.to_sym, :through => base.role_subjects_table_name.to_sym
-          if base.auth_config.with_permissions
-            base.send :has_many, base.permission_roles_table_name.to_sym
-            base.send :has_many, base.permissions_table_name.to_sym, :through => base.permission_roles_table_name.to_sym
+          base.send :has_many, base.auth_scope.role_subjects_table_name.to_sym
+          base.send :has_many, base.auth_scope.subjects_table_name.to_sym, :through => base.auth_scope.role_subjects_table_name.to_sym
+          if base.auth_scope.config.with_permissions
+            base.send :has_many, base.auth_scope.permission_roles_table_name.to_sym
+            base.send :has_many, base.auth_scope.permissions_table_name.to_sym, :through => base.auth_scope.permission_roles_table_name.to_sym
           end
         end
       end
@@ -55,9 +55,9 @@ module Allowables
         def assign_permission(permission, context=nil)
           context = Allowables::Context.parse(context)
           target = target_permission(permission, context)
-          return false unless verify_target_context(target, context) && permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).limit(1).first.nil?
+          return false unless verify_target_context(target, context) && auth_scope.permission_role_class.where(auth_scope.role_foreign_key.to_sym => id, auth_scope.permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).limit(1).first.nil?
 
-          return permission_role_class.create(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id)
+          return auth_scope.permission_role_class.create(auth_scope.role_foreign_key.to_sym => id, auth_scope.permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id)
         end
 
         # Removes a permission from a role within the provided context.
@@ -70,7 +70,7 @@ module Allowables
           target = target_permission(permission, context)
           return false if target.nil?
 
-          assigned_permission = permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).limit(1).first
+          assigned_permission = auth_scope.permission_role_class.where(auth_scope.role_foreign_key.to_sym => id, auth_scope.permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).limit(1).first
           return false if assigned_permission.nil?
           assigned_permission.destroy
         end
@@ -91,9 +91,9 @@ module Allowables
           target = target_permission(permission, context)
           return false if target.nil?
 
-          return true unless context.id.nil? || permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).first.nil?
-          return true unless context.class_name.nil? || permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => nil).first.nil?
-          !permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => nil, :context_id => nil).first.nil?
+          return true unless context.id.nil? || auth_scope.permission_role_class.where(auth_scope.role_foreign_key.to_sym => id, auth_scope.permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).first.nil?
+          return true unless context.class_name.nil? || auth_scope.permission_role_class.where(auth_scope.role_foreign_key.to_sym => id, auth_scope.permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => nil).first.nil?
+          !auth_scope.permission_role_class.where(auth_scope.role_foreign_key.to_sym => id, auth_scope.permission_foreign_key.to_sym => target.id, :context_type => nil, :context_id => nil).first.nil?
         end
         alias_method :permission?, :has_permission?
         alias_method :can?, :has_permission?
@@ -102,7 +102,7 @@ module Allowables
         # Returns all permissions possessed by the role within the provided context.
         def permissions_for(context=nil)
           context = Allowables::Context.parse(context)
-          permission_class.joins(permission_roles_table_name.to_sym).where(permission_roles_table_name.to_sym => {role_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => context.id})
+          auth_scope.permission_class.joins(auth_scope.permission_roles_table_name.to_sym).where(auth_scope.permission_roles_table_name.to_sym => {auth_scope.role_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => context.id})
         end
         
         # Check whether the role possesses any permissions within the specified context.

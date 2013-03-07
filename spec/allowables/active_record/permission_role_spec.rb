@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe "Allowables::ActiveRecord::PermissionSubject" do
+describe "Allowables::ActiveRecord::PermissionRole" do
   before(:each) do
     Permission.acts_as_authorization_permission
   end
