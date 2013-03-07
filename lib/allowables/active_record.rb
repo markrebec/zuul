@@ -16,41 +16,37 @@ module Allowables
 
     module ClassMethods
       def self.extended(base)
-        base.class.send :attr_reader, :auth_scopes
       end
 
       def acts_as_authorization_model(args={}, &block)
+        include AuthorizationMethods
         auth_config = Allowables.configuration.clone.configure(args, &block)
         @auth_scopes ||= {}
-        raise "Scope already in use: #{args[:scope]}" if @auth_scopes.has_key?(args[:scope])
-        @auth_scopes[args[:scope]] = Scope.new(auth_config)
+        raise "Scope already in use: #{auth_config.scope}" if @auth_scopes.has_key?(auth_config.scope)
+        @auth_scopes[auth_config.scope] = Scope.new(auth_config)
         @auth_scopes[:default] ||= @auth_scopes[auth_config.scope]
-        include AuthorizationMethods
+        @auth_scopes[auth_config.scope]
       end
 
       def acts_as_authorization_role(args={}, &block)
-        args = {:scope => Allowables.configuration.scope}.merge(args)
-        acts_as_authorization_model(args.merge({:role_class => self.name}), &block)
-        prepare_join_classes args[:scope]
+        scope = acts_as_authorization_model(args.merge({:role_class => self.name}), &block)
+        prepare_join_classes scope.name
         include Role 
       end
 
       def acts_as_authorization_permission(args={}, &block)
-        args = {:scope => Allowables.configuration.scope}.merge(args)
-        acts_as_authorization_model(args.merge({:permission_class => self.name}), &block)
-        prepare_join_classes args[:scope]
+        scope = acts_as_authorization_model(args.merge({:permission_class => self.name}), &block)
+        prepare_join_classes scope.name
         include Permission
       end
 
       def acts_as_authorization_subject(args={}, &block)
-        args = {:scope => Allowables.configuration.scope}.merge(args)
-        acts_as_authorization_model(args.merge({:subject_class => self.name}), &block)
-        prepare_join_classes args[:scope]
+        scope = acts_as_authorization_model(args.merge({:subject_class => self.name}), &block)
+        prepare_join_classes scope.name
         include Subject
       end
 
       def acts_as_authorization_context(args={}, &block)
-        args = {:scope => Allowables.configuration.scope}.merge(args)
         acts_as_authorization_model(args, &block)
         include Context
       end
@@ -99,19 +95,6 @@ module Allowables
       def acts_as_authorization_subject?
         ancestors.include?(Allowables::ActiveRecord::Subject)
       end
-
-      def auth_scope(scope=nil, &block)
-        scope = @current_auth_scope ||= scope.nil? ? :default : scope
-
-        if block_given?
-          old_scope = @current_auth_scope
-          @current_auth_scope = scope
-          yield
-          @current_auth_scope = old_scope
-        end
-
-        @auth_scopes[scope]
-      end
     end
 
     module InstanceMethods
@@ -124,69 +107,130 @@ module Allowables
     end
 
     module AuthorizationMethods
-      # Convenience method for accessing the @auth_scopes class-level instance variable
-      def auth_scopes
-        self.class.auth_scopes
+      def self.included(base)
+        base.class.send :attr_reader, :auth_scopes
+        base.class.send :attr_reader, :current_auth_scope
+        base.send :instance_variable_set, :@current_auth_scope, :default
+        base.send :extend, ClassMethods
+        base.send :include, InstanceMethods
       end
 
-      def auth_scope(scope=nil, &block)
-        self.class.auth_scope(scope, &block)
+      module ClassMethods
+        def auth_scope(scope=nil, &block)
+          scope ||= current_auth_scope
+
+          if block_given?
+            old_scope = current_auth_scope
+            self.current_auth_scope = scope
+            instance_eval &block
+            self.current_auth_scope = old_scope
+          end
+
+          auth_scopes[scope]
+        end
+
+        def auth_scope_eval(scope=nil, &block)
+          auth_scope(scope).instance_eval &block
+        end
+
+        def current_auth_scope=(scope)
+          @current_auth_scope = scope.to_sym
+        end
       end
 
-      # Looks for the role slug with the closest contextual match, working it's way up the context chain.
-      #
-      # If the provided role is already a Role, just return it without checking for a match.
-      #
-      # This allows a way to provide a specific role that isn't necessarily the best match 
-      # for the provided context to methods like assign_role, but still assign them in the 
-      # provided context, letting you assign a role like ['admin', SomeThing, nil] to the
-      # resource SomeThing.find(1), even if you also have a ['admin', SomeThing, 1] role.
-      def target_role(role, context)
-        return role if role.is_a?(auth_scope.role_class)
+      module InstanceMethods
+        def self.included(base)
+          # TODO figure out how to delegate tasks to self.class
+        end
+
+        def auth_scopes
+          self.class.auth_scopes
+        end
+
+        def auth_scope(scope=nil, &block)
+          scope ||= current_auth_scope
+
+          if block_given?
+            old_scope = current_auth_scope
+            self.current_auth_scope = scope
+            instance_eval &block
+            self.current_auth_scope = old_scope
+          end
+
+          auth_scopes[scope]
+        end
+
+        def auth_scope_eval(scope=nil, &block)
+          self.class.auth_scope_eval(scope, &block)
+        end
+
+        def current_auth_scope
+          self.class.current_auth_scope
+        end
         
-        context = Allowables::Context.parse(context)
-        target_role = auth_scope.role_class.where(:slug => role.to_s.underscore, :context_type => context.class_name, :context_id => context.id).first
-        target_role ||= auth_scope.role_class.where(:slug => role.to_s.underscore, :context_type => context.class_name, :context_id => nil).first unless context.id.nil?
-        target_role ||= auth_scope.role_class.where(:slug => role.to_s.underscore, :context_type => nil, :context_id => nil).first unless context.class_name.nil?
-        target_role
-      end
-      
-      # Looks for the permission slug with the closest contextual match, working it's way upwards.
-      #
-      # If the provided permission is already a Permission, just return it without checking for a match.
-      #
-      # This allows a way to provide a specific permission that isn't necessarily the best match 
-      # for the provided context to metods like assign_permission, but still assign them in the 
-      # provided context, letting you assign a permission like ['edit', SomeThing, nil] to the
-      # resource SomeThing.find(1), even if you also have a ['edit', SomeThing, 1] permission.
-      def target_permission(permission, context)
-        return permission if permission.is_a?(auth_scope.permission_class)
+        def current_auth_scope=(scope)
+          self.class.current_auth_scope = scope
+        end
         
-        context = Allowables::Context.parse(context)
-        target_permission = auth_scope.permission_class.where(:slug => permission.to_s.underscore, :context_type => context.class_name, :context_id => context.id).first
-        target_permission ||= auth_scope.permission_class.where(:slug => permission.to_s.underscore, :context_type => context.class_name, :context_id => nil).first unless context.id.nil?
-        target_permission ||= auth_scope.permission_class.where(:slug => permission.to_s.underscore, :context_type => nil, :context_id => nil).first unless context.class_name.nil?
-        target_permission
-      end
-      
-      # Verifies whether a role or permission (target) is "allowed" to be used within the provided context.
-      # The target's context must either match the one provided or be higher up the context chain.
-      # 
-      # [SomeThing, 1] CANNOT be used with [SomeThing, nil] or [OtherThing, 1]
-      # [SomeThing, nil] CAN be used for [SomeThing, 1], [SomeThing, 2], etc.
-      # [nil, nil] global targets can be used for ANY context
-      #
-      # TODO add some options to control whether we go up the chain or not (or how far up)
-      def verify_target_context(target, context)
-        return false if target.nil?
-        context = Allowables::Context.parse(context)
-        (target.context.class_name.nil? || target.context.class_name == context.class_name) && (target.context.id.nil? || target.context.id == context.id)
-      end
+        # Looks for the role slug with the closest contextual match, working it's way up the context chain.
+        #
+        # If the provided role is already a Role, just return it without checking for a match.
+        #
+        # This allows a way to provide a specific role that isn't necessarily the best match 
+        # for the provided context to methods like assign_role, but still assign them in the 
+        # provided context, letting you assign a role like ['admin', SomeThing, nil] to the
+        # resource SomeThing.find(1), even if you also have a ['admin', SomeThing, 1] role.
+        def target_role(role, context)
+          auth_scope_eval do
+            return role if role.is_a?(role_class)
+            
+            context = Allowables::Context.parse(context)
+            target_role = role_class.where(:slug => role.to_s.underscore, :context_type => context.class_name, :context_id => context.id).first
+            target_role ||= role_class.where(:slug => role.to_s.underscore, :context_type => context.class_name, :context_id => nil).first unless context.id.nil?
+            target_role ||= role_class.where(:slug => role.to_s.underscore, :context_type => nil, :context_id => nil).first unless context.class_name.nil?
+            target_role
+          end
+        end
+        
+        # Looks for the permission slug with the closest contextual match, working it's way upwards.
+        #
+        # If the provided permission is already a Permission, just return it without checking for a match.
+        #
+        # This allows a way to provide a specific permission that isn't necessarily the best match 
+        # for the provided context to metods like assign_permission, but still assign them in the 
+        # provided context, letting you assign a permission like ['edit', SomeThing, nil] to the
+        # resource SomeThing.find(1), even if you also have a ['edit', SomeThing, 1] permission.
+        def target_permission(permission, context)
+          auth_scope_eval do
+            return permission if permission.is_a?(permission_class)
+            
+            context = Allowables::Context.parse(context)
+            target_permission = permission_class.where(:slug => permission.to_s.underscore, :context_type => context.class_name, :context_id => context.id).first
+            target_permission ||= permission_class.where(:slug => permission.to_s.underscore, :context_type => context.class_name, :context_id => nil).first unless context.id.nil?
+            target_permission ||= permission_class.where(:slug => permission.to_s.underscore, :context_type => nil, :context_id => nil).first unless context.class_name.nil?
+            target_permission
+          end
+        end
+        
+        # Verifies whether a role or permission (target) is "allowed" to be used within the provided context.
+        # The target's context must either match the one provided or be higher up the context chain.
+        # 
+        # [SomeThing, 1] CANNOT be used with [SomeThing, nil] or [OtherThing, 1]
+        # [SomeThing, nil] CAN be used for [SomeThing, 1], [SomeThing, 2], etc.
+        # [nil, nil] global targets can be used for ANY context
+        #
+        # TODO add some options to control whether we go up the chain or not (or how far up)
+        def verify_target_context(target, context)
+          return false if target.nil?
+          context = Allowables::Context.parse(context)
+          (target.context.class_name.nil? || target.context.class_name == context.class_name) && (target.context.id.nil? || target.context.id == context.id)
+        end
 
-      # Simple helper for "IS NULL" vs "= 'VALUE'" SQL syntax
-      # (this *must* already exist somewhere in AREL? can't find it though...)
-      def sql_is_or_equal(value)
-        value.nil? ? "IS" : "="
+        # Simple helper for "IS NULL" vs "= 'VALUE'" SQL syntax
+        # (this *must* already exist somewhere in AREL? can't find it though...)
+        def sql_is_or_equal(value)
+          value.nil? ? "IS" : "="
+        end
       end
     end
   end
