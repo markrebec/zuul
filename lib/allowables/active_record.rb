@@ -204,12 +204,14 @@ module Allowables
         # for the provided context to methods like assign_role, but still assign them in the 
         # provided context, letting you assign a role like ['admin', SomeThing, nil] to the
         # resource SomeThing.find(1), even if you also have a ['admin', SomeThing, 1] role.
-        def target_role(role, context)
+        def target_role(role, context, force_context=nil)
           auth_scope_eval do
             return role if role.is_a?(role_class)
+            force_context ||= config.force_context
             
             context = Allowables::Context.parse(context)
             target_role = role_class.where(:slug => role.to_s.underscore, :context_type => context.class_name, :context_id => context.id).first
+            return target_role if force_context
             target_role ||= role_class.where(:slug => role.to_s.underscore, :context_type => context.class_name, :context_id => nil).first unless context.id.nil?
             target_role ||= role_class.where(:slug => role.to_s.underscore, :context_type => nil, :context_id => nil).first unless context.class_name.nil?
             target_role
@@ -224,19 +226,21 @@ module Allowables
         # for the provided context to metods like assign_permission, but still assign them in the 
         # provided context, letting you assign a permission like ['edit', SomeThing, nil] to the
         # resource SomeThing.find(1), even if you also have a ['edit', SomeThing, 1] permission.
-        def target_permission(permission, context)
+        def target_permission(permission, context, force_context=nil)
           auth_scope_eval do
             return permission if permission.is_a?(permission_class)
+            force_context ||= config.force_context
             
             context = Allowables::Context.parse(context)
             target_permission = permission_class.where(:slug => permission.to_s.underscore, :context_type => context.class_name, :context_id => context.id).first
+            return target_permission if force_context
             target_permission ||= permission_class.where(:slug => permission.to_s.underscore, :context_type => context.class_name, :context_id => nil).first unless context.id.nil?
             target_permission ||= permission_class.where(:slug => permission.to_s.underscore, :context_type => nil, :context_id => nil).first unless context.class_name.nil?
             target_permission
           end
         end
         
-        # Verifies whether a role or permission (target) is "allowed" to be used within the provided context.
+        # Verifies whether a role or permission (target) is allowed to be used within the provided context.
         # The target's context must either match the one provided or be higher up the context chain.
         # 
         # [SomeThing, 1] CANNOT be used with [SomeThing, nil] or [OtherThing, 1]
@@ -244,9 +248,11 @@ module Allowables
         # [nil, nil] global targets can be used for ANY context
         #
         # TODO add some options to control whether we go up the chain or not (or how far up)
-        def verify_target_context(target, context)
+        def verify_target_context(target, context, force_context=nil)
           return false if target.nil?
+          force_context ||= auth_scope.config.force_context
           context = Allowables::Context.parse(context)
+          return (target.context.class_name == context.class_name && target.context.id == context.id) if force_context
           (target.context.class_name.nil? || target.context.class_name == context.class_name) && (target.context.id.nil? || target.context.id == context.id)
         end
 
