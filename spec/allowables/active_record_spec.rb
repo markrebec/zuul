@@ -159,9 +159,9 @@ describe "Allowables::ActiveRecord" do
       Role.ancestors.include?(Allowables::ActiveRecord::Role).should be_true
     end
     
-    it "should extend the model with Allowables::ActiveRecord::Role::InstanceMethods" do
+    it "should extend the model with Allowables::ActiveRecord::ContextMethods" do
       Role.acts_as_authorization_role
-      Role.ancestors.include?(Allowables::ActiveRecord::Role::InstanceMethods).should be_true
+      Role.ancestors.include?(Allowables::ActiveRecord::ContextMethods).should be_true
     end
     
     it "should extend the model with Allowables::ActiveRecord::Role::PermissionMethods if permissions enabled" do
@@ -179,6 +179,11 @@ describe "Allowables::ActiveRecord" do
     it "should extend the model with Allowables::ActiveRecord::Permission" do
       Permission.acts_as_authorization_permission
       Permission.ancestors.include?(Allowables::ActiveRecord::Permission).should be_true
+    end
+    
+    it "should extend the model with Allowables::ActiveRecord::ContextMethods" do
+      Permission.acts_as_authorization_permission
+      Permission.ancestors.include?(Allowables::ActiveRecord::ContextMethods).should be_true
     end
   end
 

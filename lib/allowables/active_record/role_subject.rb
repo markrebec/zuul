@@ -3,7 +3,7 @@ module Allowables
     module RoleSubject
       def self.included(base)
         base.send :extend, ClassMethods
-        base.send :include, InstanceMethods
+        base.send :include, ContextMethods # defined in lib/allowables/active_record.rb
       end
 
       module ClassMethods
@@ -22,20 +22,6 @@ module Allowables
         def self.add_associations(base)
           base.send :has_many, base.auth_scope.roles_table_name.to_sym
           base.send :has_many, base.auth_scope.subjects_table_name.to_sym
-        end
-      end
-
-      module InstanceMethods
-        # Return a Allowables::Context object representing the context for the role_subject
-        def context
-          Allowables::Context.new(context_type, context_id)
-        end
-
-        # Parse a context into an Allowables::Context and set the type and id
-        def context=(context)
-          context = Allowables::Context.parse(context)
-          self.context_type = context.class_name
-          self.context_id = context.id
         end
       end
     end

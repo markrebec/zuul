@@ -122,18 +122,20 @@ module Allowables
           if block_given?
             old_scope = current_auth_scope
             self.current_auth_scope = scope
+            
             instance_eval do
               def method_missing (meth,*args)
                 return auth_scopes[current_auth_scope].send(meth, *args) if auth_scopes[current_auth_scope].respond_to?(meth)
                 raise NoMethodError
               end
             end
-            instance_eval &block
+            block_result = instance_eval &block
             instance_eval do
               undef method_missing
             end
 
             self.current_auth_scope = old_scope
+            return block_result
           end
 
           auth_scopes[scope]
@@ -163,17 +165,20 @@ module Allowables
           if block_given?
             old_scope = current_auth_scope
             self.current_auth_scope = scope
+            
             instance_eval do
               def method_missing (meth,*args)
                 return auth_scopes[current_auth_scope].send(meth, *args) if auth_scopes[current_auth_scope].respond_to?(meth)
                 raise NoMethodError
               end
             end
-            instance_eval &block
+            block_result = instance_eval &block
             instance_eval do
               undef method_missing
             end
+            
             self.current_auth_scope = old_scope
+            return block_result
           end
 
           auth_scopes[scope]
@@ -252,6 +257,27 @@ module Allowables
         end
       end
     end
+
+    # These are included in roles & permissions objects and assigned roles & permissions objects
+    # to provide easy access to the context for that object.
+    module ContextMethods
+      def self.included(base)
+        base.send :attr_accessible, :context
+      end
+
+      # Return a Allowables::Context object representing the context for the role
+      def context
+        Allowables::Context.new(context_type, context_id)
+      end
+
+      # Parse a context into an Allowables::Context and set the type and id
+      def context=(context)
+        context = Allowables::Context.parse(context)
+        self.context_type = context.class_name
+        self.context_id = context.id
+      end
+    end
+
   end
 end
 
