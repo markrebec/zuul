@@ -122,7 +122,17 @@ module Allowables
           if block_given?
             old_scope = current_auth_scope
             self.current_auth_scope = scope
+            instance_eval do
+              def method_missing (meth,*args)
+                return auth_scopes[current_auth_scope].send(meth, *args) if auth_scopes[current_auth_scope].respond_to?(meth)
+                raise NoMethodError
+              end
+            end
             instance_eval &block
+            instance_eval do
+              undef method_missing
+            end
+
             self.current_auth_scope = old_scope
           end
 
@@ -153,7 +163,16 @@ module Allowables
           if block_given?
             old_scope = current_auth_scope
             self.current_auth_scope = scope
+            instance_eval do
+              def method_missing (meth,*args)
+                return auth_scopes[current_auth_scope].send(meth, *args) if auth_scopes[current_auth_scope].respond_to?(meth)
+                raise NoMethodError
+              end
+            end
             instance_eval &block
+            instance_eval do
+              undef method_missing
+            end
             self.current_auth_scope = old_scope
           end
 
