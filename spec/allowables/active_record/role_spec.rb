@@ -354,6 +354,35 @@ describe "Allowables::ActiveRecord::Role" do
         @role.assign_permission(permission, context)
         @role.assign_permission(permission, context).should be_false
       end
+      
+      context "when forcing context" do
+        it "should not go up the context chain to find the permission when a permission slug is provided" do
+          context = Context.create(:name => "Test Context")
+          
+          nil_permission = Permission.create(:name => 'Edit', :slug => 'edit')
+          nil_permission_user = @role.assign_permission(:edit, nil)
+          nil_permission_user.id.should_not be_nil
+          nil_permission_user.context_type.should be_nil
+          nil_permission_user.context_id.should be_nil
+          nil_permission_user.permission.id.should == nil_permission.id
+          
+          @role.assign_permission(:edit, Context, true).should be_false
+          class_permission = Permission.create(:name => 'Edit', :slug => 'edit', :context_type => 'Context')
+          class_permission_user = @role.assign_permission(:edit, Context, true)
+          class_permission_user.id.should_not be_nil
+          class_permission_user.context_type.should == 'Context'
+          class_permission_user.context_id.should be_nil
+          class_permission_user.permission.id.should == class_permission.id
+          
+          @role.assign_permission(:edit, context, true).should be_false
+          inst_permission = Permission.create(:name => 'Edit', :slug => 'edit', :context_type => 'Context', :context_id => context.id)
+          inst_permission_user = @role.assign_permission(:edit, context, true)
+          inst_permission_user.id.should_not be_nil
+          inst_permission_user.context_type.should == 'Context'
+          inst_permission_user.context_id.should == context.id
+          inst_permission_user.permission.id.should == inst_permission.id
+        end
+      end
     end
 
     describe "unassign_permission" do
@@ -440,6 +469,27 @@ describe "Allowables::ActiveRecord::Role" do
         @role.unassign_permission(inst_permission, context).should be_false
         @role.unassign_permission(nil_permission, nil).should be_false
         @role.unassign_permission(class_permission, Context).should be_false
+      end
+      
+      context "when forcing context" do
+        it "should not go up the context chain to find the permission when a permission slug is provided" do
+          context = Context.create(:name => "Test Context")
+          nil_permission = Permission.create(:name => 'Edit', :slug => 'edit')
+          class_permission = Permission.create(:name => 'Edit', :slug => 'edit', :context_type => 'Context')
+          inst_permission = Permission.create(:name => 'Edit', :slug => 'edit', :context_type => 'Context', :context_id => context.id)
+          @role.assign_permission(nil_permission, nil)
+          @role.assign_permission(class_permission, Context)
+          @role.assign_permission(nil_permission, Context)
+          @role.assign_permission(inst_permission, context)
+          @role.assign_permission(class_permission, context)
+          
+          @role.unassign_permission(:edit, context, true).permission_id.should == inst_permission.id
+          inst_permission.destroy
+          @role.unassign_permission(:edit, context, true).should be_false
+          @role.unassign_permission(:edit, Context, true).permission_id.should == class_permission.id
+          class_permission.destroy
+          @role.unassign_permission(:edit, Context, true).should be_false
+        end
       end
     end
 
@@ -536,6 +586,21 @@ describe "Allowables::ActiveRecord::Role" do
         @role.has_permission?(permission, Context).should_not be_false
         @role.has_permission?(permission, nil).should be_false
       end
+      
+      context "when forcing context" do
+        it "should not go up the context chain to find the permission when a permission slug is provided" do
+          context = Context.create(:name => "Test Context")
+          nil_permission = Permission.create(:name => 'Edit', :slug => 'edit')
+          @role.assign_permission(nil_permission, Context)
+          @role.has_permission?(:edit, Context, false).should be_true
+          @role.has_permission?(:edit, Context, true).should be_false
+          
+          class_permission = Permission.create(:name => 'Edit', :slug => 'edit', :context_type => 'Context')
+          @role.assign_permission(class_permission, context)
+          @role.has_permission?(:edit, context, false).should be_true
+          @role.has_permission?(:edit, context, true).should be_false
+        end
+      end
     end
 
     describe "permissions_for" do
@@ -572,6 +637,18 @@ describe "Allowables::ActiveRecord::Role" do
         @role.assign_permission(class_view, Context)
         @role.permissions_for(Context).length.should == 3
       end
+      
+      context "when forcing context" do
+        it "should only return permissions that match the context exactly" do
+          edit_permission = Permission.create(:name => 'Edit', :slug => 'edit')
+          view_permission = Permission.create(:name => 'View', :slug => 'view')
+          @role.assign_permission(edit_permission, nil)
+          @role.assign_permission(view_permission, nil)
+          @role.permissions_for(nil).length.should == 2
+          @role.permissions_for(Context).length.should == 2
+          @role.permissions_for(Context, true).length.should == 0
+        end
+      end
     end
 
     describe "permissions_for?" do
@@ -607,6 +684,16 @@ describe "Allowables::ActiveRecord::Role" do
         @role.assign_permission(class_edit, Context)
         @role.assign_permission(class_view, Context)
         @role.permissions_for?(Context).should be_true
+      end
+      
+      context "when forcing context" do
+        it "should only evaluate permissions that match the context exactly" do
+          edit_permission = Permission.create(:name => 'Edit', :slug => 'edit')
+          @role.assign_permission(edit_permission, nil)
+          @role.permissions_for?(nil).should be_true
+          @role.permissions_for?(Context).should be_true
+          @role.permissions_for?(Context, true).should be_false
+        end
       end
     end
   end
