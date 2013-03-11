@@ -6,8 +6,6 @@ Controller DSL
 
 
 ActiveRecord Authorization
-  - allow forcing/restricting contexts (so subject can only be assigned permissions within that context and lookups don't go up the chain)
-  
   - genericize the active record stuff for objects (just check if responds to :authorization_find or something), create activerecord datasource and move the table-related stuff there
   
   - include a default Role and Permission model + generator for migration?

@@ -22,7 +22,7 @@ module Allowables
       end
 
       def access_control(*args, &block)
-        opts, filter_args = parse_acl_args(*args)
+        opts, filter_args = parse_access_control_args(*args)
         
         acl_filters << append_before_filter(filter_args) do |controller|
           logger = controller.logger
@@ -31,13 +31,14 @@ module Allowables
           this_block = self.class.acl_filters.slice!(0)
           
           controller.acl_dsl ||= DSL::Base.new(controller)
+          logger.debug "  \e[1;33mACL\e[0m  Carrying over results from previous block..." if controller.acl_dsl.results.length > 0
           controller.acl_dsl.configure opts
           controller.acl_dsl.execute &block
           
-          logger.debug "  \e[1;33mACL\e[0m  Access Control Results: #{(controller.acl_dsl.authorized? ? "\e[1;32mALLOWED\e[0m" : "\3[1;31mDENIED\e[0m")} using \e[1m#{controller.acl_dsl.default.to_s.upcase}\e[0m(#{controller.acl_dsl.results.join(",")})"
+          logger.debug "  \e[1;33mACL\e[0m  Access Control Results: #{(controller.acl_dsl.authorized? ? "\e[1;32mALLOWED\e[0m" : "\e[1;31mDENIED\e[0m")} using \e[1m#{controller.acl_dsl.default.to_s.upcase}\e[0m [#{controller.acl_dsl.results.map { |r| "\e[#{(r ? "32" : "31")}m#{r.to_s}\e[0m" }.join(",")}]"
 
           if self.class.acl_filters.length > 0
-            logger.debug "  \e[1;33mACL\e[0m  Collecting ACL Results to carry through the chain..."
+            # TODO add a config flag to control whether results are collected or passed on from block to block
             controller.acl_dsl.collect_results
           elsif controller.acl_dsl.mode == :raise
             raise Exceptions::AccessDenied unless controller.acl_dsl.authorized?
@@ -62,7 +63,7 @@ module Allowables
       #end
       #alias_method :deny_permission, :deny_permissions
 
-      def parse_acl_args(*args)
+      def parse_access_control_args(*args)
         args = args[0] if args.is_a?(Array)
         filter_args = args.select { |k,v| [:except, :only].include?(k) }
         [:except, :only].each { |k| args.delete(k) }
