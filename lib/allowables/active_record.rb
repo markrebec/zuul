@@ -246,8 +246,6 @@ module Allowables
         # [SomeThing, 1] CANNOT be used with [SomeThing, nil] or [OtherThing, 1]
         # [SomeThing, nil] CAN be used for [SomeThing, 1], [SomeThing, 2], etc.
         # [nil, nil] global targets can be used for ANY context
-        #
-        # TODO add some options to control whether we go up the chain or not (or how far up)
         def verify_target_context(target, context, force_context=nil)
           return false if target.nil?
           force_context ||= auth_scope.config.force_context

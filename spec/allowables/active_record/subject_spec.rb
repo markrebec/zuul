@@ -151,6 +151,35 @@ describe "Allowables::ActiveRecord::Subject" do
         @user.assign_role(role, context)
         @user.assign_role(role, context).should be_false
       end
+
+      context "when forcing context" do
+        it "should not go up the context chain to find the role when a role slug is provided" do
+          context = Context.create(:name => "Test Context")
+          
+          nil_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+          nil_role_user = @user.assign_role(:admin, nil, true)
+          nil_role_user.id.should_not be_nil
+          nil_role_user.context_type.should be_nil
+          nil_role_user.context_id.should be_nil
+          nil_role_user.role.id.should == nil_role.id
+          
+          @user.assign_role(:admin, Context, true).should be_false
+          class_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context')
+          class_role_user = @user.assign_role(:admin, Context, true)
+          class_role_user.id.should_not be_nil
+          class_role_user.context_type.should == 'Context'
+          class_role_user.context_id.should be_nil
+          class_role_user.role.id.should == class_role.id
+          
+          @user.assign_role(:admin, context, true).should be_false
+          inst_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context', :context_id => context.id)
+          inst_role_user = @user.assign_role(:admin, context, true)
+          inst_role_user.id.should_not be_nil
+          inst_role_user.context_type.should == 'Context'
+          inst_role_user.context_id.should == context.id
+          inst_role_user.role.id.should == inst_role.id
+        end
+      end
     end
 
     describe "unassign_role" do
@@ -237,6 +266,27 @@ describe "Allowables::ActiveRecord::Subject" do
         @user.unassign_role(inst_role, context).should be_false
         @user.unassign_role(nil_role, nil).should be_false
         @user.unassign_role(class_role, Context).should be_false
+      end
+      
+      context "when forcing context" do
+        it "should not go up the context chain to find the role when a role slug is provided" do
+          context = Context.create(:name => "Test Context")
+          nil_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+          class_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context')
+          inst_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context', :context_id => context.id)
+          @user.assign_role(nil_role, nil)
+          @user.assign_role(class_role, Context)
+          @user.assign_role(nil_role, Context)
+          @user.assign_role(inst_role, context)
+          @user.assign_role(class_role, context)
+          
+          @user.unassign_role(:admin, context, true).role_id.should == inst_role.id
+          inst_role.destroy
+          @user.unassign_role(:admin, context, true).should be_false
+          @user.unassign_role(:admin, Context, true).role_id.should == class_role.id
+          class_role.destroy
+          @user.unassign_role(:admin, Context, true).should be_false
+        end
       end
     end
 
@@ -332,6 +382,21 @@ describe "Allowables::ActiveRecord::Subject" do
         @user.has_role?(:admin, context).should_not be_false
         @user.has_role?(role, Context).should_not be_false
         @user.has_role?(role, nil).should be_false
+      end
+      
+      context "when forcing context" do
+        it "should not go up the context chain to find the role when a role slug is provided" do
+          context = Context.create(:name => "Test Context")
+          nil_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+          @user.assign_role(nil_role, Context)
+          @user.has_role?(:admin, Context, false).should be_true
+          @user.has_role?(:admin, Context, true).should be_false
+          
+          class_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context')
+          @user.assign_role(class_role, context)
+          @user.has_role?(:admin, context, false).should be_true
+          @user.has_role?(:admin, context, true).should be_false
+        end
       end
     end
 
@@ -469,6 +534,27 @@ describe "Allowables::ActiveRecord::Subject" do
         @user.has_role_or_higher?(admin_role, nil).should be_false
         @user.has_role_or_higher?(mod_role, nil).should be_false
       end
+      
+      context "when forcing context" do
+        it "should not go up the context chain to find the role when a role slug is provided" do
+          context = Context.create(:name => "Test Context")
+          nil_admin = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+          nil_mod = Role.create(:name => 'Moderator', :slug => 'moderator', :level => 80)
+          @user.assign_role(nil_admin, Context)
+          @user.has_role_or_higher?(:admin, Context, false).should be_true
+          @user.has_role_or_higher?(:admin, Context, true).should be_false
+          @user.has_role_or_higher?(:moderator, Context, false).should be_true
+          @user.has_role_or_higher?(:moderator, Context, true).should be_false
+          
+          class_admin = Role.create(:name => 'Admin', :slug => 'admin', :level => 100, :context_type => 'Context')
+          class_mod = Role.create(:name => 'Moderator', :slug => 'moderator', :level => 80, :context_type => 'Context')
+          @user.assign_role(class_admin, context)
+          @user.has_role_or_higher?(:admin, context, false).should be_true
+          @user.has_role_or_higher?(:admin, context, true).should be_false
+          @user.has_role_or_higher?(:moderator, context, false).should be_true
+          @user.has_role_or_higher?(:moderator, context, true).should be_false
+        end
+      end
     end
 
     describe "highest_role" do
@@ -494,7 +580,7 @@ describe "Allowables::ActiveRecord::Subject" do
         @user.assign_role(admin_role, nil)
         
         @user.highest_role(nil).id.should == admin_role.id
-        @user.highest_role(Context).should be_nil
+        @user.highest_role(Context).id.should == admin_role.id
       end
 
       it "should return the role with the highest level that is assigned to the subject within the provided context" do
@@ -504,9 +590,21 @@ describe "Allowables::ActiveRecord::Subject" do
         @user.assign_role(mod_role, nil)
         @user.assign_role(mod_role, Context)
         @user.highest_role(nil).id.should == admin_role.id
-        @user.highest_role(Context).id.should == mod_role.id
+        @user.highest_role(Context).id.should == admin_role.id
         @user.assign_role(admin_role, Context)
         @user.highest_role(Context).id.should == admin_role.id
+      end
+      
+      context "when forcing context" do
+        it "should only evaluate roles that match the context exactly" do
+          admin_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+          mod_role = Role.create(:name => 'Moderator', :slug => 'moderator', :level => 80)
+          @user.assign_role(admin_role, nil)
+          @user.assign_role(mod_role, nil)
+          @user.highest_role(nil).id.should == admin_role.id
+          @user.highest_role(Context).id.should == admin_role.id
+          @user.highest_role(Context, true).should be_nil
+        end
       end
     end
 
@@ -544,6 +642,18 @@ describe "Allowables::ActiveRecord::Subject" do
         @user.assign_role(class_mod, Context)
         @user.roles_for(Context).length.should == 3
       end
+      
+      context "when forcing context" do
+        it "should only return roles that match the context exactly" do
+          admin_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+          mod_role = Role.create(:name => 'Moderator', :slug => 'moderator', :level => 80)
+          @user.assign_role(admin_role, nil)
+          @user.assign_role(mod_role, nil)
+          @user.roles_for(nil).length.should == 2
+          @user.roles_for(Context).length.should == 2
+          @user.roles_for(Context, true).length.should == 0
+        end
+      end
     end
 
     describe "roles_for?" do
@@ -579,6 +689,16 @@ describe "Allowables::ActiveRecord::Subject" do
         @user.assign_role(class_admin, Context)
         @user.assign_role(class_mod, Context)
         @user.roles_for?(Context).should be_true
+      end
+      
+      context "when forcing context" do
+        it "should only evaluate roles that match the context exactly" do
+          admin_role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+          @user.assign_role(admin_role, nil)
+          @user.roles_for?(nil).should be_true
+          @user.roles_for?(Context).should be_true
+          @user.roles_for?(Context, true).should be_false
+        end
       end
     end
   end
@@ -719,6 +839,35 @@ describe "Allowables::ActiveRecord::Subject" do
         @user.assign_permission(permission, context)
         @user.assign_permission(permission, context).should be_false
       end
+
+      context "when forcing context" do
+        it "should not go up the context chain to find the permission when a permission slug is provided" do
+          context = Context.create(:name => "Test Context")
+          
+          nil_permission = Permission.create(:name => 'Edit', :slug => 'edit')
+          nil_permission_user = @user.assign_permission(:edit, nil)
+          nil_permission_user.id.should_not be_nil
+          nil_permission_user.context_type.should be_nil
+          nil_permission_user.context_id.should be_nil
+          nil_permission_user.permission.id.should == nil_permission.id
+          
+          @user.assign_permission(:edit, Context, true).should be_false
+          class_permission = Permission.create(:name => 'Edit', :slug => 'edit', :context_type => 'Context')
+          class_permission_user = @user.assign_permission(:edit, Context, true)
+          class_permission_user.id.should_not be_nil
+          class_permission_user.context_type.should == 'Context'
+          class_permission_user.context_id.should be_nil
+          class_permission_user.permission.id.should == class_permission.id
+          
+          @user.assign_permission(:edit, context, true).should be_false
+          inst_permission = Permission.create(:name => 'Edit', :slug => 'edit', :context_type => 'Context', :context_id => context.id)
+          inst_permission_user = @user.assign_permission(:edit, context, true)
+          inst_permission_user.id.should_not be_nil
+          inst_permission_user.context_type.should == 'Context'
+          inst_permission_user.context_id.should == context.id
+          inst_permission_user.permission.id.should == inst_permission.id
+        end
+      end
     end
 
     describe "unassign_permission" do
@@ -805,6 +954,27 @@ describe "Allowables::ActiveRecord::Subject" do
         @user.unassign_permission(inst_permission, context).should be_false
         @user.unassign_permission(nil_permission, nil).should be_false
         @user.unassign_permission(class_permission, Context).should be_false
+      end
+      
+      context "when forcing context" do
+        it "should not go up the context chain to find the permission when a permission slug is provided" do
+          context = Context.create(:name => "Test Context")
+          nil_permission = Permission.create(:name => 'Edit', :slug => 'edit')
+          class_permission = Permission.create(:name => 'Edit', :slug => 'edit', :context_type => 'Context')
+          inst_permission = Permission.create(:name => 'Edit', :slug => 'edit', :context_type => 'Context', :context_id => context.id)
+          @user.assign_permission(nil_permission, nil)
+          @user.assign_permission(class_permission, Context)
+          @user.assign_permission(nil_permission, Context)
+          @user.assign_permission(inst_permission, context)
+          @user.assign_permission(class_permission, context)
+          
+          @user.unassign_permission(:edit, context, true).permission_id.should == inst_permission.id
+          inst_permission.destroy
+          @user.unassign_permission(:edit, context, true).should be_false
+          @user.unassign_permission(:edit, Context, true).permission_id.should == class_permission.id
+          class_permission.destroy
+          @user.unassign_permission(:edit, Context, true).should be_false
+        end
       end
     end
 
@@ -901,6 +1071,21 @@ describe "Allowables::ActiveRecord::Subject" do
         @user.has_permission?(permission, Context).should_not be_false
         @user.has_permission?(permission, nil).should be_false
       end
+      
+      context "when forcing context" do
+        it "should not go up the context chain to find the permission when a permission slug is provided" do
+          context = Context.create(:name => "Test Context")
+          nil_permission = Permission.create(:name => 'Edit', :slug => 'edit')
+          @user.assign_permission(nil_permission, Context)
+          @user.has_permission?(:edit, Context, false).should be_true
+          @user.has_permission?(:edit, Context, true).should be_false
+          
+          class_permission = Permission.create(:name => 'Edit', :slug => 'edit', :context_type => 'Context')
+          @user.assign_permission(class_permission, context)
+          @user.has_permission?(:edit, context, false).should be_true
+          @user.has_permission?(:edit, context, true).should be_false
+        end
+      end
     end
 
     describe "permissions_for" do
@@ -937,6 +1122,18 @@ describe "Allowables::ActiveRecord::Subject" do
         @user.assign_permission(class_view, Context)
         @user.permissions_for(Context).length.should == 3
       end
+      
+      context "when forcing context" do
+        it "should only return permissions that match the context exactly" do
+          edit_permission = Permission.create(:name => 'Edit', :slug => 'edit')
+          view_permission = Permission.create(:name => 'View', :slug => 'view')
+          @user.assign_permission(edit_permission, nil)
+          @user.assign_permission(view_permission, nil)
+          @user.permissions_for(nil).length.should == 2
+          @user.permissions_for(Context).length.should == 2
+          @user.permissions_for(Context, true).length.should == 0
+        end
+      end
     end
 
     describe "permissions_for?" do
@@ -972,6 +1169,16 @@ describe "Allowables::ActiveRecord::Subject" do
         @user.assign_permission(class_edit, Context)
         @user.assign_permission(class_view, Context)
         @user.permissions_for?(Context).should be_true
+      end
+      
+      context "when forcing context" do
+        it "should only evaluate permissions that match the context exactly" do
+          edit_permission = Permission.create(:name => 'Edit', :slug => 'edit')
+          @user.assign_permission(edit_permission, nil)
+          @user.permissions_for?(nil).should be_true
+          @user.permissions_for?(Context).should be_true
+          @user.permissions_for?(Context, true).should be_false
+        end
       end
     end
     
