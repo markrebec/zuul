@@ -155,13 +155,14 @@ module Allowables
             :force_context => @force_context,
             :context => @context.clone,
             :mode => @mode,
+            :collect_results => @collect_results,
             :allow => (@default_block_allow_rules.nil? ? @default_block_allow_rules : @default_block_allow_rules.clone),
             :deny => (@default_block_deny_rules.nil? ? @default_block_deny_rules : @default_block_deny_rules.clone),
           }
         end
 
         def set_options(opts)
-          [:default, :actions, :roles, :permissions, :force_context, :mode].each do |key|
+          [:default, :actions, :roles, :permissions, :force_context, :mode, :collect_results].each do |key|
             instance_variable_set "@#{key.to_s}", opts[key] if opts.has_key?(key)
           end
           [:allow, :deny].each do |key|
@@ -222,14 +223,15 @@ module Allowables
         end
 
         def collect_results
-          @results = [authorized?]
+          @results = [authorized?] if @collect_results
         end
 
         protected
 
         def initialize(controller, opts={})
-          opts = {:default => Allowables.configuration.acl_default, :force_context => Allowables.configuration.force_context, :context => nil, :mode => Allowables.configuration.acl_mode, :allow => nil, :deny => nil, :actions => [], :roles => [], :permissions => []}.merge(opts)
           @controller = controller
+          config = subject.nil? ? Allowables.configuration : subject.auth_scope.config
+          opts = {:default => config.acl_default, :force_context => config.force_context, :context => nil, :mode => config.acl_mode, :collect_results => config.acl_collect_results, :allow => nil, :deny => nil, :actions => [], :roles => [], :permissions => []}.merge(opts)
           set_options opts
           @results = []
         end
@@ -259,7 +261,7 @@ module Allowables
       class Roles < Actionable
         
         def match?(role)
-          (@or_higher && subject.has_role_or_higher?(role, @context.to_context)) || (!@or_higher && subject.has_role?(role, @context.to_context))
+          (@or_higher && subject.has_role_or_higher?(role, @context.to_context, @force_context)) || (!@or_higher && subject.has_role?(role, @context.to_context, @force_context))
         end
         
         def allow(*actions)
@@ -276,14 +278,13 @@ module Allowables
               
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
               
-              logger.debug "  \e[1;33mACL\e[0m  Checking role (\e[32mallow\e[0m): #{role.is_a?(subject.auth_scope.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
               if allow?(role)
-                logger.debug "  \e[1;33mACL\e[0m  \e[1;32mmatched\e[0m"
+                logger.debug "  \e[1;33mACL\e[0m  \e[1mMATCH\e[0m for \e[32mallow\e[0m role \e[1m#{role.is_a?(subject.auth_scope.role_class) ? "#{role.slug}[#{role.context.to_s}]" : role}\e[0m"
                 @results << true
                 return
               end
+              logger.debug "  \e[1;33mACL\e[0m  \e[1mNO MATCH\e[0m for \e[32mallow\e[0m role \e[1m#{role.is_a?(subject.auth_scope.role_class) ? "#{role.slug}[#{role.context.to_s}]" : role}\e[0m"
             end
-            #@results << false
           end
         end
         
@@ -301,14 +302,13 @@ module Allowables
               
               next if subject.nil? # keep going in case :_allowables_logged_out is specified
               
-              logger.debug "  \e[1;33mACL\e[0m  Checking role (\e[31mdeny\e[0m): #{role.is_a?(subject.auth_scope.role_class) ? "#{role.slug} context: #{role.context.to_s}" : role}"
               if deny?(role)
-                logger.debug "  \e[1;33mACL\e[0m  \e[1;31mmatched\e[0m"
+                logger.debug "  \e[1;33mACL\e[0m  \e[1mMATCH\e[0m for \e[31mdeny\e[0m role \e[1m#{role.is_a?(subject.auth_scope.role_class) ? "#{role.slug}[#{role.context.to_s}]" : role}\e[0m"
                 @results << false
                 return
               end
+              logger.debug "  \e[1;33mACL\e[0m  \e[1mNO MATCH\e[0m for \e[31mdeny\e[0m role \e[1m#{role.is_a?(subject.auth_scope.role_class) ? "#{role.slug}[#{role.context.to_s}]" : role}\e[0m"
             end
-            #@results << true
           end
         end
 
@@ -332,7 +332,7 @@ module Allowables
       class Permissions < Actionable
 
         def match?(permission)
-          subject.has_permission?(permission, @context.to_context)
+          subject.has_permission?(permission, @context.to_context, @force_context)
         end
         
         def allow(*actions)
@@ -341,12 +341,12 @@ module Allowables
           return if subject.nil? || @permissions.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @permissions.each do |permission|
-              logger.debug "  \e[1;33mACL\e[0m  Checking permission (\e[32mallow\e[0m): #{permission.is_a?(subject.auth_scope.role_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
               if allow?(permission)
-                logger.debug "  \e[1;33mACL\e[0m  \e[1;32mmatched\e[0m"
+                logger.debug "  \e[1;33mACL\e[0m  \e[1mMATCH\e[0m for \e[32mallow\e[0m permission \e[1m#{permission.is_a?(subject.auth_scope.role_class) ? "#{permission.slug}[#{permission.context.to_s}]" : permission}\e[0m"
                 @results << true
                 return
               end
+              logger.debug "  \e[1;33mACL\e[0m  \e[1mNO MATCH\e[0m for \e[32mallow\e[0m permission \e[1m#{permission.is_a?(subject.auth_scope.role_class) ? "#{permission.slug}[#{permission.context.to_s}]" : permission}\e[0m"
             end
           end
         end
@@ -357,18 +357,15 @@ module Allowables
           return if subject.nil? || @permissions.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @permissions.each do |permission|
-              logger.debug "  \e[1;33mACL\e[0m  Checking permission (\e[31mdeny\e[0m): #{permission.is_a?(subject.auth_scope.role_class) ? "#{permission.slug} context: #{permission.context.to_s}" : permission}"
               if deny?(permission)
-                logger.debug "  \e[1;33mACL\e[0m  \e[1;31mmatched\e[0m"
+                logger.debug "  \e[1;33mACL\e[0m  \e[1mMATCH\e[0m for \e[31mdeny\e[0m permission \e[1m#{permission.is_a?(subject.auth_scope.role_class) ? "#{permission.slug}[#{permission.context.to_s}]" : permission}\e[0m"
                 @results << false
                 return
               end
+              logger.debug "  \e[1;33mACL\e[0m  \e[1mNO MATCH\e[0m for \e[31mdeny\e[0m permission \e[1m#{permission.is_a?(subject.auth_scope.role_class) ? "#{permission.slug}[#{permission.context.to_s}]" : permission}\e[0m"
             end
           end
         end
-        
-        protected
-
       end
     end
   end

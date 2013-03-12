@@ -26,21 +26,16 @@ module Allowables
         
         acl_filters << append_before_filter(filter_args) do |controller|
           logger = controller.logger
-          logger.debug "  \e[1;33mACL\e[0m  Starting Access Control Block"
-          
           this_block = self.class.acl_filters.slice!(0)
           
           controller.acl_dsl ||= DSL::Base.new(controller)
-          logger.debug "  \e[1;33mACL\e[0m  Carrying over results from previous block..." if controller.acl_dsl.results.length > 0
           controller.acl_dsl.configure opts
           controller.acl_dsl.execute &block
+          controller.acl_dsl.collect_results if self.class.acl_filters.length > 0
           
-          logger.debug "  \e[1;33mACL\e[0m  Access Control Results: #{(controller.acl_dsl.authorized? ? "\e[1;32mALLOWED\e[0m" : "\e[1;31mDENIED\e[0m")} using \e[1m#{controller.acl_dsl.default.to_s.upcase}\e[0m [#{controller.acl_dsl.results.map { |r| "\e[#{(r ? "32" : "31")}m#{r.to_s}\e[0m" }.join(",")}]"
+          logger.debug "  \e[1;33mACL\e[0m  #{(controller.acl_dsl.authorized? ? "\e[1;32mALLOWED\e[0m" : "\e[1;31mDENIED\e[0m")} using \e[1m#{controller.acl_dsl.default.to_s.upcase}\e[0m [#{controller.acl_dsl.results.map { |r| "\e[#{(r ? "32mallow" : "31mdeny")}\e[0m" }.join(",")}]"
 
-          if self.class.acl_filters.length > 0
-            # TODO add a config flag to control whether results are collected or passed on from block to block
-            controller.acl_dsl.collect_results
-          elsif controller.acl_dsl.mode == :raise
+          if self.class.acl_filters.length == 0 && controller.acl_dsl.mode != :quiet
             raise Exceptions::AccessDenied unless controller.acl_dsl.authorized?
           end
         end

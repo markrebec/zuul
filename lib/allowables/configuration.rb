@@ -15,6 +15,7 @@ module Allowables
     DEFAULT_CONFIGURATION_OPTIONS = {
       :acl_default => :deny, # :allow, :deny
       :acl_mode => :raise, # :raise, :quiet
+      :acl_collect_results => false,
       :subject_method => :current_user,
       :force_context => false,
       :scope => :default,

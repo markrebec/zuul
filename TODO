@@ -1,5 +1,6 @@
 Controller DSL
   - helpers for views like --  <% requires_role(:role) do %>HTML HERE<% end %>
+  - use configuration objects in the DSL stuff instead of the current options hash
   - specs - test dsl in isolation with dummy controller object, test controller implementations
   - clean up logging (create logger class that prefixes with ACL)
 
