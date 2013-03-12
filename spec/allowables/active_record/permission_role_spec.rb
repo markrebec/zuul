@@ -74,7 +74,7 @@ describe "Allowables::ActiveRecord::PermissionRole" do
     end
   end
 
-  it "should provide the model with has_many associations for permissions and roles" do
+  it "should provide the model with belongs_to associations for permissions and roles" do
     PermissionRole.reflections.keys.should include(:permission)
     PermissionRole.reflections.keys.should include(:role)
     pu = PermissionRole.create(:permission_id => 1, :use_id => 1)

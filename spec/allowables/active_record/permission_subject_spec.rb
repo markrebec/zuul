@@ -74,7 +74,7 @@ describe "Allowables::ActiveRecord::PermissionSubject" do
     end
   end
 
-  it "should provide the model with has_many associations for permissions and subjects" do
+  it "should provide the model with belongs_to associations for permissions and subjects" do
     PermissionUser.reflections.keys.should include(:permission)
     PermissionUser.reflections.keys.should include(:user)
     pu = PermissionUser.create(:permission_id => 1, :use_id => 1)

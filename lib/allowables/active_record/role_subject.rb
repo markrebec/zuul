@@ -20,8 +20,8 @@ module Allowables
         end
 
         def self.add_associations(base)
-          base.send :has_many, base.auth_scope.roles_table_name.to_sym
-          base.send :has_many, base.auth_scope.subjects_table_name.to_sym
+          base.send :belongs_to, base.auth_scope.role_class_name.underscore.to_sym
+          base.send :belongs_to, base.auth_scope.subject_class_name.underscore.to_sym
         end
       end
     end

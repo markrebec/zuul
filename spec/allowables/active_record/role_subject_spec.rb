@@ -74,7 +74,7 @@ describe "Allowables::ActiveRecord::RoleSubject" do
     end
   end
 
-  it "should provide the model with has_many associations for roles and subjects" do
+  it "should provide the model with belongs_to associations for roles and subjects" do
     RoleUser.reflections.keys.should include(:role)
     RoleUser.reflections.keys.should include(:user)
     ru = RoleUser.create(:role_id => 1, :use_id => 1)
