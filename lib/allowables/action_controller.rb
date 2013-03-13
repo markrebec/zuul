@@ -1,65 +1,11 @@
 require 'allowables/action_controller/dsl'
+require 'allowables/action_controller/evaluators'
 
 module Allowables
   module ActionController
     def self.included(base)
       base.send :extend, ClassMethods
       base.send :include, InstanceMethods
-    end
-
-    class ForTargetHelper
-      def for_target(&block)
-        return self if @dsl.nil?
-        if match?
-          @controller.instance_eval do
-            yield
-          end if block_given?
-        end
-        self
-      end
-
-      def else(&block)
-        return self if @dsl.nil?
-        if !match?
-          @controller.instance_eval do
-            yield
-          end if block_given?
-        end
-        self
-      end
-
-      def else_for(target, context=nil, force_context=nil, &block)
-        return self.class.new(@controller, target, context, force_context, &block)
-      end
-
-      protected
-
-      def initialize(controller, target, context=nil, force_context=nil, &block)
-        @controller = controller
-        @dsl = @controller.acl_dsl
-        @target = target
-        @context = context
-        @force_context = force_context
-        for_target &block
-      end
-    end
-
-    class ForRoleHelper < ForTargetHelper
-      def match?
-        (@dsl.subject.nil? && @target == @dsl.logged_out) || (!@dsl.subject.nil? && (@target == @dsl.logged_in || @dsl.subject.has_role?(@target, @context, @force_context)))
-      end
-    end
-
-    class ForRoleOrHigherHelper < ForTargetHelper
-      def match?
-        (@dsl.subject.nil? && @target == @dsl.logged_out) || (!@dsl.subject.nil? && (@target == @dsl.logged_in || @dsl.subject.has_role_or_higher?(@target, @context, @force_context)))
-      end
-    end
-    
-    class ForPermissionHelper < ForTargetHelper
-      def match?
-        @dsl.subject.has_permission?(@target, @context, @force_context)
-      end
     end
 
     module InstanceMethods
@@ -79,27 +25,27 @@ module Allowables
       end
 
       def for_role(role, context=nil, force_context=nil, &block)
-        return ForRoleHelper.new(self, role, context, force_context, &block)
+        return Evaluators::ForRole.new(self, role, context, force_context, &block)
       end
       
       def for_role_or_higher(role, context=nil, force_context=nil, &block)
-        return ForRoleOrHigherHelper.new(self, role, context, force_context, &block)
+        return Evaluators::ForRoleOrHigher.new(self, role, context, force_context, &block)
       end
       
       def for_permission(permission, context=nil, force_context=nil, &block)
-        return ForPermissionHelper.new(self, permission, context, force_context, &block)
+        return Evaluators::ForPermission.new(self, permission, context, force_context, &block)
       end
       
       def except_for_role(role, context=nil, force_context=nil, &block)
-        return ForRoleHelper.new(self, role, context, force_context).else(&block)
+        return Evaluators::ForRole.new(self, role, context, force_context).else(&block)
       end
       
       def except_for_role_or_higher(role, context=nil, force_context=nil, &block)
-        return ForRoleOrHigherHelper.new(self, role, context, force_context).else(&block)
+        return Evaluators::ForRoleOrHigher.new(self, role, context, force_context).else(&block)
       end
       
       def except_for_permission(permission, context=nil, force_context=nil, &block)
-        return ForPermissionHelper.new(self, permission, context, force_context).else(&block)
+        return Evaluators::ForPermission.new(self, permission, context, force_context).else(&block)
       end
     end
     
