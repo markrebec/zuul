@@ -7,17 +7,108 @@ module Allowables
       base.send :include, InstanceMethods
     end
 
+    class ForTargetHelper
+      def for_target(&block)
+        return self if @dsl.nil?
+        if match?
+          @controller.instance_eval do
+            yield
+          end if block_given?
+        end
+        self
+      end
+
+      def else(&block)
+        return self if @dsl.nil?
+        if !match?
+          @controller.instance_eval do
+            yield
+          end if block_given?
+        end
+        self
+      end
+
+      def else_for(target, context=nil, force_context=nil, &block)
+        return self.class.new(@controller, target, context, force_context, &block)
+      end
+
+      protected
+
+      def initialize(controller, target, context=nil, force_context=nil, &block)
+        @controller = controller
+        @dsl = @controller.acl_dsl
+        @target = target
+        @context = context
+        @force_context = force_context
+        for_target &block
+      end
+    end
+
+    class ForRoleHelper < ForTargetHelper
+      def match?
+        (@dsl.subject.nil? && @target == @dsl.logged_out) || (!@dsl.subject.nil? && (@target == @dsl.logged_in || @dsl.subject.has_role?(@target, @context, @force_context)))
+      end
+    end
+
+    class ForRoleOrHigherHelper < ForTargetHelper
+      def match?
+        (@dsl.subject.nil? && @target == @dsl.logged_out) || (!@dsl.subject.nil? && (@target == @dsl.logged_in || @dsl.subject.has_role_or_higher?(@target, @context, @force_context)))
+      end
+    end
+    
+    class ForPermissionHelper < ForTargetHelper
+      def match?
+        @dsl.subject.has_permission?(@target, @context, @force_context)
+      end
+    end
+
     module InstanceMethods
+      def self.included(base)
+        base.send :helper_method, :authorized?
+        base.send :helper_method, :for_role
+        base.send :helper_method, :for_role_or_higher
+        base.send :helper_method, :for_permission
+        base.send :helper_method, :except_for_role
+        base.send :helper_method, :except_for_role_or_higher
+        base.send :helper_method, :except_for_permission
+      end
+
       def authorized?
         return true if @acl_dsl.nil?
         @acl_dsl.authorized?
+      end
+
+      def for_role(role, context=nil, force_context=nil, &block)
+        return ForRoleHelper.new(self, role, context, force_context, &block)
+      end
+      
+      def for_role_or_higher(role, context=nil, force_context=nil, &block)
+        return ForRoleOrHigherHelper.new(self, role, context, force_context, &block)
+      end
+      
+      def for_permission(permission, context=nil, force_context=nil, &block)
+        return ForPermissionHelper.new(self, permission, context, force_context, &block)
+      end
+      
+      def except_for_role(role, context=nil, force_context=nil, &block)
+        return ForRoleHelper.new(self, role, context, force_context).else(&block)
+      end
+      
+      def except_for_role_or_higher(role, context=nil, force_context=nil, &block)
+        return ForRoleOrHigherHelper.new(self, role, context, force_context).else(&block)
+      end
+      
+      def except_for_permission(permission, context=nil, force_context=nil, &block)
+        return ForPermissionHelper.new(self, permission, context, force_context).else(&block)
       end
     end
     
     module ClassMethods
       def self.extended(base)
         base.send :cattr_accessor, :acl_filters
+        base.send :cattr_accessor, :used_acl_filters
         base.send :class_variable_set, :@@acl_filters, []
+        base.send :class_variable_set, :@@used_acl_filters, []
         base.send :attr_accessor, :acl_dsl
       end
 
@@ -25,18 +116,16 @@ module Allowables
         opts, filter_args = parse_access_control_args(*args)
         
         acl_filters << append_before_filter(filter_args) do |controller|
-          logger = controller.logger
-          this_block = self.class.acl_filters.slice!(0)
+          self.class.used_acl_filters << self.class.acl_filters.slice!(0)
           
           controller.acl_dsl ||= DSL::Base.new(controller)
           controller.acl_dsl.configure opts
           controller.acl_dsl.execute &block
-          controller.acl_dsl.collect_results if self.class.acl_filters.length > 0
-          
-          logger.debug "  \e[1;33mACL\e[0m  #{(controller.acl_dsl.authorized? ? "\e[1;32mALLOWED\e[0m" : "\e[1;31mDENIED\e[0m")} using \e[1m#{controller.acl_dsl.default.to_s.upcase}\e[0m [#{controller.acl_dsl.results.map { |r| "\e[#{(r ? "32mallow" : "31mdeny")}\e[0m" }.join(",")}]"
 
-          if self.class.acl_filters.length == 0 && controller.acl_dsl.mode != :quiet
-            raise Exceptions::AccessDenied unless controller.acl_dsl.authorized?
+          if self.class.acl_filters.length == 0
+            self.class.acl_filters = self.class.used_acl_filters
+            self.class.used_acl_filters = []
+            raise Exceptions::AccessDenied if !controller.acl_dsl.authorized? && controller.acl_dsl.mode != :quiet
           end
         end
       end

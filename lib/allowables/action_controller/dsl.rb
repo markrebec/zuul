@@ -102,7 +102,7 @@ module Allowables
           :_allowables_logged_in
         end
 
-        def anyone(context=false)
+        def anyone
           [logged_in, logged_out]
         end
 
@@ -212,6 +212,9 @@ module Allowables
               end
             end
           end
+          # only collect results if configured & there are more filters in the chain
+          logger.debug "  \e[1;33mACL\e[0m  #{(authorized? ? "\e[1;32mALLOWED\e[0m" : "\e[1;31mDENIED\e[0m")} using \e[1m#{@default.to_s.upcase}\e[0m [#{results.map { |r| "\e[#{(r ? "32mallow" : "31mdeny")}\e[0m" }.join(",")}]"
+          collect_results if @collect_results && @controller.class.acl_filters.length > 0
         end
 
         def authorized?
@@ -223,7 +226,7 @@ module Allowables
         end
 
         def collect_results
-          @results = [authorized?] if @collect_results
+          @results = [authorized?]
         end
 
         protected
@@ -270,8 +273,8 @@ module Allowables
           return if @roles.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @roles.each do |role|
-              if (role == :_allowables_logged_out && subject.nil?) ||
-                 (role == :_allowables_logged_in && !subject.nil?)
+              if (role == logged_out && subject.nil?) ||
+                 (role == logged_in && !subject.nil?)
                 @results << true
                 return
               end
@@ -294,8 +297,8 @@ module Allowables
           return if @roles.empty? || actions.empty?
           if actions.map(&:to_sym).include?(@controller.params[:action].to_sym)
             @roles.each do |role|
-              if (role == :_allowables_logged_out && subject.nil?) ||
-                 (role == :_allowables_logged_in && !subject.nil?)
+              if (role == logged_out && subject.nil?) ||
+                 (role == logged_in && !subject.nil?)
                 @results << false
                 return
               end
