@@ -118,6 +118,7 @@ module Allowables
       module ClassMethods
         def auth_scope(scope=nil, *exec_args, &block)
           scope ||= current_auth_scope
+          raise Exception, "Scope does not exist." unless auth_scopes.has_key?(scope) # TODO make error class
 
           if block_given?
             old_scope = current_auth_scope
@@ -161,6 +162,7 @@ module Allowables
 
         def auth_scope(scope=nil, *exec_args, &block)
           scope ||= current_auth_scope
+          raise Exception, "Scope does not exist." unless auth_scopes.has_key?(scope) # TODO make error class
 
           if block_given?
             old_scope = current_auth_scope
