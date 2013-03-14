@@ -116,7 +116,7 @@ module Allowables
       end
 
       module ClassMethods
-        def auth_scope(scope=nil, &block)
+        def auth_scope(scope=nil, *exec_args, &block)
           scope ||= current_auth_scope
 
           if block_given?
@@ -126,10 +126,10 @@ module Allowables
             instance_eval do
               def method_missing (meth,*args)
                 return auth_scopes[current_auth_scope].send(meth, *args) if auth_scopes[current_auth_scope].respond_to?(meth)
-                raise NoMethodError
+                raise NoMethodError, "#{meth} does not exist."
               end
             end
-            block_result = instance_eval &block
+            block_result = instance_exec(*exec_args, &block)
             instance_eval do
               undef method_missing
             end
@@ -159,7 +159,7 @@ module Allowables
           self.class.auth_scopes
         end
 
-        def auth_scope(scope=nil, &block)
+        def auth_scope(scope=nil, *exec_args, &block)
           scope ||= current_auth_scope
 
           if block_given?
@@ -169,10 +169,10 @@ module Allowables
             instance_eval do
               def method_missing (meth,*args)
                 return auth_scopes[current_auth_scope].send(meth, *args) if auth_scopes[current_auth_scope].respond_to?(meth)
-                raise NoMethodError
+                raise NoMethodError, "#{meth} does not exist."
               end
             end
-            block_result = instance_eval &block
+            block_result = instance_exec(*exec_args, &block)
             instance_eval do
               undef method_missing
             end
