@@ -52,7 +52,7 @@ module Allowables
       
       class ForPermission < ForTarget
         def match?
-          @dsl.subject.has_permission?(@target, @context, @force_context)
+          !@dsl.subject.nil? && @dsl.subject.has_permission?(@target, @context, @force_context)
         end
       end
     end

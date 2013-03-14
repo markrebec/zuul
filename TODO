@@ -1,12 +1,9 @@
 Priority TODOs
-  - figure out a way to work around the fact that the DSL gets modified in place (config, etc.), and subsequent requests fail
-  - move controller/view helper methods to their own mixins and include them
   - model/migration generators
 
 
 
 Controller DSL
-  - helpers for views like --  <% requires_role(:role) do %>HTML HERE<% end %>
   - use configuration objects in the DSL stuff instead of the current options hash
   - specs - test dsl in isolation with dummy controller object, test controller implementations
   - clean up logging (create logger class that prefixes with ACL)
