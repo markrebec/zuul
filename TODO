@@ -1,21 +1,14 @@
-Priority TODOs
-  - model/migration generators
-
-
-
 Controller DSL
+  - add built-in default options for catching access denied and redirecting or rendering w/ flash or error template
   - use configuration objects in the DSL stuff instead of the current options hash
   - specs - test dsl in isolation with dummy controller object, test controller implementations
-  - clean up logging (create logger class that prefixes with ACL)
+  - clean up logging (create logger class that prefixes with ACL, keeps track of time, etc.)
 
 
 
 ActiveRecord Authorization
-  - genericize the active record stuff for objects (just check if responds to :authorization_find or something), create activerecord datasource and move the table-related stuff there
-  
-  - include a default Role and Permission model + generator for migration?
-  - generators for Role, Permission, RolePermission, SubjectRole, SubjectPermission models?
-  - generators for migrations to add fields to custom Role, Permission models?
+  - abstract the activerecord stuff a little further and create an ORM layer
+  - specs for generators
 
 
 
