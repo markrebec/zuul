@@ -11,7 +11,7 @@ module ActiveRecord
         include ::Zuul::Generators::OrmHelpers
 
         def generate_model
-          invoke "active_record:model", [name], :migration => true unless model_exists? && behavior == :invoke
+          invoke "active_record:model", [name].concat(attributes.map {|attr| "#{attr.name}:#{attr.type}" }), :migration => true unless model_exists? && behavior == :invoke
         end
 
         def inject_zuul_content
