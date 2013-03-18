@@ -93,43 +93,43 @@ class RankSkill < ActiveRecord::Base
 end
 
 # Namespaced Subject, Role, Permission and Context models
-module AllowablesModels
+module ZuulModels
   def self.table_name_prefix
-    'allowables_models_'
+    'zuul_models_'
   end
 
-  send(:remove_const, :User) if defined?(AllowablesModels::User)
+  send(:remove_const, :User) if defined?(ZuulModels::User)
   class User < ActiveRecord::Base
     attr_accessible :name
   end
 
-  send(:remove_const, :Role) if defined?(AllowablesModels::Role)
+  send(:remove_const, :Role) if defined?(ZuulModels::Role)
   class Role < ActiveRecord::Base
     attr_accessible :name, :slug, :level, :context_type, :context_id
   end
 
-  send(:remove_const, :Permission) if defined?(AllowablesModels::Permission)
+  send(:remove_const, :Permission) if defined?(ZuulModels::Permission)
   class Permission < ActiveRecord::Base
     attr_accessible :name, :slug, :context_type, :context_id
   end
 
-  send(:remove_const, :Context) if defined?(AllowablesModels::Context)
+  send(:remove_const, :Context) if defined?(ZuulModels::Context)
   class Context < ActiveRecord::Base
   end
 
-  send(:remove_const, :RoleUser) if defined?(AllowablesModels::RoleUser)
+  send(:remove_const, :RoleUser) if defined?(ZuulModels::RoleUser)
   class RoleUser < ActiveRecord::Base
     belongs_to :user
     belongs_to :role
   end
 
-  send(:remove_const, :PermissionUser) if defined?(AllowablesModels::PermissionUser)
+  send(:remove_const, :PermissionUser) if defined?(ZuulModels::PermissionUser)
   class PermissionUser < ActiveRecord::Base
     belongs_to :user
     belongs_to :permission
   end
 
-  send(:remove_const, :PermissionRole) if defined?(AllowablesModels::PermissionRole)
+  send(:remove_const, :PermissionRole) if defined?(ZuulModels::PermissionRole)
   class PermissionRole < ActiveRecord::Base
     belongs_to :role
     belongs_to :permission

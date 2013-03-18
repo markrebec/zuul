@@ -90,11 +90,11 @@ ActiveRecord::Schema.define(:version => 0) do
     t.string :name
   end
   
-  create_table :allowables_models_users do |t|
+  create_table :zuul_models_users do |t|
     t.string :name
   end
 
-  create_table :allowables_models_roles do |t|
+  create_table :zuul_models_roles do |t|
     t.string :name
     t.string :slug
     t.integer :level
@@ -102,35 +102,35 @@ ActiveRecord::Schema.define(:version => 0) do
     t.integer :context_id
   end
   
-  create_table :allowables_models_permissions do |t|
+  create_table :zuul_models_permissions do |t|
     t.string :name
     t.string :slug
     t.string :context_type
     t.integer :context_id
   end
 
-  create_table :allowables_models_role_users do |t|
+  create_table :zuul_models_role_users do |t|
     t.integer :user_id
     t.integer :role_id
     t.string :context_type
     t.integer :context_id
   end
   
-  create_table :allowables_models_permission_users do |t|
+  create_table :zuul_models_permission_users do |t|
     t.integer :user_id
     t.integer :permission_id
     t.string :context_type
     t.integer :context_id
   end
   
-  create_table :allowables_models_permission_roles do |t|
+  create_table :zuul_models_permission_roles do |t|
     t.integer :role_id
     t.integer :permission_id
     t.string :context_type
     t.integer :context_id
   end
   
-  create_table :allowables_models_contexts do |t|
+  create_table :zuul_models_contexts do |t|
     t.string :name
   end
 end

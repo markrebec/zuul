@@ -19,7 +19,10 @@ General
 
 
 
+
+
+
+
 NOTES
-  ACL DSL
-    + actions, roles and permissions are tacked on to any default/parent :actions, :roles or :permissions
-    + moved role/permission checks into #allow?, #deny? and #match? - allows decoupling ACL DSL from ActiveRecord Authorization by overriding those methods in the DSL block or in a monkeypatch
+  + actions, roles and permissions are tacked on to any default/parent :actions, :roles or :permissions
+  + moved role/permission checks into #allow?, #deny? and #match? - allows decoupling ACL DSL from ActiveRecord Authorization by overriding those methods in the DSL block or in a monkeypatch
