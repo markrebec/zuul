@@ -29,22 +29,22 @@ Then run bundler to install it.
 
 In order to use the core authorization functionality, you'll need to setup subjects and roles. Permissions are enabled in the default configuration, so if you don't specify otherwise you'll have to setup the permissions model as well. Each authorization model type has it's own default, but those can be overridden in the global initializer config, or they can be specified per-model as you're setting up authorization models.
 
-**Authorization Subjects**
+####Authorization Subjects
 An authorization subject is the object to which you grant roles and permissions, usually a user. In order to use Zuul, you'll need to setup at least one subject model. The default model is `User`.
 
-**Authorization Roles**
+####Authorization Roles
 Authorization roles are the roles that can be assigned to the subject mentioned above, and then used to allow or deny access to various resources. Zuul requires at least one role model. The default model is `Role`.
 
-**Authorization Permissions**
+####Authorization Permissions
 Authorization permissions are optional, and allow finer grained control over which subjects have access to which resources. Permissions can be assigned to roles (which are in turn assigned to subjects), or they can be assigned directly to subjects themselves. They require that the model be setup in order to be used by roles or subjects, and the default model is `Permission`.
 
-**Authorization Resources (Contexts)**
+####Authorization Resources (Contexts)
 Authorization resources, or contexts, behave as both the resources that are being accessed by a subject, as well as (optionally) a context within which roles or permissions can be created and assigned. When combined with Zuul's "context chain," this allows you to define or assign roles for specific models or even specific instances of those models. No setup is required to use a model as a resource or context, but there is some optional configuration that provides the model directly with methods to authorize against roles and permissions. Resource/context models are not required, and there are no configured defaults.
 
 ### Generating Authorization Models
 It's likely you already have a `User` model (or equivalent), especially if you've already got some form of authentication setup in your app. However, you probably don't yet have any role or permission models setup unless you're transitioning from another authorization solution. Either way, you can use the provided generators to create new models or to configure existing models as authorization objects. The generators work just like the normal model generators (with a few additions) and will either create the models and migrations for you if they don't exist, or modify your models and create any necessary migrations if they do.
 
-**Generate an authorization subject model**
+####Generate an authorization subject model
 To generate a subject model, you can use the `zuul:subject` generator, and pass it options just like you would if you were creating a normal model. The generator is smart enough to know whether your model already exists, and acts accordingly.
 
     rails generate zuul:subject User email:string password:string
@@ -66,7 +66,7 @@ If you are modifying an existing model, any optional fields passed into the gene
 
 There are a number of configuration options for `acts_as_authorization_subject` outlined elsewhere in this document, but this is enough to get us going. The default configuration, however, will be looking for a `Role` model and a `Permission` model, so we should create those next.
 
-**Generate an authorization role model**
+####Generate an authorization role model
 You can use the `zuul:role` generator for roles, and like the subject generator, you can pass in optional fields. There are four required fields, which are automatically added to your model and migrations by the generator - `slug`, `level`, `context_type` and `context_id` - and you can specify any additional fields you'd like, such as a name or description.
 
     rails generate zuul:role Role name:string
@@ -86,7 +86,7 @@ If you are using the generator to configure an existing model, a migration will 
 
 Like the other authorization object types, there are lots of configuration options for `acts_as_authorization_role` but we're just using defaults here.
 
-**Generate an authorization permission model**
+####Generate an authorization permission model
 Generating a permission model is just like generating a role model, with a few slight differences.  There are three required fields for permissions, which are created automatically by the generator - `slug`, `context_type`, `context_id` - and you may specify any others you'd like.
 
     rails generate zuul:permission Permission
@@ -105,7 +105,7 @@ If you are using the generator to configure an existing model, a migration will 
 
 Like the other authorization object types, there are lots of configuration options for `acts_as_authorization_permission` but we're just using defaults here.
 
-**Generate authorization association tables**
+####Generate authorization association models
 TODO: add instructions on generating the association tables
 
 ## Configuration
