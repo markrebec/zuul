@@ -5,6 +5,8 @@ module ActiveRecord
   module Zuul
     module Generators
       class SubjectGenerator < ActiveRecord::Generators::Base
+        remove_argument :name, :undefine => true
+        argument :name, :type => :string, :default => "User"
         argument :attributes, :type => :array, :default => [], :banner => "field:type field:type"
         namespace "zuul:subject"
 

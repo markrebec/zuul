@@ -1,4 +1,4 @@
-class ZuulSubjectCreate<%= table_name.camelize %> < ActiveRecord::Migration
+class ZuulPermissionCreate<%= table_name.camelize %> < ActiveRecord::Migration
   def change
     create_table(:<%= table_name %>) do |t|
 <%= migration_data -%>

@@ -1,8 +1,6 @@
-class AddZuulRoleTo<%= table_name.camelize %> < ActiveRecord::Migration
+class AddZuulRoleSubjectTo<%= table_name.camelize %> < ActiveRecord::Migration
   def self.up
     change_table(:<%= table_name %>) do |t|
-<%= migration_data -%>
-
 <% attributes.each do |attribute| -%>
       t.<%= attribute.type %> :<%= attribute.name %>
 <% end -%>
@@ -11,12 +9,11 @@ class AddZuulRoleTo<%= table_name.camelize %> < ActiveRecord::Migration
       # t.timestamps
     end
 
-    add_index :<%= table_name %>, :slug
-    add_index :<%= table_name %>, :level
+    add_index :<%= table_name %>, :<%= role_model.to_s.underscore.singularize %>_id
+    add_index :<%= table_name %>, :<%= subject_model.to_s.underscore.singularize %>_id
     add_index :<%= table_name %>, :context_type
     add_index :<%= table_name %>, :context_id
-    add_index :<%= table_name %>, [:slug, :context_type, :context_id],  :unique => true
-    add_index :<%= table_name %>, [:level, :context_type, :context_id], :unique => true
+    add_index :<%= table_name %>, [:<%= role_model.to_s.underscore.singularize %>_id, :<%= subject_model.to_s.underscore.singularize %>_id, :context_type, :context_id], :unique => true
   end
 
   def self.down

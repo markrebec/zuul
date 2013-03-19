@@ -5,13 +5,15 @@ module ActiveRecord
   module Zuul
     module Generators
       class RoleGenerator < ActiveRecord::Generators::Base
+        remove_argument :name, :undefine => true
+        argument :name, :type => :string, :default => "Role"
         argument :attributes, :type => :array, :default => [], :banner => "field:type field:type"
         namespace "zuul:role"
 
         include ::Zuul::Generators::OrmHelpers
         source_root File.expand_path("../templates", __FILE__)
         
-        def copy_zuul_migration
+        def copy_role_migration
           if (behavior == :invoke && model_exists?) || (behavior == :revoke && migration_exists?(:role, table_name))
             migration_template "role_existing.rb", "db/migrate/add_zuul_role_to_#{table_name}"
           else
@@ -23,7 +25,7 @@ module ActiveRecord
           invoke "active_record:model", [name].concat(attributes.map {|attr| "#{attr.name}:#{attr.type}" }), :migration => false unless model_exists? && behavior == :invoke
         end
 
-        def inject_zuul_content
+        def inject_role_content
           content = <<CONTENT
   # Setup authorization for your role model
   acts_as_authorization_role
