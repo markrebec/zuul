@@ -13,7 +13,7 @@ Zuul provides an extremely flexible authorization solution for ActiveRecord wher
 
 * **Completely Customizable:** Allows configuration of everything - models used as authorization objects, how the context chain behaves, how access control rules are evaluated, and much more.
 * **Modular:** You can use just the ActiveRecord authorization system and completely ignore the ActionController DSL, or even configure the controller DSL to use your own methods (allowing you to decouple it from the authorization models completely).
-* **Optional Permissions:** Use of permissions is optional, and when enabled can be assigned to roles or directly to individual subjects if you require that level of control.
+* **Optional Permissions:** Use of permissions is completely optional. When disabled, modules won't even get included, preventing permissions methods from littering your models. When enabled, permissions can be assigned to roles or directly to individual subjects if you require that level of control.
 * **Authorization Models:** Can be used with your existing models, and doesn't require any database modifications for subjects (like users) or resource contexts (like blog posts). You also have the choice of generating new role and/or permissions models, or utilizing existing models as those roles and permissions - for example, if you were building a game and you wanted your `Level` and `Achievement` models to behave as "Roles" and "Permissions" for a `Character`, which would allow/deny that character access to various `Dungeon` objects.
 * **Contextual:** Allows creating and assigning abilities within a provided context - either globally, at the class level, or at the object level - and contexts can be mixed-and-matched (within the context chain). *While contexts are currently required for Zuul to work, you can "ignore" them by simply creating/managing everything at the global level, and there are plans to look into making contexts optional in future versions.*
 * **Context Chain:** There is a built-in "context chain" that is enforced when working with roles and permissions. This allows for both a high level of flexibility (i.e. roles can be applied within child contexts) and finer level of control (i.e. looking up a specific role within a specific context and not traversing up the chain), and can be as simple or complex as you want.
@@ -126,7 +126,7 @@ These commands will generate models (if they don't exist) and migrations for the
 ###Creating and using authorization abilities
 Once you've run all the generators, you'll need to run the generated migrations with `rake db:migrate` to update your database, and then it's time to start creating roles and permissions (and subjects if you don't have any).
 
-To create a role, all you need to do is use the `Role.create` method and supply the required fields (`slug` and `level`). Roles can be created within a specific context, but that's covered elsewhere in this document. Let's create a few roles to get started.
+To create a role, all you need to do is use the `Role.create` method and supply the required fields (`slug` and `level`). Roles can be created within a specific context, but that's covered elsewhere in this document.
 
     admin = Role.create(:slug => 'admin', :level => 100)
     moderator = Role.create(:slug => 'moderator', :level => 80)
@@ -168,7 +168,7 @@ When checking whether a subject possesses a permission, both their individual pe
     user.has_permission?(:edit)  # true if the user has :edit assigned directly OR if the user is assigned a role which is in turn assigned the :edit permission
 
 ###Setup access control for your controllers
-The first step in setting up your controllers is to ensure you have a `current_user` method available. This is provided by many authorization solutions (such as [devise](https://github.com/plataformatec/devise)), but if you don't already have one, you'll need to set one up. All the method needs to do is return a user object or `nil` if there is no user (i.e. not logged in).
+The first step in setting up your controllers is to ensure you have a `current_user` method available. This is provided by many authorization solutions (such as [devise](https://github.com/plataformatec/devise)), but if you don't already have one, you'll need to set one up. All the method needs to do is return a user object or `nil` if there is no user (i.e. not logged in). You can also configure a method other than `current_user` either globally or per-filter.
 
 Once you've got your `current_user` method in place, you can start to implement the `access_control` filters in your controllers. Here are a couple examples that all do the same thing - allow :admin roles access to :create, :destroy, :edit, :new, :update, and allow :user roles access to :index.
 
