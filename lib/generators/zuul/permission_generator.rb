@@ -20,7 +20,7 @@ module ActiveRecord
         end
 
         def generate_model
-          invoke "active_record:model", [name], :migration => false unless model_exists? && behavior == :invoke
+          invoke "active_record:model", [name].concat(attributes.map {|attr| "#{attr.name}:#{attr.type}" }), :migration => false unless model_exists? && behavior == :invoke
         end
 
         def inject_zuul_content
