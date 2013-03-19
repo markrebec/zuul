@@ -11,7 +11,8 @@ I can't thank Wes enough for allowing me to take over Zuul, rather than introduc
 ## Features
 Zuul provides an extremely flexible authorization solution for ActiveRecord wherein roles and (optionally) permissions can be assigned within various contexts, along with an equally robust access control DSL for ActionController and helpers for your views. It can be used with virtually any authentication system (I highly recommend [devise](http://github.com/platformatec/devise) if you haven't chosen one yet), and it provides the following features:
 
-* **Completely Customizable:** Allows configuration of everything - models used as authorization objects, how the context chain behaves, how access control rules are evaluated, and much more. 
+* **Completely Customizable:** Allows configuration of everything - models used as authorization objects, how the context chain behaves, how access control rules are evaluated, and much more.
+* **Modular:** You can use just the ActiveRecord authorization system and completely ignore the ActionController DSL, or even configure the controller DSL to use your own methods (allowing you to decouple it from the authorization models completely).
 * **Optional Permissions:** Use of permissions is optional, and when enabled can be assigned to roles or directly to individual subjects if you require that level of control.
 * **Authorization Models:** Can be used with your existing models, and doesn't require any database modifications for subjects (like users) or resource contexts (like blog posts). You also have the choice of generating new role and/or permissions models, or utilizing existing models as those roles and permissions - for example, if you were building a game and you wanted your `Level` and `Achievement` models to behave as "Roles" and "Permissions" for a `Character`, which would allow/deny that character access to various `Dungeon` objects.
 * **Contextual:** Allows creating and assigning abilities within a provided context - either globally, at the class level, or at the object level - and contexts can be mixed-and-matched (within the context chain). *While contexts are currently required for Zuul to work, you can "ignore" them by simply creating/managing everything at the global level, and there are plans to look into making contexts optional in future versions.*
@@ -106,7 +107,125 @@ If you are using the generator to configure an existing model, a migration will 
 Like the other authorization object types, there are lots of configuration options for `acts_as_authorization_permission` but we're just using defaults here.
 
 ####Generate authorization association models
-TODO: add instructions on generating the association tables
+The last thing you'll need to generate are the association models that link roles to subjects, and link permissions to roles and subjects (if you're using permissions). These generators are very simple and only take two arguments, which are the names of the models you're associating, and there are configured defaults if you don't pass any arguments. They are able to accept additional optional field arguments (like all the other generators) if you'd like to add extra fields to the models for any reason, and will also act accordingly depending on whether your models and migrations already exist or not.
+
+For roles and subjects:
+
+    rails generate zuul:role_subject Role User
+
+For permissions and roles:
+
+    rails generate zuul:permission_role Permission Role
+
+For permissions and subjects:
+
+    rails generate zuul:permission_subject Permission User
+
+These commands will generate models (if they don't exist) and migrations for the `RoleUser`, `PermissionRole` and `PermissionUser` models.  As with everywhere else in Zuul, the model names are based on the default ActiveRecord behavior of sorting alphabetically, but this can all be configured to use custom model and table names for everything.
+
+###Creating and using authorization abilities
+Once you've run all the generators, you'll need to run the generated migrations with `rake db:migrate` to update your database, and then it's time to start creating roles and permissions (and subjects if you don't have any).
+
+To create a role, all you need to do is use the `Role.create` method and supply the required fields (`slug` and `level`). Roles can be created within a specific context, but that's covered elsewhere in this document. Let's create a few roles to get started.
+
+    admin = Role.create(:slug => 'admin', :level => 100)
+    moderator = Role.create(:slug => 'moderator', :level => 80)
+    vip = Role.create(:slug => 'vip', :level => 50)
+    banned = Role.create(:slug => 'banned', :level => 1)
+
+Assuming you already have users in your users table, you can now assign these roles to them:
+
+    user = User.find(1)
+    user.assign_role(:admin)        # you can pass a symbol
+    user.assign_role('moderator')   # or a string
+    user.assign_role(vip)           # or the role object itself
+
+And once you've got a user with roles assigned to them, you can check if they possess various roles:
+
+    user = User.find(1)
+    user.has_role?(:admin)
+    user.has_role?('vip')
+    user.has_role_or_higher?('moderator')   # has_role_or_higher? will also return true if the user possesses any roles with a higher level than the one provided
+
+Creating and assigning permissions is similar to roles, except the `slug` is the only required field:
+
+    view = Permission.create(:slug => 'view')
+    create = Permission.create(:slug => 'create')
+    edit = Permission.create(:slug => 'edit')
+    destroy = Permission.create(:slug => 'destroy')
+
+And you can assign those permissions to roles (which can in turn be assigned to subjects), or you can assign those permissions directly to a subject:
+
+    role = Role.find_by_slug('admin')
+    role.assign_permission(:create)   # assigns the :create permission to the :admin role, granting any user with that role the :create permission
+    
+    user = User.find(1)
+    user.assign_permission('view')    # assigns the :view permission directly to the user
+
+When checking whether a subject possesses a permission, both their individual permissions and those belonging to their assigned roles are evaluated:
+
+    user = User.find(1)
+    user.has_permission?(:edit)  # true if the user has :edit assigned directly OR if the user is assigned a role which is in turn assigned the :edit permission
+
+###Setup access control for your controllers
+The first step in setting up your controllers is to ensure you have a `current_user` method available. This is provided by many authorization solutions (such as [devise](https://github.com/plataformatec/devise)), but if you don't already have one, you'll need to set one up. All the method needs to do is return a user object or `nil` if there is no user (i.e. not logged in).
+
+Once you've got your `current_user` method in place, you can start to implement the `access_control` filters in your controllers. Here are a couple examples that all do the same thing - allow :admin roles access to :create, :destroy, :edit, :new, :update, and allow :user roles access to :index.
+
+    class StrictExampleController < ApplicationController
+      access_control do
+        roles :admin do
+          allow :create, :destroy, :edit, :index, :new, :update
+        end
+        
+        roles :user do
+          allow :index
+        end
+      end
+    end
+    
+    class StrictExampleController < ApplicationController
+      access_control do
+        roles :admin do
+          allow :create, :destroy, :edit, :new, :update
+        end
+
+        roles :admin, :user do
+          allow :index
+        end
+      end
+    end
+    
+    class StrictExampleController < ApplicationController
+      access_control do
+        actions :index do
+          allow_roles :admin, :user
+        end
+        
+        actions :create, :destroy, :edit, :new, :update do
+          allow_roles :admin
+        end
+      end
+    end
+
+You can of course check for permissions as well. This example denies any logged out users (with the `logged_out` pseudo-role) and any users with the :banned permission from all actions (using the `all_actions` helper method).
+
+    class BannedExampleController < ApplicationController
+      access_control do
+        roles logged_out do
+          deny all_actions
+        end
+
+        permissions :banned do
+          deny all_actions
+        end
+      end
+    end
+
+There are a number of configuration options and additional DSL methods available for the `access_control` filters, and multiple filters can even be chained together.
+
+
+
 
 ## Configuration
 
