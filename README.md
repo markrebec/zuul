@@ -224,6 +224,8 @@ You can of course check for permissions as well. This example denies any logged 
 
 There are a number of configuration options and additional DSL methods available for the `access_control` filters, and multiple filters can even be chained together.
 
+**TODO: Add notes about default handling of 'access denied' and using rescue_from in controllers**
+
 
 
 
