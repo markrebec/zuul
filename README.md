@@ -260,17 +260,92 @@ The other option, instead of using `rescue_from`, is to set the `:mode` config o
       end
     end
 
+##Configuration
+Zuul is extremely configurable, and there are options to control just about everything at the global level and ways to override just about everything in specific authorization objects or `access_control` blocks.  For example, you may have the use of permissions configured globally, but want to disable them for a secondary, special subject+role scope that you're setting up. Or you may want the global default behavior of your access control blocks to be `:allow` (less strict), but then define `access_control :default => :deny` for stricter matching on more sensitive controllers.
 
+In order to configure Zuul and set your own global defaults, you can create an initializer in `/config/initializers/zuul.rb`:
 
-## Configuration
+    Zuul.configure do |config|
+      # configuration options go here
+      config.with_permissions = false # defaults to true
+      config.subject_method = :logged_in_user # defaults to :current_user
+      # etc...
+    end
 
-## Authorization Models
+Whatever you set here will override the Zuul global defaults, and your values will be used as defautls by any authorization models or access control blocks you define (unless you override them).  This allows you to override common defaults like `:with_permissions` without having to do so over and over again in your models and controllers.
 
-## The Context Chain
+Take a look at the authorization models and access control DSL documentation for more information on what config options can be overridden when defining them.
 
-## Access Control DSL
+###Global configuration options
+**TODO: add a table with all the config options and what they do**
 
-## Contributing
+##Authorization Models
+Authorization models are any of the subject, role, permission or resource/context models that are used by the authorization system (take a look at the Getting Started section for a brief explanation of each). They are configured using the `acts_as_authorization_*` methods - such as `acts_as_authorization_subject` for authorization subjects.
+
+When a model "acts as an authorization object," it inherits some behaviors specific to the type of object it's acting as.  For example with subjects, this provides them the ability to have roles and permissions assigned to them, or check if they `has_role?(:admin)`. Roles and permissions are a bit simpler, and are provided with some methods to help them behave as what they are, check them against subjects, etc. And finally resources/contexts, if you choose to define them, are given some shortcut methods like `allowed?(user, role)` which essentially are just wrappers to check whether the user possesses the role for the provided resource (within the provided context).
+
+**Note:** There are no inherent abilities granted by assigning any roles or permissions to a subject. Just because you define an `:admin` role and assign it to a user, that doesn't mean they can do anything special. It's up to you to check whether a subject possesses those roles and permissions in your code and act accordingly.
+
+###Subjects
+Zuul authorization subjects provide a few methods to make it easy to assign, remove and verify roles and permissions.
+
+**TODO: add a table with a list of methods like has_role?, assign_role, unassign_role, etc.**
+
+###Roles
+Authorization roles are provided with methods to assign, remove and verify permissions against the role. This in turn grants those permissions to any subjects who possess the role.
+
+**TODO: add a table with a list of methods like has_permission?, assign_permission, etc.**
+
+###Permissions
+Authorization permissions do not have any useful public methods available, since all the management is handled against the subjects or roles to which they are assigned. They mostly just have a few associations and internal methods defined to facilitate their use by the other authorization objects.
+
+###Resources & Contexts
+Defining resources (also used as contexts) is not required. You can use subjects, roles and permissions to authorize against any model without having to modify the resource model in any way. However, you have the option of configuring your resource models to `acts_as_authorization_context`, which will provide a few shortcut methods for you (which are all just wrappers for the methods defined on the subject being authorized).
+
+**TODO: add a table with the resource/context methods - allowed?, allowed_to?**
+
+###Configuring class names
+Zuul comes with some default class names that are used when generating and configuring authorization models, but you can use any class names you'd like. These can be defined globally (see the Configuration section of this readme) to DRY up your code, or when setting up a model to `acts_as_authorization_*`. If you set them up globally they'll be used in place of the defaults unless you override them. 
+
+When configuring an authorization model, you don't need to provide the name of the model you're configuring. So if you're configuring a `Soldier` as an authorization subject, you don't need to provide the subject class name. You also don't need to worry about table names or foreign keys, as Zuul will ask your models for that information rather than trying to inflect the provided class names.
+
+Here is an example using some custom classes:
+
+    # this is our subject, a chef who will be assigned cuisines
+    class Chef < ActiveRecord::Base
+      # you can set classes as strings, symbols or actuall class constants
+      acts_as_authorization_subject :role_class => :cuisine, :permission_class => Ingredient
+    end
+
+    # cuisine might be things like 'seafood', 'bbq', etc.
+    class Cuisine < ActiveRecord::Base
+      acts_as_authorization_role :subject_class => :chef, :permission_class => :ingredient
+    end
+
+    # a cuisine would probably have ingredients assigned to it - like 'fish' and 'scallops' for seafood
+    # but a chef might also have an ingredient like 'fish' in their repertoire without specializing in seafood
+    class Ingredient < ActiveRecord::Base
+      acts_as_authorization_permission :subject_class => :chef, :role_class => :cuisine
+    end
+
+If you only provide the core class names, as above, Zuul will fill in the blanks for the association models automatically. So in the above example, chefs and cuisines will be linked together using the `ChefCuisine` model.
+
+You can override each association model class name as well if you need to. Let's say you wanted to link `Chef` and `Cuisine` with a model called `Specialty`. Just provide the `:role_subject_class` as well:
+
+  class Chef < ActiveRecord::Base
+    acts_as_authorization_subject :role_class => :cuisine, :role_subject_class => :specialty, :permission_class => :ingredient
+  end
+
+  class Cuisine < ActiveRecord::Base
+    acts_as_authorization_subject :subject_class => :chef, :role_subject_class => :specialty, :permission_class => :ingredient
+  end
+
+###Scoping
+###The Context Chain
+
+##Access Control DSL
+
+##Contributing
 
 ##TODO
 * fill out readme + documentation
@@ -282,4 +357,4 @@ The other option, instead of using `rescue_from`, is to set the `:mode` config o
 * write specs for all the controller mixins
 * abstract out ActiveRecord, create ORM layer to allow other datasources
 
-## Copyright/License
+##Copyright/License
