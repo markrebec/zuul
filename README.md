@@ -170,7 +170,7 @@ When checking whether a subject possesses a permission, both their individual pe
 ###Setup access control for your controllers
 The first step in setting up your controllers is to ensure you have a `current_user` method available. This is provided by many authorization solutions (such as [devise](https://github.com/plataformatec/devise)), but if you don't already have one, you'll need to set one up. All the method needs to do is return a user object or `nil` if there is no user (i.e. not logged in). You can also configure a method other than `current_user` either globally or per-filter.
 
-Once you've got your `current_user` method in place, you can start to implement the `access_control` filters in your controllers. Here are a couple examples that all do the same thing - allow :admin roles access to :create, :destroy, :edit, :new, :update, and allow :user roles access to :index.
+Once you've got your `current_user` method in place, you can start to implement the `access_control` filters in your controllers. Here are a couple examples that all do the same thing - allow :admin roles access to :create, :destroy, :edit, :index, :new and :update, and allow :user roles access only to :index.
 
     class StrictExampleController < ApplicationController
       access_control do
