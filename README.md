@@ -340,6 +340,8 @@ You can override each association model class name as well if you need to. Let's
       acts_as_authorization_subject :subject_class => :chef, :role_subject_class => :specialty, :permission_class => :ingredient
     end
 
+The config options for the three association classes are `:role_subject_class`, `:permission_role_class` and `:permission_subject_class`.
+
 ###Scoping
 ###The Context Chain
 
