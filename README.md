@@ -229,7 +229,7 @@ By default, an `AccessDenied` exception is raised when a subject is denied acces
 The first option is to use `rescue_from` in your controllers to catch the exception. In most cases you can define the `rescue_from` block once on your `ApplicationController` and it will be inherited by all child controllers. If you want to do different things in different controllers, you can use `rescue_from` directly with those controllers. Here's a basic example using `ApplicationController`:
 
     class ApplicationController < ActionController::Base
-      rescue_from Zuul::Exceptions::AccessDenied, :with => :access_denied       # access_denied is defined below
+      rescue_from Zuul::Exceptions::AccessDenied, :with => :access_denied   # the access_denied method is defined below. you can also just pass a block instead of :with => :method
 
       def access_denied
         # you can use this method to redirect or render an error template (or do whatever you want)
