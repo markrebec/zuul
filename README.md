@@ -224,8 +224,41 @@ You can of course check for permissions as well. This example denies any logged 
 
 There are a number of configuration options and additional DSL methods available for the `access_control` filters, and multiple filters can even be chained together.
 
-**TODO: Add notes about default handling of 'access denied' and using rescue_from in controllers**
+By default, an `AccessDenied` exception is raised when a subject is denied access. You can customize this behavior in a few ways to either redirect, render or do essentially whatever you want.
 
+The first option is to use `rescue_from` in your controllers to catch the exception. In most cases you can define the `rescue_from` block once on your `ApplicationController` and it will be inherited by all child controllers. If you want to do different things in different controllers, you can use `rescue_from` directly with those controllers. Here's a basic example using `ApplicationController`:
+
+    class ApplicationController < ActionController::Base
+      rescue_from Zuul::Exceptions::AccessDenied, :with => :access_denied       # access_denied is defined below
+
+      def access_denied
+        # you can use this method to redirect or render an error template (or do whatever you want)
+      end
+    end
+
+    class MyExampleController < ApplicationController
+      access_control do
+        # add your rules here
+      end
+    end
+
+The other option, instead of using `rescue_from`, is to set the `:mode` config option to `:quiet` for the `access_control` block, which will surpress the exception and allow you to use the `authorized?` method to check the results yourself:
+
+    class MyExampleController < ApplicationController
+      access_control :mode => :quiet do
+        # add your rules here
+      end
+
+      before_filter do |controller|
+        # you can add a before_filter and check controller.authorized? here, then redirect or render an error
+        do_something unless controller.authorized?
+      end
+
+      def index
+        # or you can use authorized? directly within your controller actions to decide what to do per-action
+        do_something_specific unless authorized?
+      end
+    end
 
 
 
@@ -241,13 +274,12 @@ There are a number of configuration options and additional DSL methods available
 
 ##TODO
 * fill out readme + documentation
-* create generators for joining models
-* write specs for generators
-* abstract out ActiveRecord, create ORM layer to allow other datasources
-* create a logger for the ACL DSL stuff and clean up the logging there
 * add some built-in defaults for handling access denied errors and rendering a default template and/or flash message
-* write specs for all the controller mixins
 * clean up errors/exceptions a bit more
 * i18n for messaging, errors, templates, etc.
+* create a logger for the ACL DSL stuff and clean up the logging there
+* write specs for generators
+* write specs for all the controller mixins
+* abstract out ActiveRecord, create ORM layer to allow other datasources
 
 ## Copyright/License
