@@ -126,6 +126,8 @@ These commands will generate models (if they don't exist) and migrations for the
 ###Creating and using authorization abilities
 Once you've run all the generators, you'll need to run the generated migrations with `rake db:migrate` to update your database, and then it's time to start creating roles and permissions (and subjects if you don't have any).
 
+**Note:** There are no inherent abilities granted by assigning any roles or permissions to a subject. Just because you define an `:admin` role and assign it to a user, that doesn't mean they can do anything special. It's up to you to check whether a subject possesses those roles and permissions in your code and act accordingly.
+
 To create a role, all you need to do is use the `Role.create` method and supply the required fields (`slug` and `level`). Roles can be created within a specific context, but that's covered elsewhere in this document.
 
     admin = Role.create(:slug => 'admin', :level => 100)
@@ -284,8 +286,6 @@ Authorization models are any of the subject, role, permission or resource/contex
 
 When a model "acts as an authorization object," it inherits some behaviors specific to the type of object it's acting as.  For example with subjects, this provides them the ability to have roles and permissions assigned to them, or check if they `has_role?(:admin)`. Roles and permissions are a bit simpler, and are provided with some methods to help them behave as what they are, check them against subjects, etc. And finally resources/contexts, if you choose to define them, are given some shortcut methods like `allowed?(user, role)` which essentially are just wrappers to check whether the user possesses the role for the provided resource (within the provided context).
 
-**Note:** There are no inherent abilities granted by assigning any roles or permissions to a subject. Just because you define an `:admin` role and assign it to a user, that doesn't mean they can do anything special. It's up to you to check whether a subject possesses those roles and permissions in your code and act accordingly.
-
 ###Subjects
 Zuul authorization subjects provide a few methods to make it easy to assign, remove and verify roles and permissions.
 
@@ -332,13 +332,13 @@ If you only provide the core class names, as above, Zuul will fill in the blanks
 
 You can override each association model class name as well if you need to. Let's say you wanted to link `Chef` and `Cuisine` with a model called `Specialty`. Just provide the `:role_subject_class` as well:
 
-  class Chef < ActiveRecord::Base
-    acts_as_authorization_subject :role_class => :cuisine, :role_subject_class => :specialty, :permission_class => :ingredient
-  end
+    class Chef < ActiveRecord::Base
+      acts_as_authorization_subject :role_class => :cuisine, :role_subject_class => :specialty, :permission_class => :ingredient
+    end
 
-  class Cuisine < ActiveRecord::Base
-    acts_as_authorization_subject :subject_class => :chef, :role_subject_class => :specialty, :permission_class => :ingredient
-  end
+    class Cuisine < ActiveRecord::Base
+      acts_as_authorization_subject :subject_class => :chef, :role_subject_class => :specialty, :permission_class => :ingredient
+    end
 
 ###Scoping
 ###The Context Chain
