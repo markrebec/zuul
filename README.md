@@ -17,7 +17,7 @@ Zuul provides an extremely flexible authorization solution for ActiveRecord wher
 * **Authorization Models:** Can be used with your existing models, and doesn't require any database modifications for subjects (like users) or resource contexts (like blog posts). You also have the choice of generating new role and/or permissions models, or utilizing existing models as those roles and permissions - for example, if you were building a game and you wanted your `Level` and `Achievement` models to behave as "Roles" and "Permissions" for a `Character`, which would allow/deny that character access to various `Dungeon` objects.
 * **Contextual:** Allows creating and assigning abilities within a provided context - either globally, at the class level, or at the object level - and contexts can be mixed-and-matched (within the context chain). *While contexts are currently required for Zuul to work, you can "ignore" them by simply creating/managing everything at the global level, and there are plans to look into making contexts optional in future versions.*
 * **Context Chain:** There is a built-in "context chain" that is enforced when working with roles and permissions. This allows for both a high level of flexibility (i.e. roles can be applied within child contexts) and finer level of control (i.e. looking up a specific role within a specific context and not traversing up the chain), and can be as simple or complex as you want.
-* **Scoping:** All authorization methods are scoped, which allows the same model to act as an authorization subject for multiple scopes (each with it's own role/permission models).
+* **Scoping:** All authorization methods are scoped, which allows the same model to act as an authorization object for multiple scopes (each with it's own role/permission models).
 * **Controller ACL:** Provides a flexible access control DSL for your controllers that gives the ability to allow or deny access to controller actions and resources based on roles or permissions, and provides a few helper methods and pseudo roles for logged in/out.
 * **Helpers:** There are a few helpers included, like `for_role`, which allow you to execute blocks or display templates based on whether or not a subject possesses the specified role/permission, with optional fallback blocks if not.
 
@@ -345,26 +345,68 @@ The config options for the three association classes are `:role_subject_class`, 
 ###The Context Chain
 All operations involving roles and permissions within Zuul utilize "the context chain," which dictates what roles and permissions are allowed to be used within what context. There are three types of contexts - global, class level and object/instance level - and they are organized in a hierarchy which defines how they may be used within the chain. Basically they cascade in order, from global to class to instance level:
 
-Roles and permissions defined within the global context can be assigned and used at the class or instance level. The global context is sometimes also referred to as a 'nil context', since it is defined by leaving the context data blank.
+Roles and permissions defined within the global context may also be assigned at the class or instance level. The global context is sometimes also referred to as a 'nil context', since it is defined by leaving the context data blank.
 
-Those defined at the class level may only be used within a class level context that matches it's own, or any instance level contexts with a matching class. The class level context is defined by providing the class name to which the context applies.  For example, you might assign the role `:admin` to a subject within a context of `'BlogPost'`, and use that to allow subjects to have admin access to all blog posts.
+Those defined at the class level may only be used within a class level context that matches it's own, or any instance level contexts with a matching class. The class level context is defined by providing the class name to which the context applies.  For example, you might assign the role `:admin` to a subject within a context of `BlogPost`, and use that to allow subjects to have admin access to all blog posts.
 
-If defined at the instance level, the role or permission may only be used within that context. The instance level context is defined by providing the class name and the foreign key (id) of the record to which the context applies. This allows you to assign the permission `:edit_thread` to a role (or an individual subject) within the context type of `'DiscussionForum'` and the id of a specific forum.
+If defined at the instance level, the role or permission may only be used within that context. The instance level context is defined by providing the class name and the primary key (id) of the record to which the context applies. This allows you to assign the permission `:edit_thread` to a role or individual subject within the context type of `DiscussionForum` and the id of a specific forum, which you can then use to allow editing of threads within just the specified forum.
 
 When dealing with contexts in Zuul, one important thing to keep in mind is that there are **two types of contexts** in action. There is the context within wich a role or permissions is **defined** and the context within which a role or permission is **assigned**, and the former generally dictates the latter. This means that any role or permission defined within a context (including the nil/global context) may only be used within it's own context or other valid contexts further down the chain.
 
-So for example, if you **define** the role `:admin` within a global context, you may **assign** that role to subjects within any context. However, if you **define** that `:admin` role within the context of `'DiscussionForum'` you may not **assign** that role within a global context or any other class context, but you may assign it within the same context or within an instance level context for an instance of that same class.
+So for example, if you **define** the role `:admin` within a global context, you may **assign** that role to subjects within any context. However, if you **define** that `:admin` role within the context of `DiscussionForum` you may not **assign** that role within a global context or any other class context, but you may assign it within the same context or within an instance level context for an instance of that same class.
 
-But why would you want to define and assign a role in two separate contexts, let alone define contexts in the first place? It depends, you may not need contexts at all. If that's the case you can just use the global context (which is the default for all operations) without even thinking about it, and you can probably skip this section entirely. However, you may want to define and assign roles for specific types of resources, or define a single set of global roles and assign them contextually. 
+It is also important to understand that Zuul will prefer the closest contextual match to the one provided, and uses the context chain both for the lookup of the role or permission and when checking whether it is assigned to a subject.
+
+**But why would you want to define and assign a role in two separate contexts, or even define contexts in the first place?** It depends, you may not need contexts at all. If that's the case you can just use the default global context without even thinking about it (just don't specify contexts), and you can probably skip this section entirely. However, you may want to define and assign roles separately for specific types of resources, or even define a single set of roles at the global level and then assign them contextually. 
 
 Maybe you want to define one `:moderator` role to be used for your discussion forums and a separate `:moderator` role only for use with a video submissions system. You could create two separate roles, both with the `moderator` slug but each defined within their own context, and then you could assign those to the users who are moderators of the appropriate section of your site. Alternately you might want to define a single global `:moderator` role, and then just assign that role to various subjects within the appropriate context (discussion forums, video submissions system, etc.).
 
-**TODO: examples. use publisher/series/book examples with global admins, publisher admins, publisher level :edit_books, etc.**
+Let's look at a more in-depth example with multiple contexts at work using a company that provides a self publishing app for users to upload, create, edit and publish ebooks. In this example, we'll assume we have the following models: `User`, `Role`, `Permission`, `Publisher`, `Series` and `Book`. The user, role and permission models are self explanatory, and the others should be fairly obvious.  A publisher is the organization under which series and books are organized, a series represent a collection of books, and a book is a book. Multiple users may be linked to a publisher, each with varying abilities based on their roles and permissions.
+
+In this scenario, you might have a set of roles defined with a global context, like the following:
+
+    admin = Role.create(:slug => 'admin', :level => 100)
+    manager = Role.create(:slug => 'manager', :level => 70)
+    employee = Role.create(:slug => 'employee', :level => 60)
+    user = Role.create(:slug => 'user', :level => 50)
+
+You would then assign those roles, also within a global context, to the user accounts for employees of the company and either allow or deny them various abilities around the site based on those roles. Engineers and officers could have the 'admin' role and be able to change settings that control the applications behavior, 'managers' might be allowed to pull reports for various departments, and an 'employee' might be given some other abilities beyond those of normal users.
+
+These same roles could also be used within a context to give users special abilities. For example, you might assign the role of 'admin' within the context of the `Publisher` class to some of your employee users:
+
+    mark = User.find(1)
+    mark.assign_role(:admin, Publisher)
+
+Then you could allow any users possessing that global 'admin' role, **but assigned within the `Publisher` context,** the ability to edit, update, destroy, etc. for any and all individual publishers. This user **would not** possess the global admin abilities mentioned above (unless you also separately assign the admin role within a global context). You'd check if a user possesses the role by passing the context in as well:
+
+    mark.has_role?(:admin, Publisher)
+
+By default Zuul does not force the use provided context, but instead bubbles up the chain when looking for roles/permissions (see the section below for details on how the chain behaves when forcing context or not). In this example, if a user possesses the global admin role assigned within a global context, they would also be allowed the same abilities as the `Publisher` admin. However if you were to tell Zuul to force the context, it would not look up the chain and the user would be required to possess the admin role within the `Publisher` context or they would not be allowed. If you wanted **only** users who possessed the admin role within the `Publisher` context, and did not want to include global admins, you can force the context like this:
+
+    mark.has_role?(:admin, Publisher, true) # passing true for the force_context argument
+
+A user may also be assigned one of these global roles **within the context of a specific publisher**. Part of the requirements for your application might be for a new user to either create or join a publisher organization when they first sign up. When creating that publisher organization the user should be assigned as an 'admin' **just for that publisher**. Publisher admins would have the ability to invite or remove users as collaborators for their publisher, edit any of the publisher profile information or series or book content, etc. **but not edit any other publisher's info/content**.
+
+    user = User.find(1)
+    publisher = Publisher.find(1)
+    user.assign_role(:admin, publisher)   # or just user.assign_role(:admin, Publisher.find(1))
+
+And now you can update your code to allow these publisher admins to do various things within the context of the publisher organization to which they belong. As with the class level context above, unless you choose to force the context the role check will bubble up the context chain, so any `Publisher` context admin users or any global admin users will be allowed these same abilities.
+
+As mentioned, publisher admin users would be able to invite other users to join their organization and assign them roles. In that case, you could also reuse the 'manager' and 'employee' global roles within the individual publisher context. The publisher admin could assign those roles to other users within the publisher organization, and they would be allowed different abilities within the publisher context (maybe employees can only edit books, but managers can delete and create new series).
+
+So now we've defined a few global roles, and we're using those roles in a few different contexts, but we've decided we want to introduce an 'editor' role for publishers. The editor role should be just below admins and just above managers. We don't have any use for the editor role outside the publisher context however, so instead of defining it at the global level, we'll define it at the `Publisher` level. That way we can use it to give users the editor role within publisher contexts, but it's not unnecessarily polluting our global or other class level context space.
+
+    editor = Role.create(:slug => 'editor', :level => 80, :context => Publisher)
+    user = User.find(1)
+    user.assign_role(:editor, Publisher.find(1))  # even though it COULD be used at the class level, here we're using the role to make the user an editor for just his own publisher instance
+
+Because of the context chain, you can define as simple or complex of a set of roles and permissions as you want. If you want to keep one global set of roles and assign them within a context (or no context) you can. If you want to create a separate set of roles for each resource in your application, you can do that too. It's entirely up to you how to structure your abilities and how you'd like to mix-n-match everything.
 
 ###Scoping
 With the context chain outlined above Zuul is already extremely flexible. But in order to add another level of customizability (and to keep unnecessary methods from polluting the ActiveRecord namespace), authorization scopes have been implemented as well. Each of the authorizaton objects is scoped to a provided namespace (the default is `:default`), which allows the object to be used in more than one scope. You may provide a named scope when defining the model `acts_as_authorization_*` which you may then use to access authorization methods within that scope. If a `:default` scope does not yet exist, your named scope will be aliased to `:default`.
 
-Let's use an example of a web based role playing game. Let's say you have a website with multiple components - a forum, user profiles and a role playing game for users to play. In our example, we'll assume you have your default `User` model and `Role` and `Permission` models that you use outside of the game component to define roles like `:forum_user` to grant access to the forums, or `:banned` to prevent users from even logging into the webiste. Your `User` model would probably be defined with something like the following:
+Let's use an example of a web based role playing game. Let's say you have a website with multiple components - an HTML5 role playing game you're building, user profiles and discussion forums for users to discuss bugs, strategies, etc. In our example, we'll assume you have your default `User` model and `Role` and `Permission` models that you use outside of the game component to define roles like `:forum_user` to grant access to the forums, or `:banned` to prevent users from even logging into the webiste. Your `User` model would probably be defined with something like the following:
 
     class User < ActiveRecord::Base
       acts_as_authorization_subject # this uses the defaults, which point to the Role and Permission classes
@@ -391,15 +433,17 @@ Now what you'd like to do, is allow those same `User` objects to be assigned a `
       # you don't need to scope this to :character unless you want to
     end
 
-This would add an authorization scope of `:character` to `User` objects that could then be used instead of the default:
+This would add an authorization scope of `:character` to `User` objects that can be used (with the `auth_scope` method) instead of the default:
 
     user = User.find(1)
     user.auth_scope(:character) do
-      has_role?(:level_1)           # check if the user is level 1
-      has_permission?(:dual_wield)  # check if the user has the :dual_wield ability
+      has_role_or_higher?(:level_10)  # check if the user is level 10 or greater
+      has_permission?(:dual_wield)    # check if the user has the :dual_wield ability
     end
 
-    user.has_role?(:forum_user)  # this uses default scope
+    user.has_role?(:forum_user)  # this uses the default scope to check for the :forum_user role
+
+You might then even want to use contextual permissions within that scope so you can do things like assign the `:dual_wield` ability within the context of a weapon (swords, maces, axes, etc.).
 
 *There are plans to implement some dynamic aliasing, to allow for methods like `has_level?` to be aliased to `has_role?`, but for now you have to use the "role" and "permission" methods.*
 
