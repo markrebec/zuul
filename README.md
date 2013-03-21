@@ -284,7 +284,7 @@ Take a look at the authorization models and access control DSL documentation for
 ##Authorization Models
 Authorization models are any of the subject, role, permission or resource/context models that are used by the authorization system (take a look at the Getting Started section for a brief explanation of each). They are configured using the `acts_as_authorization_*` methods - such as `acts_as_authorization_subject` for authorization subjects.
 
-When a model "acts as an authorization object," it inherits some behaviors specific to the type of object it's acting as.  For example with subjects, this provides them the ability to have roles and permissions assigned to them, or check if they `has_role?(:admin)`. Roles and permissions are a bit simpler, and are provided with some methods to help them behave as what they are, check them against subjects, etc. And finally resources/contexts, if you choose to define them, are given some shortcut methods like `allowed?(user, role)` which essentially are just wrappers to check whether the user possesses the role for the provided resource (within the provided context).
+When a model "acts as an authorization object," it inherits some behaviors specific to the type of object it's emulating.  For example with subjects, this provides them the ability to have roles and permissions assigned to them, or check if they `has_role?(:admin)`. Roles and permissions are a bit simpler, and are provided with some methods to help them behave as what they are, check them against subjects, etc. And finally resources/contexts, if you choose to define them, are given some shortcut methods like `allowed?(user, role)` which essentially are just wrappers to check whether the user possesses the role for the provided resource (within the provided context).
 
 ###Subjects
 Zuul authorization subjects provide a few methods to make it easy to assign, remove and verify roles and permissions.
@@ -313,7 +313,7 @@ Here is an example using some custom classes:
 
     # this is our subject, a chef who will be assigned cuisines
     class Chef < ActiveRecord::Base
-      # you can set classes as strings, symbols or actuall class constants
+      # you can set classes as strings, symbols or actual class constants
       acts_as_authorization_subject :role_class => :cuisine, :permission_class => Ingredient
     end
 
@@ -448,6 +448,219 @@ You might then even want to use contextual permissions within that scope so you 
 *There are plans to implement some dynamic aliasing, to allow for methods like `has_level?` to be aliased to `has_role?`, but for now you have to use the "role" and "permission" methods.*
 
 ##Access Control DSL
+Zuul's access control DSL is essentially just a custom `before_filter` for your controllers that is configured via the `access_control` method. Within the access control block, you can use the DSL methods to allow or deny access to your controller actions based on roles and permissions. Take a look at the Getting Started section for some simple examples.
+
+###Configuring `access_control` filters
+There are a number of arguments you can supply to your access control filters to control how they behave, including how strict they are, providing a default context or scope to be used by the underlying authorization system, and more. Just like everywhere else, you can set the defaults with a global config initializer, or you can override them with arguments for individual filters.
+
+Here is an example of passing a couple arguments to the filter:
+
+    class ExampleController < ApplicationController
+      access_control :default => :allow, :mode => :quiet do
+        # rules go here
+      end
+    end
+
+This sets the mode to `:quiet` which surpresses any access denied errors (for custom handling) and sets the default matching strictness to `:allow` (which is less strict than the standard default of `:deny`).
+
+**TODO: add a table of arguments and what they do**
+
+###Default matching behavior
+Zuul allows you to define how strict your access control filters should be by defining the default matching behavior. The two options are `:allow` and `:deny`, and the default is `:deny` which is more strict. Your rules are all matched individually and then evaluated based on the behavior you specify.
+
+The following table illustrates the differences:
+
+<table>
+<tr>
+<th>Rules</th>
+<th>`:allow`</th>
+<th>`:deny`</th>
+</tr>
+<tr>
+<td>No rules were matched.</td>
+<td>allowed</td>
+<td>denied</td>
+</tr>
+<tr>
+<td>Some `allow` rules matched, no `deny` rules matched.</td>
+<td>allowed</td>
+<td>allowed</td>
+</tr>
+<tr>
+<td>No `allow` rules matched, some `deny` rules matched.</td>
+<td>denied</td>
+<td>denied</td>
+</tr>
+<tr>
+<td>Some `allow` rules matched and some `deny` rules matched.</td>
+<td>allowed</td>
+<td>denied</td>
+</tr>
+</table>
+
+
+###Checking against roles and permissions
+
+###Including or excluding controller actions
+By default the access control filters are applied to all actions within your controller, which means all your rules will be evaluated for every action. Sometimes though, you may want to apply different rules to different actions, exclude some actions entirely, or only apply access control to specific actions. There are a few different ways to do this.
+
+If you want to completely exclude certain actions from access control, or you want to only apply access control to a few actions in your controller, the `access_control` filter accepts the same `:only` and `:except` arguments as the standard `before_filter`. Let's say you wanted to deny access to everyone except admin users for all actions in your controller except 'index'.
+
+    class StrictController < ApplicationController
+      access_control :default => :deny, :except => [:index] do
+        roles :admin do
+          allow :create, :update, :destroy
+        end
+      end
+    end
+
+In the above example, if you **did not** specify the 'index' action in the `:except` argument, no one would be allowed to access it. The filter would be evaluated and because the default behavior is `:deny`, and because no one is explicitly granted access to the index action in the rules, everyone would be denied access. Passing the index action here prevents the access control block from ever being evaluated when requesting index (which lets everyone through).
+
+Now let's take that same example, and let's say instead of allowing everyone access to the index action, we only want 'moderators' and 'admins' to have access.
+
+    class StrictController < ApplicationController
+      access_control :default => :deny do
+        actions :index do
+          roles :admin, :moderator do
+            allow # the actions are inherited from the parent block here, so the index action is automatically included and does not need to be passed to allow
+          end
+
+          # OR for shorter syntax in this case, you could do
+
+          allow_roles :admin, :moderator
+        end
+
+        roles :admin do
+          allow :create, :update, :destroy
+        end
+      end
+    end
+
+Here we use the `actions` method to specify the actions we want to define rules for, then we add the rules to allow the admin and moderator roles access. You can also see an example of the shortcut `allow_roles`, which just uses any actions already defined within the block to allow the roles you provide.
+
+###Contexts and scoping
+You can specify a context and scope for your access control filters, and when provided all defined rules will be matched within that context and/or scope.
+
+The first option is to pass the `:context` or `:scope` arguments directly to the filter:
+
+    # using our publisher example from earlier
+    class ContextualController < ApplicationController
+      access_control :context => Publisher do
+        roles :admin, :editor do
+          # this will use the Publisher context when checking if the user posesses the admin or editor roles
+          allow :create, :update, :destroy 
+        end
+      end
+    end
+    
+    # using our web based RPG example from earlier
+    class ScopedController < ApplicationController
+      access_control :scope => :character do
+        roles :level_10 do
+          # this will use the :character auth scope on our user to check if they are level_10 (using the Level model defined for that scope)
+          allow :enter_dungeon, :invite_to_party
+        end
+      end
+    end
+
+The `:context` can either be a class, an object or a reference to an instance variable or method.
+
+    class ContextualController < ApplicationController
+      access_control :context => Publisher.find(1) do
+        # rules...
+      end
+    end
+    
+    class ContextualController < ApplicationController
+      access_control :context => :get_publisher do
+        # rules...
+      end
+
+      def get_publisher
+        Publisher.find(params[:id])
+      end
+    end
+    
+    class ContextualController < ApplicationController
+      before_filter :load_publisher
+      access_control :context => :@publisher do
+        # rules...
+      end
+
+      def load_publisher
+        @publisher = Publisher.find(params[:id])
+      end
+    end
+
+Another option is to use the `context` and `scope` DSL methods within the block to define a subset of rules.
+
+    # an example of an "events" controller from a calendar application
+    class EventsController < ApplicationController
+      before_filter :load_event
+
+      access_control do
+        roles all_roles do  # this uses the all_roles helper to allow anyone to view events
+          allow :show
+        end
+
+        roles :admin do
+          allow :destroy    # this allows global site admins to destroy events
+        end
+        
+        context :@event do  # uses the @event instance var set in the :load_event before filter
+          roles :owner do
+            # this will check for the 'owner' role within the context of the event
+            allow :invite, :kick, :destroy
+          end
+          roles :participant do
+            # this will check for the 'participant' role within the context of the event
+            allow :leave
+          end
+        end
+      end
+
+      def load_event
+        @event = Event.find(params[:id])
+      end
+    end
+
+    # using the web based RPG example again
+    class DungeonController < ApplicationController
+      access_control do
+        # technically this is not necessary, as the default behavior is to deny access unless there is an allow match. it's here for the sake of the example.
+        deny_roles :banned, logged_out    # this denies logged out users (using the pseudo-role) and any :banned users from all actions
+
+        scope :character do
+          roles :level_10 do
+            or_higher do
+              allow :enter    # this uses the :character scope to check if the user is level 10 or greater
+            end
+          end
+        end
+      end
+    end
+
+You can also specify whether or not to force the context when matching rules. The default is false unless you've overridden it globally, and whatever value is set is passed through to the authorization models and methods. Like context and scope, you can specify this option as an argument or use the DSL method.
+
+    class ExampleController < ApplicationController
+      access_control :context => Publisher, :force_context => true do
+        roles :admin do
+          allow :edit, :update, :destroy      # the context would be forced when checking against the admin role, requiring the Publisher admin role (global admins would NOT be matched)
+        end
+      end
+    end
+    
+    class ExampleController < ApplicationController
+      access_control :context => Publisher do
+        force_context do
+          roles :admin do
+            allow :edit, :update, :destroy    # the context would be forced when checking against the admin role, requiring the Publisher admin role (global admins would NOT be matched)
+          end
+        end
+      end
+    end
+
+###Chaining filters
 
 ##Contributing
 
