@@ -342,8 +342,66 @@ You can override each association model class name as well if you need to. Let's
 
 The config options for the three association classes are `:role_subject_class`, `:permission_role_class` and `:permission_subject_class`.
 
-###Scoping
 ###The Context Chain
+All operations involving roles and permissions within Zuul utilize "the context chain," which dictates what roles and permissions are allowed to be used within what context. There are three types of contexts - global, class level and object/instance level - and they are organized in a hierarchy which defines how they may be used within the chain. Basically they cascade in order, from global to class to instance level:
+
+Roles and permissions defined within the global context can be assigned and used at the class or instance level. The global context is sometimes also referred to as a 'nil context', since it is defined by leaving the context data blank.
+
+Those defined at the class level may only be used within a class level context that matches it's own, or any instance level contexts with a matching class. The class level context is defined by providing the class name to which the context applies.  For example, you might assign the role `:admin` to a subject within a context of `'BlogPost'`, and use that to allow subjects to have admin access to all blog posts.
+
+If defined at the instance level, the role or permission may only be used within that context. The instance level context is defined by providing the class name and the foreign key (id) of the record to which the context applies. This allows you to assign the permission `:edit_thread` to a role (or an individual subject) within the context type of `'DiscussionForum'` and the id of a specific forum.
+
+When dealing with contexts in Zuul, one important thing to keep in mind is that there are **two types of contexts** in action. There is the context within wich a role or permissions is **defined** and the context within which a role or permission is **assigned**, and the former generally dictates the latter. This means that any role or permission defined within a context (including the nil/global context) may only be used within it's own context or other valid contexts further down the chain.
+
+So for example, if you **define** the role `:admin` within a global context, you may **assign** that role to subjects within any context. However, if you **define** that `:admin` role within the context of `'DiscussionForum'` you may not **assign** that role within a global context or any other class context, but you may assign it within the same context or within an instance level context for an instance of that same class.
+
+But why would you want to define and assign a role in two separate contexts, let alone define contexts in the first place? It depends, you may not need contexts at all. If that's the case you can just use the global context (which is the default for all operations) without even thinking about it, and you can probably skip this section entirely. However, you may want to define and assign roles for specific types of resources, or define a single set of global roles and assign them contextually. 
+
+Maybe you want to define one `:moderator` role to be used for your discussion forums and a separate `:moderator` role only for use with a video submissions system. You could create two separate roles, both with the `moderator` slug but each defined within their own context, and then you could assign those to the users who are moderators of the appropriate section of your site. Alternately you might want to define a single global `:moderator` role, and then just assign that role to various subjects within the appropriate context (discussion forums, video submissions system, etc.).
+
+**TODO: examples. use publisher/series/book examples with global admins, publisher admins, publisher level :edit_books, etc.**
+
+###Scoping
+With the context chain outlined above Zuul is already extremely flexible. But in order to add another level of customizability (and to keep unnecessary methods from polluting the ActiveRecord namespace), authorization scopes have been implemented as well. Each of the authorizaton objects is scoped to a provided namespace (the default is `:default`), which allows the object to be used in more than one scope. You may provide a named scope when defining the model `acts_as_authorization_*` which you may then use to access authorization methods within that scope. If a `:default` scope does not yet exist, your named scope will be aliased to `:default`.
+
+Let's use an example of a web based role playing game. Let's say you have a website with multiple components - a forum, user profiles and a role playing game for users to play. In our example, we'll assume you have your default `User` model and `Role` and `Permission` models that you use outside of the game component to define roles like `:forum_user` to grant access to the forums, or `:banned` to prevent users from even logging into the webiste. Your `User` model would probably be defined with something like the following:
+
+    class User < ActiveRecord::Base
+      acts_as_authorization_subject # this uses the defaults, which point to the Role and Permission classes
+      
+      # the rest of your model stuff would be here
+    end
+
+Now what you'd like to do, is allow those same `User` objects to be assigned a `Level` and `Ability` for the game component. You plan on assigning abilities to a level, and then assigning levels to each user as they progress through the game. Then various activities in the game will be based on whether or not a user possesses certain abilities or is of a certain level. You can create a new scoped authorization subject for `User` that uses those new classes:
+
+    class User < ActiveRecord::Base
+      acts_as_authorization_subject # this uses the defaults, which point to the Role and Permission classes
+      acts_as_authorization_subject :scope => :character, :role_class => :level, :permission_class => :ability
+      
+      # the rest of your model stuff would be here
+    end
+
+    class Level < ActiveRecord::Base
+      acts_as_authorization_role :permission_class => :ability  # the default subject model is User, so no need to specify it
+      # you don't need to scope this to :character unless you want to
+    end
+    
+    class Ability < ActiveRecord::Base
+      acts_as_authorization_permission :role_class => :level    # the default subject model is User, so no need to specify it
+      # you don't need to scope this to :character unless you want to
+    end
+
+This would add an authorization scope of `:character` to `User` objects that could then be used instead of the default:
+
+    user = User.find(1)
+    user.auth_scope(:character) do
+      has_role?(:level_1)           # check if the user is level 1
+      has_permission?(:dual_wield)  # check if the user has the :dual_wield ability
+    end
+
+    user.has_role?(:forum_user)  # this uses default scope
+
+*There are plans to implement some dynamic aliasing, to allow for methods like `has_level?` to be aliased to `has_role?`, but for now you have to use the "role" and "permission" methods.*
 
 ##Access Control DSL
 
