@@ -65,7 +65,7 @@ module Zuul
               target = target_role(role, context, force_context)
               return false if target.nil?
 
-              return true unless context.id.nil? || role_subject_class.joins(role_class_name.underscore.to_sym).where(subject_foreign_key.to_sym => id, role_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).first.nil?
+              return true unless (context.id.nil? && !force_context) || role_subject_class.joins(role_class_name.underscore.to_sym).where(subject_foreign_key.to_sym => id, role_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).first.nil?
               return false if force_context
               return true unless context.class_name.nil? || role_subject_class.where(subject_foreign_key.to_sym => id, role_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => nil).first.nil?
               return !role_subject_class.where(subject_foreign_key.to_sym => id, role_foreign_key.to_sym => target.id, :context_type => nil, :context_id => nil).first.nil?
@@ -193,13 +193,13 @@ module Zuul
               target = target_permission(permission, context, force_context)
               return false if target.nil?
 
-              return true unless context.id.nil? || permission_subject_class.where(subject_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).first.nil?
+              return true unless (context.id.nil? && !force_context) || permission_subject_class.where(subject_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).first.nil?
               unless force_context
                 return true unless context.class_name.nil? || permission_subject_class.where(subject_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => nil).first.nil?
                 return true unless permission_subject_class.where(subject_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => nil, :context_id => nil).first.nil?
               end
 
-              return true unless context.id.nil? || permission_role_class.where(role_foreign_key.to_sym => roles_for(context).map(&:id), permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).first.nil?
+              return true unless (context.id.nil? && !force_context) || permission_role_class.where(role_foreign_key.to_sym => roles_for(context).map(&:id), permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).first.nil?
               return false if force_context
               return true unless context.class_name.nil? || permission_role_class.where(role_foreign_key.to_sym => roles_for(context).map(&:id), permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => nil).first.nil?
               return !permission_role_class.where(role_foreign_key.to_sym => roles_for(context).map(&:id), permission_foreign_key.to_sym => target.id, :context_type => nil, :context_id => nil).first.nil?

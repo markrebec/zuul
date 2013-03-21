@@ -83,7 +83,7 @@ module Zuul
             target = target_permission(permission, context, force_context)
             return false if target.nil?
 
-            return true unless context.id.nil? || permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).first.nil?
+            return true unless (context.id.nil? && !force_context) || permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).first.nil?
             unless force_context
               return true unless context.class_name.nil? || permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => nil).first.nil?
               return !permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => nil, :context_id => nil).first.nil?
