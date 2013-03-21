@@ -473,8 +473,8 @@ The following table illustrates the differences:
 <table>
 <tr>
 <th>Rules</th>
-<th>`:allow`</th>
-<th>`:deny`</th>
+<th><code>:allow</code></th>
+<th><code>:deny</code></th>
 </tr>
 <tr>
 <td>No rules were matched.</td>
@@ -482,17 +482,17 @@ The following table illustrates the differences:
 <td>denied</td>
 </tr>
 <tr>
-<td>Some `allow` rules matched, no `deny` rules matched.</td>
+<td>Some <code>allow</code> rules matched, no <code>deny</code> rules matched.</td>
 <td>allowed</td>
 <td>allowed</td>
 </tr>
 <tr>
-<td>No `allow` rules matched, some `deny` rules matched.</td>
+<td>No <code>allow</code> rules matched, some <code>deny</code> rules matched.</td>
 <td>denied</td>
 <td>denied</td>
 </tr>
 <tr>
-<td>Some `allow` rules matched and some `deny` rules matched.</td>
+<td>Some <code>allow</code> rules matched and some <code>deny</code> rules matched.</td>
 <td>allowed</td>
 <td>denied</td>
 </tr>
