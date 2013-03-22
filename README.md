@@ -279,7 +279,6 @@ Whatever you set here will override the zuul global defaults, and your values wi
 Take a look at the authorization models and access control DSL documentation for more information on what config options can be overridden when defining them.
 
 ###Global configuration options
-**TODO: add a table with all the config options and what they do**
 <table>
   <tr>
     <th>Setting</th>
