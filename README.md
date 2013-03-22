@@ -1,10 +1,10 @@
 # Zuul
 Contextual Authorization and Access Control for ActiveRecord and ActionController respectively, along with a few handy extras (like generators) for Rails. The name is a reference to the film [Ghostbusters](http://en.wikipedia.org/wiki/Ghostbusters) (1984), in which an ancient Sumerian deity called [Zuul](http://www.gbfans.com/wiki/Zuul), also known as The Gatekeeper, possesses the character Dana Barrett.
 
-### Zuul is undergoing some changes!
-[Wes Gibbs](https://github.com/wgibbs) has been kind enough to transfer maintenance of the gem to myself ([Mark Rebec](https://github.com/markrebec)), and in turn I'm taking some time to revamp and upate Zuul to provide some new features and make everything compatible with the latest versions of ActiveRecord and ActionController.
+### Zuul is undergoing some changes
+[Wes Gibbs](https://github.com/wgibbs) has been kind enough to transfer maintenance of the gem to myself ([Mark Rebec](https://github.com/markrebec)), and in turn I'm taking some time to update Zuul to provide some new features and make everything compatible with the latest versions of ActiveRecord and ActionController.
 
-The version is being bumped to `0.2.0` to start, and version history is being maintained so we don't break any existing implementations. This also allows continued use, maintenance and forking of any previous versions of the gem if anyone should prefer to use a version prior to the switchover.
+The version is being bumped to `0.2.0` to start, and version history is being maintained so we don't break any existing implementations. This also allows continued use, maintenance and forking of any previous versions of the gem.
 
 I can't thank Wes enough for allowing me to take over Zuul, rather than introducing yet-another-competing-access-control-gem for everyone to sort through!
 
@@ -355,7 +355,7 @@ When dealing with contexts in Zuul, one important thing to keep in mind is that 
 
 So for example, if you **define** the role `:admin` within a global context, you may **assign** that role to subjects within any context. However, if you **define** that `:admin` role within the context of `DiscussionForum` you may not **assign** that role within a global context or any other class context, but you may assign it within the same context or within an instance level context for an instance of that same class.
 
-It is also important to understand that Zuul will prefer the closest contextual match to the one provided, and uses the context chain both for the lookup of the role or permission and when checking whether it is assigned to a subject.
+It is also important to understand that Zuul will prefer the closest contextual match to the one provided, and uses the context chain both for the lookup of the role or permission and when checking whether it is assigned to a subject. This mostly comes into play when you want to force the use of a particular context and not bubble up the context chain.
 
 **But why would you want to define and assign a role in two separate contexts, or even define contexts in the first place?** It depends, you may not need contexts at all. If that's the case you can just use the default global context without even thinking about it (just don't specify contexts), and you can probably skip this section entirely. However, you may want to define and assign roles separately for specific types of resources, or even define a single set of roles at the global level and then assign them contextually. 
 
@@ -368,22 +368,80 @@ In this scenario, you might have a set of roles defined with a global context, l
     admin = Role.create(:slug => 'admin', :level => 100)
     manager = Role.create(:slug => 'manager', :level => 70)
     employee = Role.create(:slug => 'employee', :level => 60)
-    user = Role.create(:slug => 'user', :level => 50)
 
 You would then assign those roles, also within a global context, to the user accounts for employees of the company and either allow or deny them various abilities around the site based on those roles. Engineers and officers could have the 'admin' role and be able to change settings that control the applications behavior, 'managers' might be allowed to pull reports for various departments, and an 'employee' might be given some other abilities beyond those of normal users.
 
+You can assign roles within a global context like this:
+
+    user = User.find(1)
+    user.assign_role(:admin)
+
+And you can check for roles using the `has_role?` method:
+
+    user.has_role?(:admin)  # => true
+
 These same roles could also be used within a context to give users special abilities. For example, you might assign the role of 'admin' within the context of the `Publisher` class to some of your employee users:
 
-    mark = User.find(1)
-    mark.assign_role(:admin, Publisher)
+    bob = User.find(1)
+    bob.assign_role(:admin, Publisher)   # this would make the user an admin for publishers, but not a global admin
 
 Then you could allow any users possessing that global 'admin' role, **but assigned within the `Publisher` context,** the ability to edit, update, destroy, etc. for any and all individual publishers. This user **would not** possess the global admin abilities mentioned above (unless you also separately assign the admin role within a global context). You'd check if a user possesses the role by passing the context in as well:
 
-    mark.has_role?(:admin, Publisher)
+    bob.has_role?(:admin)                 # => false (bob is a publisher admin, but not a global admin)
+    bob.has_role?(:admin, Publisher)      # => true
+    user.has_role?(:admin, Publisher)     # => true (because this user has the global admin role and it bubbles up the chain)
 
-By default Zuul does not force the use provided context, but instead bubbles up the chain when looking for roles/permissions (see the section below for details on how the chain behaves when forcing context or not). In this example, if a user possesses the global admin role assigned within a global context, they would also be allowed the same abilities as the `Publisher` admin. However if you were to tell Zuul to force the context, it would not look up the chain and the user would be required to possess the admin role within the `Publisher` context or they would not be allowed. If you wanted **only** users who possessed the admin role within the `Publisher` context, and did not want to include global admins, you can force the context like this:
+By default Zuul does not force the use of the provided context, but instead bubbles up the chain when looking for roles/permissions. In this example, if a user possesses the global admin role assigned within a global context, they would also be allowed the same abilities as the `Publisher` admin. In other words, the above call to `has_role?` would return true if the user is assigned the 'admin' role in a `Publisher` context **or** a global context. 
 
-    mark.has_role?(:admin, Publisher, true) # passing true for the force_context argument
+However if you were to tell Zuul to force the context, it would not look up the chain and the user would be required to possess the admin role within the `Publisher` context or they would not be allowed. If you wanted **only** users who possessed the admin role within the `Publisher` context, and did not want to include global admins, you can force the context like this:
+
+    # passing true for force_context
+    user.has_role?(:admin, Publisher, true)   # => false (this user does not possess the role within the context)
+    bob.has_role?(:admin, Publisher, true)    # => false (this also fails because by default it wants the role to be DEFINED AND ASSIGNED within the forced context)
+
+The catch here though, is that forcing the context for the role check will also force the context for the lookup of the role by slug. Since our admin role is **defined** in the global context, this lookup will fail before we even check the role against the subject (even though it is **assigned** to bob within the forced `Publisher` context). In order for this to work using a slug, the admin role would have to be both defined and assigned in the `Publisher` context.
+
+You can however work around this by passing a role or permission object instead of a slug to pretty much all the authorization methods. So for our previous example to work *using the global roles defined in our example and assigned within the `Publisher` context*, we'd actually want to do this:
+
+    global_admin = Role.find(1)   # this would be our global admin role
+    bob.has_role?(global_admin, Publisher, true)   # => true (because the role is provided so there is no lookup by slug, and it is assigned within the context being forced)
+
+Otherwise you can break out your role definitions by context and create a separate publisher admin role:
+
+    publisher_admin = Role.create(:slug => 'admin', :level => 100, :context => Publisher)
+    bob.assign_role(:admin, Publisher)
+    bob.has_role?(:admin, Publisher, true)  # => true
+
+A few more examples should help clarify:
+
+    # this is our global admin role
+    global_admin = Role.create(:slug => 'admin', :level => 100)
+    # this is our publisher admin role
+    publisher_admin = Role.create(:slug => 'admin', :level => 100, :context => Publisher)
+    
+    user = User.find(1)
+    
+    user.assign_role(:admin)                        # this will use the global context, so it will find the global_admin role and assign it within the global context
+    user.has_role?(:admin)                          # => true
+    user.has_role?(:admin, Publisher)               # => true (it bubbles up the context chain for the lookup and the match)
+    user.has_role?(:admin, Publisher, true)         # => false (since we're forcing context, it finds the publisher_admin role and can't make a match)
+    user.remove_role(:admin)
+    
+    user.assign_role(:admin, Publisher)             # this will find the publisher_admin role and assign it within the Publisher context
+    user.has_role?(:admin)                          # => false (the user is not a global admin)
+    user.has_role?(:admin, Publisher)               # => true
+    user.has_role?(:admin, Publisher, true)         # => true (the role is defined and assigned within the forced context, so it matches)
+    user.remove_role(:admin, Publisher)
+    
+    # use the global role, but assign it within the Publisher context, and force the context for the match
+    user.assign_role(global_admin, Publisher)       # this assigns the global_admin role within the assigned context of Publisher
+    user.has_role?(:admin)                          # => false (the global_admin role is looked up, but the user is not assigned the role in a global context)
+    user.has_role?(:admin, Publisher)               # => false (even though we're not forcing context here, because a Publisher admin role exists, that one is preferred over the global admin role in the lookup)
+    user.has_role?(global_admin, Publisher)         # => true (using the actual role object means the context is only used to match the role since it doesn't have to be looked up)
+    user.has_role?(:admin, Publisher, true)         # => false (the Publisher admin role is preferred in the lookup and no match is made)
+    user.has_role?(global_admin, Publisher, true)   # => true (since we provide the role object there is no lookup, and since the role we provided is assigned within the force context of Publisher, there is a match)
+
+Now, to get back to our publishing example.
 
 A user may also be assigned one of these global roles **within the context of a specific publisher**. Part of the requirements for your application might be for a new user to either create or join a publisher organization when they first sign up. When creating that publisher organization the user should be assigned as an 'admin' **just for that publisher**. Publisher admins would have the ability to invite or remove users as collaborators for their publisher, edit any of the publisher profile information or series or book content, etc. **but not edit any other publisher's info/content**.
 
@@ -499,7 +557,7 @@ The following table illustrates the differences:
 </table>
 
 
-###Checking against roles and permissions
+###Checking for roles and permissions
 
 ###Including or excluding controller actions
 By default the access control filters are applied to all actions within your controller, which means all your rules will be evaluated for every action. Sometimes though, you may want to apply different rules to different actions, exclude some actions entirely, or only apply access control to specific actions. There are a few different ways to do this.
@@ -660,7 +718,35 @@ You can also specify whether or not to force the context when matching rules. Th
       end
     end
 
-###Chaining filters
+###Chaining filters together
+Access control filters can be chained together, allowing you to split up rules into separate blocks. This is mostly useful if you've got controllers that inherit from a parent and you don't want to re-define rules over and over again. For example, you may want to deny access to banned users in your `ApplicationController`, then provide an additional set of rules for each of your controllers.
+
+    class ApplicationController < ActionController::Base
+      access_control :default => :allow do
+        deny_roles :banned
+      end
+    end
+
+    class SomeOtherController < ApplicationController
+      access_control do
+        # additional rules here
+      end
+    end
+
+It's important to know that any arguments passed to a previous filter will be persisted unless overridden. So in the above example, the second `access_control` block would inherit the `:default => :allow` configuration (unless we were to pass `:default => :deny`).
+
+There is a `:collect_results` argument for `access_control` which determines how results are passed between chained access control filters. It can be set to `true` or `false`, and the default is `false`.
+
+When `:collect_results` is set to `false` all individual rule matches are passed through to the final filter in the chain, and are then evaluated together based on the default matching behavior set for that filter (either `:allow` or `:deny`).
+
+When `:collect_results` is set to `true` each block of rules is evaluated inline based on the default matching behavior for that filter (either `:allow` or `:deny`), and that single collective result is passed on to the next filter to be combined and evaluated with the next set of rules. 
+
+##Controller and View Helpers
+
+##Credit and Thanks
+* [Mark Rebec](https://github.com/markrebec) is the current author and maintainer of Zuul.
+* Thanks to [Wes Gibbs](https://github.com/wgibbs) for creating the original version of Zuul and for allowing me to take over maintenance of the gem.
+* [Oleg Dashevskii's](https://github.com/be9) library [acl9](https://github.com/be9/acl9) is another great authorization and access control solution that provides similar functionality. While acl9 does not support the same context chain (it actually sort of works in the other direction) or authorization scoping that Zuul does, it does allow working with roles in context of resources, and it provided much inspiration when building the ActionController DSL included in Zuul.
 
 ##Contributing
 
