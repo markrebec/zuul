@@ -52,7 +52,7 @@ To generate a subject model, you can use the `zuul:subject` generator, and pass 
 
 The extra field names are optional and are only parsed if you're creating the model for the first time. Only the name of the model is required.
 
-The above will create a standard migration at `/db/migrate/TIMESTAMP_create_users.rb` if the model did not exist (since no extra fields are required on a subject model) and will create the model itself in `/app/models/user.rb` if it does not exist. It will also add the default `acts_as_authorization_subject` configuration to the model. Using the above example to create a new `User` model, the generated model looks like below. *Note: Saying "no extra fields are required" is not entirely accurate. An integer primary key **is** required for all subjects.*
+The above will create a standard migration at `/db/migrate/TIMESTAMP_create_users.rb` if the model did not exist and will create the model itself in `/app/models/user.rb` if it does not exist. It will then add the default `acts_as_authorization_subject` configuration to the model. Using the above example to create a new `User` model, the generated model looks like below.
 
     class User < ActiveRecord::Base
       # Setup authorization for your subject model
@@ -280,6 +280,78 @@ Take a look at the authorization models and access control DSL documentation for
 
 ###Global configuration options
 **TODO: add a table with all the config options and what they do**
+<table>
+  <tr>
+    <th>Setting</th>
+    <th>Valid Options</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td><code>subject_class</code></td>
+    <td>A string, symbol or class constant. Defaults to <code>:user</code></td>
+    <td>The specified class is used as the default subject class when defining authorization models. It can be overridden when defining the authorization models.</td>
+  </tr>
+  <tr>
+    <td><code>role_class</code></td>
+    <td>A string, symbol or class constant. Defaults to <code>:role</code></td>
+    <td>The specified class is used as the default role class when defining authorization models. It can be overridden when defining the authorization models.</td>
+  </tr>
+  <tr>
+    <td><code>permission_class</code></td>
+    <td>A string, symbol or class constant. Defaults to <code>:permission</code></td>
+    <td>The specified class is used as the default permission class when defining authorization models. It can be overridden when defining the authorization models.</td>
+  </tr>
+  <tr>
+    <td><code>role_subject_class</code></td>
+    <td>A string, symbol or class constant. Defaults to <code>:role_user</code></td>
+    <td>The specified class is used as the default association class for roles and subjects when defining authorization models. It can be overridden when defining the authorization models.</td>
+  </tr>
+  <tr>
+    <td><code>permission_role_class</code></td>
+    <td>A string, symbol or class constant. Defaults to <code>:permission_role</code></td>
+    <td>The specified class is used as the default association class for permissions and roles when defining authorization models. It can be overridden when defining the authorization models.</td>
+  </tr>
+  <tr>
+    <td><code>permission_subject_class</code></td>
+    <td>A string, symbol or class constant. Defaults to <code>:permission_user</code></td>
+    <td>The specified class is used as the default association class for permissions and subjects when defining authorization models. It can be overridden when defining the authorization models.</td>
+  </tr>
+  <tr>
+    <td><code>acl_default</code></td>
+    <td><code>:allow</code> or <code>:deny</code>. Defaults to <code>:deny</code></td>
+    <td>The default matching behavior used by the controller ACL filters. Can be overridden when defining access control filters.</td>
+  </tr>
+  <tr>
+    <td><code>acl_mode</code></td>
+    <td><code>:raise</code> or <code>:quiet</code>. Defaults to <code>:raise</code></td>
+    <td>Dictates how the ACL filters will handle access denied errors. If set to <code>:raise</code> an exception will be raised. If set to <code>:quiet</code> no exception will be raised and you can use the <code>authorized?</code> method to check for the result. Can be overridden when defining access control filters.</td>
+  </tr>
+  <tr>
+    <td><code>acl_collect_results</code></td>
+    <td><code>true</code> or <code>false</code>. Defaults to <code>false</code></td>
+    <td>Whether or not chained ACL filters will collect their results or not by default. If set to <code>true</code> each filter will analyze it's rules and pass along a single result of <code>allow</code> or <code>deny</code. If set to <code>false</code> the individual rule results will be passed along and analyzed with the next set of rules. Can be overridden when defining access control filters.</td>
+  </tr>
+  <tr>
+    <td><code>subject_method</code></td>
+    <td>A string or symbol. Defaults to <code>:current_user</code></td>
+    <td>The default method used by the ACL filters to determine which subject to authorize against the defined rules. Can be overridden when defining access control filters.</td>
+  </tr>
+  <tr>
+    <td><code>force_context</code></td>
+    <td><code>true</code> or <code>false</code>. Defaults to <code>false</code></td>
+    <td>Whether or not to force provided contexts for authorization operations. This applies to the authorization models and the access control filters, and can be overridden when defining either one.</td>
+  </tr>
+  <tr>
+    <td><code>scope</code></td>
+    <td>A symbol. Defaults to <code>:default</code></td>
+    <td>The default scope to use for authorization options. This applies to the authorization models and the access control filters, and can be overridden when defining either one.</td>
+  </tr>
+  <tr>
+    <td><code>with_permissions</code></td>
+    <td><code>true</code> or <code>false</code>. Defaults to <code>true</code></td>
+    <td>Enable or disable the use of permissions with your authorization models. Can be overridden when defining the authorization models.</td>
+  </tr>
+</table>
 
 ##Authorization Models
 Authorization models are any of the subject, role, permission or resource/context models that are used by the authorization system (take a look at the Getting Started section for a brief explanation of each). They are configured using the `acts_as_authorization_*` methods - such as `acts_as_authorization_subject` for authorization subjects.
