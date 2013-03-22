@@ -391,22 +391,26 @@ Then you could allow any users possessing that global 'admin' role, **but assign
     bob.has_role?(:admin, Publisher)      # => true
     user.has_role?(:admin, Publisher)     # => true (because this user has the global admin role and it bubbles up the chain)
 
-By default Zuul does not force the use of the provided context, but instead bubbles up the chain when looking for roles/permissions. In this example, if a user possesses the global admin role assigned within a global context, they would also be allowed the same abilities as the `Publisher` admin. In other words, the above call to `has_role?` would return true if the user is assigned the 'admin' role in a `Publisher` context **or** a global context. 
+By default Zuul does not force the use of the provided context, but instead bubbles up the chain when looking for roles/permissions. In this example, if a user possesses the global admin role assigned within a global context, they would also be allowed the same abilities as the `Publisher` admin.
 
-However if you were to tell Zuul to force the context, it would not look up the chain and the user would be required to possess the admin role within the `Publisher` context or they would not be allowed. If you wanted **only** users who possessed the admin role within the `Publisher` context, and did not want to include global admins, you can force the context like this:
+If you were to tell Zuul to force the context though, it would not look up the chain and the user would be required to possess the admin role within the specific context provided. If you wanted **only** users who possessed the admin role within the `Publisher` context and did not want to include global admins, you can force the context like this:
 
     # passing true for force_context
     user.has_role?(:admin, Publisher, true)   # => false (this user does not possess the role within the context)
+
+However right now this same check would also fail for bob, even though he has the admin role assigned within the `Publisher` context.  The reason is because forcing the context requires the role or permissions to be both **defined and assigned** within the force context:
+
     bob.has_role?(:admin, Publisher, true)    # => false (this also fails because by default it wants the role to be DEFINED AND ASSIGNED within the forced context)
 
-The catch here though, is that forcing the context for the role check will also force the context for the lookup of the role by slug. Since our admin role is **defined** in the global context, this lookup will fail before we even check the role against the subject (even though it is **assigned** to bob within the forced `Publisher` context). In order for this to work using a slug, the admin role would have to be both defined and assigned in the `Publisher` context.
+The catch here is that forcing the context for the role check will also force the context for the lookup of the role via the slug. Since our admin role is **defined** in the global context, this lookup will fail before we even check the role against the subject (even though it is **assigned** to bob within the forced `Publisher` context). In this case, as far as `has_role?` is concerned the publisher admin role doesn't even exist (because it's not bubbling up). In order for this to work using a slug, the admin role would have to be both defined and assigned within the `Publisher` context.
 
-You can however work around this by passing a role or permission object instead of a slug to pretty much all the authorization methods. So for our previous example to work *using the global roles defined in our example and assigned within the `Publisher` context*, we'd actually want to do this:
+You can however work around this by passing a role or permission object (instead of a slug) to pretty much all the authorization methods. So for our previous example to work *using the global roles defined in our example and assigned within the `Publisher` context*, we'd actually want to do this:
 
     global_admin = Role.find(1)   # this would be our global admin role
-    bob.has_role?(global_admin, Publisher, true)   # => true (because the role is provided so there is no lookup by slug, and it is assigned within the context being forced)
+    bob.has_role?(global_admin, Publisher, true)    # => true (because the role is provided so there is no lookup by slug, and it is assigned within the context being forced)
+    user.has_role?(global_admin, Publisher, true)   # => false (this still doesn't match because the user is assigned in the global context and the match doesn't bubble when forced)
 
-Otherwise you can break out your role definitions by context and create a separate publisher admin role:
+Otherwise you can break out your role definitions by context and create a separate publisher admin role, in which case the slug lookup and the match will work:
 
     publisher_admin = Role.create(:slug => 'admin', :level => 100, :context => Publisher)
     bob.assign_role(:admin, Publisher)
