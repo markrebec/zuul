@@ -328,7 +328,7 @@ Take a look at the authorization models and access control DSL documentation for
   <tr>
     <td><code>acl_collect_results</code></td>
     <td><code>true</code> or <code>false</code>. Defaults to <code>false</code></td>
-    <td>Whether or not chained ACL filters will collect their results or not by default. If set to <code>true</code> each filter will analyze it's rules and pass along a single result of <code>allow</code> or <code>deny</code. If set to <code>false</code> the individual rule results will be passed along and analyzed with the next set of rules. Can be overridden when defining access control filters.</td>
+    <td>Whether or not chained ACL filters will collect their results or not by default. If set to <code>true</code> each filter will analyze it's rules and pass along a single result of <code>allow</code> or <code>deny</code>. If set to <code>false</code> the individual rule results will be passed along and analyzed with the next set of rules. Can be overridden when defining access control filters.</td>
   </tr>
   <tr>
     <td><code>subject_method</code></td>
@@ -343,7 +343,7 @@ Take a look at the authorization models and access control DSL documentation for
   <tr>
     <td><code>scope</code></td>
     <td>A symbol. Defaults to <code>:default</code></td>
-    <td>The default scope to use for authorization options. This applies to the authorization models and the access control filters, and can be overridden when defining either one.</td>
+    <td>The default scope to use for authorization operations. This applies to the authorization models and the access control filters, and can be overridden when defining either one.</td>
   </tr>
   <tr>
     <td><code>with_permissions</code></td>
