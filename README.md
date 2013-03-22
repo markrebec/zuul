@@ -1,12 +1,12 @@
 # Zuul
-Contextual Authorization and Access Control for ActiveRecord and ActionController respectively, along with a few handy extras (like generators) for Rails. The name is a reference to the film [Ghostbusters](http://en.wikipedia.org/wiki/Ghostbusters) (1984), in which an ancient Sumerian deity called [Zuul](http://www.gbfans.com/wiki/Zuul), also known as The Gatekeeper, possesses the character Dana Barrett.
+Contextual Authorization and Access Control for ActiveRecord and ActionController respectively, along with a few handy extras (like easy to use generators) for Rails.
 
-### Zuul is undergoing some changes
-[Wes Gibbs](https://github.com/wgibbs) has been kind enough to transfer maintenance of the gem to myself ([Mark Rebec](https://github.com/markrebec)), and in turn I'm taking some time to update Zuul to provide some new features and make everything compatible with the latest versions of ActiveRecord and ActionController.
+#### Zuul is undergoing some changes
+[Wes Gibbs](https://github.com/wgibbs) has been kind enough to transfer maintenance of the gem to myself ([Mark Rebec](https://github.com/markrebec)), and in turn I'm taking some time to update zuul to provide some new features and make everything compatible with the latest versions of ActiveRecord and ActionController.
 
-The version is being bumped to `0.2.0` to start, and version history is being maintained so we don't break any existing implementations. This also allows continued use, maintenance and forking of any previous versions of the gem.
+The version is being bumped to `0.2.0` and version history is being maintained to allow maintenance and forking of any `0.1.x` versions of the gem.
 
-I can't thank Wes enough for allowing me to take over Zuul, rather than introducing yet-another-competing-access-control-gem for everyone to sort through!
+I can't thank Wes enough for allowing me to take over zuul, rather than introducing yet-another-competing-access-control-gem for everyone to sort through!
 
 ## Features
 Zuul provides an extremely flexible authorization solution for ActiveRecord wherein roles and (optionally) permissions can be assigned within various contexts, along with an equally robust access control DSL for ActionController and helpers for your views. It can be used with virtually any authentication system (I highly recommend [devise](http://github.com/platformatec/devise) if you haven't chosen one yet), and it provides the following features:
@@ -14,10 +14,10 @@ Zuul provides an extremely flexible authorization solution for ActiveRecord wher
 * **Completely Customizable:** Allows configuration of everything - models used as authorization objects, how the context chain behaves, how access control rules are evaluated, and much more.
 * **Modular:** You can use just the ActiveRecord authorization system and completely ignore the ActionController DSL, or even configure the controller DSL to use your own methods (allowing you to decouple it from the authorization models completely).
 * **Optional Permissions:** Use of permissions is completely optional. When disabled, modules won't even get included, preventing permissions methods from littering your models. When enabled, permissions can be assigned to roles or directly to individual subjects if you require that level of control.
-* **Authorization Models:** Can be used with your existing models, and doesn't require any database modifications for subjects (like users) or resource contexts (like blog posts). You also have the choice of generating new role and/or permissions models, or utilizing existing models as those roles and permissions - for example, if you were building a game and you wanted your `Level` and `Achievement` models to behave as "Roles" and "Permissions" for a `Character`, which would allow/deny that character access to various `Dungeon` objects.
-* **Contextual:** Allows creating and assigning abilities within a provided context - either globally, at the class level, or at the object level - and contexts can be mixed-and-matched (within the context chain). *While contexts are currently required for Zuul to work, you can "ignore" them by simply creating/managing everything at the global level, and there are plans to look into making contexts optional in future versions.*
+* **Authorization Models:** Can be used with your existing models, and doesn't require any database modifications for subjects (like users) or resource contexts (like blog posts). You also have the choice of generating new role and permissions models, or utilizing existing models as those roles and permissions - for example, if you were building a game and you wanted your `Level` and `Skill` models to behave as "Roles" and "Permissions" for a `Character`, which would allow/deny that character access to various dungeons or weapons.
+* **Contextual:** Allows creating and assigning abilities within a provided context - either globally, at the class level, or at the object level - and contexts can be mixed-and-matched (within the context chain). *While contexts are currently required for zuul to work, you can "ignore" them by simply creating/managing everything at the global level, and there are plans to look into making contexts optional in future versions.*
 * **Context Chain:** There is a built-in "context chain" that is enforced when working with roles and permissions. This allows for both a high level of flexibility (i.e. roles can be applied within child contexts) and finer level of control (i.e. looking up a specific role within a specific context and not traversing up the chain), and can be as simple or complex as you want.
-* **Scoping:** All authorization methods are scoped, which allows the same model to act as an authorization object for multiple scopes (each with it's own role/permission models).
+* **Named Scoping:** All authorization methods are scoped, which allows the same model to act as an authorization object for multiple scopes (each with it's own role/permission models).
 * **Controller ACL:** Provides a flexible access control DSL for your controllers that gives the ability to allow or deny access to controller actions and resources based on roles or permissions, and provides a few helper methods and pseudo roles for logged in/out.
 * **Helpers:** There are a few helpers included, like `for_role`, which allow you to execute blocks or display templates based on whether or not a subject possesses the specified role/permission, with optional fallback blocks if not.
 
@@ -31,7 +31,7 @@ Then run bundler to install it.
 In order to use the core authorization functionality, you'll need to setup subjects and roles. Permissions are enabled in the default configuration, so if you don't specify otherwise you'll have to setup the permissions model as well. Each authorization model type has it's own default, but those can be overridden in the global initializer config, or they can be specified per-model as you're setting up authorization models.
 
 ####Authorization Subjects
-An authorization subject is the object to which you grant roles and permissions, usually a user. In order to use Zuul, you'll need to setup at least one subject model. The default model is `User`.
+An authorization subject is the object to which you grant roles and permissions, usually a user. In order to use zuul, you'll need to setup at least one subject model. The default model is `User`.
 
 ####Authorization Roles
 Authorization roles are the roles that can be assigned to the subject mentioned above, and then used to allow or deny access to various resources. Zuul requires at least one role model. The default model is `Role`.
@@ -40,7 +40,7 @@ Authorization roles are the roles that can be assigned to the subject mentioned 
 Authorization permissions are optional, and allow finer grained control over which subjects have access to which resources. Permissions can be assigned to roles (which are in turn assigned to subjects), or they can be assigned directly to subjects themselves. They require that the model be setup in order to be used by roles or subjects, and the default model is `Permission`.
 
 ####Authorization Resources (Contexts)
-Authorization resources, or contexts, behave as both the resources that are being accessed by a subject, as well as (optionally) a context within which roles or permissions can be created and assigned. When combined with Zuul's "context chain," this allows you to define or assign roles for specific models or even specific instances of those models. No setup is required to use a model as a resource or context, but there is some optional configuration that provides the model directly with methods to authorize against roles and permissions. Resource/context models are not required, and there are no configured defaults.
+Authorization resources, or contexts, behave as both the resources that are being accessed by a subject, as well as (optionally) a context within which roles or permissions can be created and assigned. When combined with zuul's "context chain," this allows you to define or assign roles for specific models or even specific instances of those models. No setup is required to use a model as a resource or context, but there is some optional configuration that provides the model directly with methods to authorize against roles and permissions. Resource/context models are not required, and there are no configured defaults.
 
 ### Generating Authorization Models
 It's likely you already have a `User` model (or equivalent), especially if you've already got some form of authentication setup in your app. However, you probably don't yet have any role or permission models setup unless you're transitioning from another authorization solution. Either way, you can use the provided generators to create new models or to configure existing models as authorization objects. The generators work just like the normal model generators (with a few additions) and will either create the models and migrations for you if they don't exist, or modify your models and create any necessary migrations if they do.
@@ -121,7 +121,7 @@ For permissions and subjects:
 
     rails generate zuul:permission_subject Permission User
 
-These commands will generate models (if they don't exist) and migrations for the `RoleUser`, `PermissionRole` and `PermissionUser` models.  As with everywhere else in Zuul, the model names are based on the default ActiveRecord behavior of sorting alphabetically, but this can all be configured to use custom model and table names for everything.
+These commands will generate models (if they don't exist) and migrations for the `RoleUser`, `PermissionRole` and `PermissionUser` models.  As with everywhere else in zuul, the model names are based on the default ActiveRecord behavior of sorting alphabetically, but this can all be configured to use custom model and table names for everything.
 
 ###Creating and using authorization abilities
 Once you've run all the generators, you'll need to run the generated migrations with `rake db:migrate` to update your database, and then it's time to start creating roles and permissions (and subjects if you don't have any).
@@ -265,7 +265,7 @@ The other option, instead of using `rescue_from`, is to set the `:mode` config o
 ##Configuration
 Zuul is extremely configurable, and there are options to control just about everything at the global level and ways to override just about everything in specific authorization objects or `access_control` blocks.  For example, you may have the use of permissions configured globally, but want to disable them for a secondary, special subject+role scope that you're setting up. Or you may want the global default behavior of your access control blocks to be `:allow` (less strict), but then define `access_control :default => :deny` for stricter matching on more sensitive controllers.
 
-In order to configure Zuul and set your own global defaults, you can create an initializer in `/config/initializers/zuul.rb`:
+In order to configure zuul and set your own global defaults, you can create an initializer in `/config/initializers/zuul.rb`:
 
     Zuul.configure do |config|
       # configuration options go here
@@ -274,7 +274,7 @@ In order to configure Zuul and set your own global defaults, you can create an i
       # etc...
     end
 
-Whatever you set here will override the Zuul global defaults, and your values will be used as defautls by any authorization models or access control blocks you define (unless you override them).  This allows you to override common defaults like `:with_permissions` without having to do so over and over again in your models and controllers.
+Whatever you set here will override the zuul global defaults, and your values will be used as defautls by any authorization models or access control blocks you define (unless you override them).  This allows you to override common defaults like `:with_permissions` without having to do so over and over again in your models and controllers.
 
 Take a look at the authorization models and access control DSL documentation for more information on what config options can be overridden when defining them.
 
@@ -307,7 +307,7 @@ Defining resources (also used as contexts) is not required. You can use subjects
 ###Configuring class names
 Zuul comes with some default class names that are used when generating and configuring authorization models, but you can use any class names you'd like. These can be defined globally (see the Configuration section of this readme) to DRY up your code, or when setting up a model to `acts_as_authorization_*`. If you set them up globally they'll be used in place of the defaults unless you override them. 
 
-When configuring an authorization model, you don't need to provide the name of the model you're configuring. So if you're configuring a `Soldier` as an authorization subject, you don't need to provide the subject class name. You also don't need to worry about table names or foreign keys, as Zuul will ask your models for that information rather than trying to inflect the provided class names.
+When configuring an authorization model, you don't need to provide the name of the model you're configuring. So if you're configuring a `Soldier` as an authorization subject, you don't need to provide the subject class name. You also don't need to worry about table names or foreign keys, as zuul will ask your models for that information rather than trying to inflect the provided class names.
 
 Here is an example using some custom classes:
 
@@ -328,7 +328,7 @@ Here is an example using some custom classes:
       acts_as_authorization_permission :subject_class => :chef, :role_class => :cuisine
     end
 
-If you only provide the core class names, as above, Zuul will fill in the blanks for the association models automatically. So in the above example, chefs and cuisines will be linked together using the `ChefCuisine` model.
+If you only provide the core class names, as above, zuul will fill in the blanks for the association models automatically. So in the above example, chefs and cuisines will be linked together using the `ChefCuisine` model.
 
 You can override each association model class name as well if you need to. Let's say you wanted to link `Chef` and `Cuisine` with a model called `Specialty`. Just provide the `:role_subject_class` as well:
 
@@ -343,7 +343,7 @@ You can override each association model class name as well if you need to. Let's
 The config options for the three association classes are `:role_subject_class`, `:permission_role_class` and `:permission_subject_class`.
 
 ###The Context Chain
-All operations involving roles and permissions within Zuul utilize "the context chain," which dictates what roles and permissions are allowed to be used within what context. There are three types of contexts - global, class level and object/instance level - and they are organized in a hierarchy which defines how they may be used within the chain. Basically they cascade in order, from global to class to instance level:
+All operations involving roles and permissions within zuul utilize "the context chain," which dictates what roles and permissions are allowed to be used within what context. There are three types of contexts - global, class level and object/instance level - and they are organized in a hierarchy which defines how they may be used within the chain. Basically they cascade in order, from global to class to instance level:
 
 Roles and permissions defined within the global context may also be assigned at the class or instance level. The global context is sometimes also referred to as a 'nil context', since it is defined by leaving the context data blank.
 
@@ -351,11 +351,11 @@ Those defined at the class level may only be used within a class level context t
 
 If defined at the instance level, the role or permission may only be used within that context. The instance level context is defined by providing the class name and the primary key (id) of the record to which the context applies. This allows you to assign the permission `:edit_thread` to a role or individual subject within the context type of `DiscussionForum` and the id of a specific forum, which you can then use to allow editing of threads within just the specified forum.
 
-When dealing with contexts in Zuul, one important thing to keep in mind is that there are **two types of contexts** in action. There is the context within wich a role or permissions is **defined** and the context within which a role or permission is **assigned**, and the former generally dictates the latter. This means that any role or permission defined within a context (including the nil/global context) may only be used within it's own context or other valid contexts further down the chain.
+When dealing with contexts in zuul, one important thing to keep in mind is that there are **two types of contexts** in action. There is the context within wich a role or permissions is **defined** and the context within which a role or permission is **assigned**, and the former generally dictates the latter. This means that any role or permission defined within a context (including the nil/global context) may only be used within it's own context or other valid contexts further down the chain.
 
 So for example, if you **define** the role `:admin` within a global context, you may **assign** that role to subjects within any context. However, if you **define** that `:admin` role within the context of `DiscussionForum` you may not **assign** that role within a global context or any other class context, but you may assign it within the same context or within an instance level context for an instance of that same class.
 
-It is also important to understand that Zuul will prefer the closest contextual match to the one provided, and uses the context chain both for the lookup of the role or permission and when checking whether it is assigned to a subject. This mostly comes into play when you want to force the use of a particular context and not bubble up the context chain.
+It is also important to understand that zuul will prefer the closest contextual match to the one provided, and uses the context chain both for the lookup of the role or permission and when checking whether it is assigned to a subject. This mostly comes into play when you want to force the use of a particular context and not bubble up the context chain.
 
 **But why would you want to define and assign a role in two separate contexts, or even define contexts in the first place?** It depends, you may not need contexts at all. If that's the case you can just use the default global context without even thinking about it (just don't specify contexts), and you can probably skip this section entirely. However, you may want to define and assign roles separately for specific types of resources, or even define a single set of roles at the global level and then assign them contextually. 
 
@@ -391,9 +391,9 @@ Then you could allow any users possessing that global 'admin' role, **but assign
     bob.has_role?(:admin, Publisher)      # => true
     user.has_role?(:admin, Publisher)     # => true (because this user has the global admin role and it bubbles up the chain)
 
-By default Zuul does not force the use of the provided context, but instead bubbles up the chain when looking for roles/permissions. In this example, if a user possesses the global admin role assigned within a global context, they would also be allowed the same abilities as the `Publisher` admin.
+By default zuul does not force the use of the provided context, but instead bubbles up the chain when looking for roles/permissions. In this example, if a user possesses the global admin role assigned within a global context, they would also be allowed the same abilities as the `Publisher` admin.
 
-If you were to tell Zuul to force the context though, it would not look up the chain and the user would be required to possess the admin role within the specific context provided. If you wanted **only** users who possessed the admin role within the `Publisher` context and did not want to include global admins, you can force the context like this:
+If you were to tell zuul to force the context though, it would not look up the chain and the user would be required to possess the admin role within the specific context provided. If you wanted **only** users who possessed the admin role within the `Publisher` context and did not want to include global admins, you can force the context like this:
 
     # passing true for force_context
     user.has_role?(:admin, Publisher, true)   # => false (this user does not possess the role within the context)
@@ -466,7 +466,7 @@ So now we've defined a few global roles, and we're using those roles in a few di
 Because of the context chain, you can define as simple or complex of a set of roles and permissions as you want. If you want to keep one global set of roles and assign them within a context (or no context) you can. If you want to create a separate set of roles for each resource in your application, you can do that too. It's entirely up to you how to structure your abilities and how you'd like to mix-n-match everything.
 
 ###Scoping
-With the context chain outlined above Zuul is already extremely flexible. But in order to add another level of customizability (and to keep unnecessary methods from polluting the ActiveRecord namespace), authorization scopes have been implemented as well. Each of the authorizaton objects is scoped to a provided namespace (the default is `:default`), which allows the object to be used in more than one scope. You may provide a named scope when defining the model `acts_as_authorization_*` which you may then use to access authorization methods within that scope. If a `:default` scope does not yet exist, your named scope will be aliased to `:default`.
+With the context chain outlined above zuul is already extremely flexible. But in order to add another level of customizability (and to keep unnecessary methods from polluting the ActiveRecord namespace), authorization scopes have been implemented as well. Each of the authorizaton objects is scoped to a provided namespace (the default is `:default`), which allows the object to be used in more than one scope. You may provide a named scope when defining the model `acts_as_authorization_*` which you may then use to access authorization methods within that scope. If a `:default` scope does not yet exist, your named scope will be aliased to `:default`.
 
 Let's use an example of a web based role playing game. Let's say you have a website with multiple components - an HTML5 role playing game you're building, user profiles and discussion forums for users to discuss bugs, strategies, etc. In our example, we'll assume you have your default `User` model and `Role` and `Permission` models that you use outside of the game component to define roles like `:forum_user` to grant access to the forums, or `:banned` to prevent users from even logging into the webiste. Your `User` model would probably be defined with something like the following:
 
@@ -476,23 +476,23 @@ Let's use an example of a web based role playing game. Let's say you have a webs
       # the rest of your model stuff would be here
     end
 
-Now what you'd like to do, is allow those same `User` objects to be assigned a `Level` and `Ability` for the game component. You plan on assigning abilities to a level, and then assigning levels to each user as they progress through the game. Then various activities in the game will be based on whether or not a user possesses certain abilities or is of a certain level. You can create a new scoped authorization subject for `User` that uses those new classes:
+Now what you'd like to do, is allow those same `User` objects to be assigned a `Level` and `Skill` for the game component. You plan on assigning skills to a level, and then assigning levels to each user as they progress through the game. Then various activities in the game will be based on whether or not a user possesses certain skills or is of a certain level. You can create a new scoped authorization subject for `User` that uses those new classes:
 
     class User < ActiveRecord::Base
       acts_as_authorization_subject # this uses the defaults, which point to the Role and Permission classes
-      acts_as_authorization_subject :scope => :character, :role_class => :level, :permission_class => :ability
+      acts_as_authorization_subject :scope => :character, :role_class => :level, :permission_class => :skill
       
       # the rest of your model stuff would be here
     end
 
     class Level < ActiveRecord::Base
-      acts_as_authorization_role :permission_class => :ability  # the default subject model is User, so no need to specify it
-      # you don't need to scope this to :character unless you want to
+      acts_as_authorization_role :permission_class => :skill  # the default subject model is User, so no need to specify it
+      # you don't need to scope this to :character unless you want to, and since there is no other scope on this model, :character would still be aliased to :default
     end
     
-    class Ability < ActiveRecord::Base
+    class Skill < ActiveRecord::Base
       acts_as_authorization_permission :role_class => :level    # the default subject model is User, so no need to specify it
-      # you don't need to scope this to :character unless you want to
+      # you don't need to scope this to :character unless you want to, and since there is no other scope on this model, :character would still be aliased to :default
     end
 
 This would add an authorization scope of `:character` to `User` objects that can be used (with the `auth_scope` method) instead of the default:
@@ -500,12 +500,12 @@ This would add an authorization scope of `:character` to `User` objects that can
     user = User.find(1)
     user.auth_scope(:character) do
       has_role_or_higher?(:level_10)  # check if the user is level 10 or greater
-      has_permission?(:dual_wield)    # check if the user has the :dual_wield ability
+      has_permission?(:dual_wield)    # check if the user has the :dual_wield skill
     end
 
     user.has_role?(:forum_user)  # this uses the default scope to check for the :forum_user role
 
-You might then even want to use contextual permissions within that scope so you can do things like assign the `:dual_wield` ability within the context of a weapon (swords, maces, axes, etc.).
+You might then even want to use contextual permissions within that scope so you can do things like assign the `:dual_wield` skill within the context of a weapon (swords, maces, axes, etc.).
 
 *There are plans to implement some dynamic aliasing, to allow for methods like `has_level?` to be aliased to `has_role?`, but for now you have to use the "role" and "permission" methods.*
 
@@ -561,7 +561,45 @@ The following table illustrates the differences:
 </table>
 
 
-###Checking for roles and permissions
+###Defining rules
+To check for roles and permissions, you can use the `roles` and `permissions` methods, combined with `allow` and `deny` rules. The `roles` and `permissions` methods accept a list of roles or permissions and a block of rules. Within a `roles` or `permisisons` block, the `allow` and `deny` methods accept a list of actions for which to allow or deny access. By default all actions, roles and permissions are inherited from parent blocks.
+
+    class ExampleController < ApplicationController
+      access_control do
+        roles :admin, :moderator do
+          allow :index, :show, :create, :update, :destroy
+        end
+
+        permissions :edit do
+          allow :update
+        end
+
+        # this is unnecessary since the default matching order is :deny, anyone who is not allowed is denied.
+        # it is here as an example of the deny method.
+        roles :banned do
+          deny :index, :show, :create, :update, :destroy
+        end
+      end
+    end
+
+As mentioned above, all actions, roles and permissions are inherited when nesting blocks of rules. Because the `access_control` filter applies to all actions by default, this means that rules can sometimes be simplified if they apply to all actions.
+
+    class AdminController < ApplicationController
+      access_control do
+        roles :admin { allow }  # access_control applies to all actions by default, and they are inherited if we don't pass any arguments to allow
+      end
+    end
+
+This can be made even simpler with the `allow_roles`, `deny_roles`, `allow_permissions` and `deny_permissions` methods.  These methods will allow you to allow or deny roles and permissions in one shot and will apply to the currently active set of actions (from the parent block).
+
+    class AdminController < ApplicationController
+      access_control do
+        allow_roles :admin  # access_control applies to all actions by default, and allow_roles inherits the actions from it's parent block
+        deny_permissions :banned
+      end
+    end
+
+Pretty much all the DSL methods are also aliased to singular forms, so you can use `role` instead of `roles` or `deny_permission` instead of `deny_permissions` where it makes your code more readable.
 
 ###Including or excluding controller actions
 By default the access control filters are applied to all actions within your controller, which means all your rules will be evaluated for every action. Sometimes though, you may want to apply different rules to different actions, exclude some actions entirely, or only apply access control to specific actions. There are a few different ways to do this.
@@ -737,7 +775,7 @@ Access control filters can be chained together, allowing you to split up rules i
       end
     end
 
-It's important to know that any arguments passed to a previous filter will be persisted unless overridden. So in the above example, the second `access_control` block would inherit the `:default => :allow` configuration (unless we were to pass `:default => :deny`).
+It's important to know that any arguments passed to a previous filter will be persisted unless overridden. So in the above example, the second `access_control` block would inherit the `:default => :allow` configuration (unless we were to pass `:default => :deny`). This includes configuration for things like contexts, scoping, etc.
 
 There is a `:collect_results` argument for `access_control` which determines how results are passed between chained access control filters. It can be set to `true` or `false`, and the default is `false`.
 
@@ -746,22 +784,70 @@ When `:collect_results` is set to `false` all individual rule matches are passed
 When `:collect_results` is set to `true` each block of rules is evaluated inline based on the default matching behavior for that filter (either `:allow` or `:deny`), and that single collective result is passed on to the next filter to be combined and evaluated with the next set of rules. 
 
 ##Controller and View Helpers
+Zuul includes a few helper methods for your controllers and views to make it easier to perform actions or display content based on whether or not a user possesses roles or permissions. Normally, you might do something like this in a controller action:
+
+    def do_thing
+      # some code here that should be executed for everyone
+      if current_user && current_user.has_role?(:admin)
+        # do something special only for admin users
+      else
+        # do something else for everyone else
+      end
+    end
+
+Or like this in a view:
+
+    <% if current_user && current_user.has_role?(:admin) %>
+      <li><%= link_to "Admin Dashboard", admin_dashboard_url %></li>
+    <% end %>
+
+With zuul's helpers, you can clean that up a little bit:
+
+    def do_thing
+      # some code here that should be executed for everyone
+      for_role(:admin) do
+        # do something special only for admin users
+      end.else do
+        # do something else for everyone else
+      end
+    end
+
+    <% for_role(:admin) do %>
+      <li><%= link_to "Admin Dashboard", admin_dashboard_url %></li>
+    <% end %>
+
+The helpers can be nested and chained together, so you can do stuff like:
+
+    for_role(:admin) do
+      # do stuff for admins
+      for_permission(:super_special) do
+        # do stuff for admins w/ the super_special permission
+      end
+    end.else_for(:moderator) do
+      # do stuff for moderators
+    end.else do
+      # do stuff for everyone else
+    end
+
+**TODO: add a table with a list of helper methods**
 
 ##Credit and Thanks
-* [Mark Rebec](https://github.com/markrebec) is the current author and maintainer of Zuul.
-* Thanks to [Wes Gibbs](https://github.com/wgibbs) for creating the original version of Zuul and for allowing me to take over maintenance of the gem.
-* [Oleg Dashevskii's](https://github.com/be9) library [acl9](https://github.com/be9/acl9) is another great authorization and access control solution that provides similar functionality. While acl9 does not support the same context chain (it actually sort of works in the other direction) or authorization scoping that Zuul does, it does allow working with roles in context of resources, and it provided much inspiration when building the ActionController DSL included in Zuul.
+* [Mark Rebec](https://github.com/markrebec) is the current author and maintainer of zuul.
+* Thanks to [Wes Gibbs](https://github.com/wgibbs) for creating the original version of zuul and for allowing me to take over maintenance of the gem.
+* [Oleg Dashevskii's](https://github.com/be9) library [acl9](https://github.com/be9/acl9) is another great authorization and access control solution that provides similar functionality. While acl9 does not support the same context chain (it actually sort of works in the other direction) or authorization scoping that zuul does, it does allow working with roles in context of resources, and it provided much inspiration when building the ActionController DSL included in zuul. I'd advise taking a look at acl9 and comparing it with zuul to see which better fits your needs.
+* The name is a reference to the film [Ghostbusters](http://en.wikipedia.org/wiki/Ghostbusters) (1984), in which an ancient Sumerian deity called [Zuul](http://www.gbfans.com/wiki/Zuul), also known as The Gatekeeper, possesses the character Dana Barrett.
 
 ##Contributing
 
 ##TODO
-* fill out readme + documentation
+* continue filling out readme + documentation
+* write specs for generators
+* write specs for all the controller mixins
 * add some built-in defaults for handling access denied errors and rendering a default template and/or flash message
 * clean up errors/exceptions a bit more
 * i18n for messaging, errors, templates, etc.
+* add a rake task that can generate a map/report of roles and permissions + their contexts and how everything is assigned and linked together (maybe use graphviz?) (maybe even look for where the roles/perms are used in the codebase?)
 * create a logger for the ACL DSL stuff and clean up the logging there
-* write specs for generators
-* write specs for all the controller mixins
 * abstract out ActiveRecord, create ORM layer to allow other datasources
 
 ##Copyright/License
