@@ -26,21 +26,16 @@ Zuul &gt;= 0.2.0 works with Rails &gt;= 3.1 (probably older versions too, but it
 
     gem `zuul`
 
-Then run bundler to install it.
+Then run bundler to install it. *Note: Zuul 0.2.0 is not yet available on rubygems. If you with to use the current version, you'll need to point to this github repo until 0.2.0 is released.*
 
-In order to use the core authorization functionality, you'll need to setup subjects and roles. Permissions are enabled in the default configuration, so if you don't specify otherwise you'll have to setup the permissions model as well. Each authorization model type has it's own default, but those can be overridden in the global initializer config, or they can be specified per-model as you're setting up authorization models.
+In order to use the core authorization functionality, you'll need to setup subjects and roles. Permissions are enabled in the default configuration, so if you don't specify otherwise you'll have to setup the permissions model as well. Each authorization model type has it's own default class, but those can be overridden in the global initializer config or they can be specified per-model as you're setting up authorization models.
 
-####Authorization Subjects
-An authorization subject is the object to which you grant roles and permissions, usually a user. In order to use zuul, you'll need to setup at least one subject model. The default model is `User`.
+There are four types of authorization objects:
 
-####Authorization Roles
-Authorization roles are the roles that can be assigned to the subject mentioned above, and then used to allow or deny access to various resources. Zuul requires at least one role model. The default model is `Role`.
-
-####Authorization Permissions
-Authorization permissions are optional, and allow finer grained control over which subjects have access to which resources. Permissions can be assigned to roles (which are in turn assigned to subjects), or they can be assigned directly to subjects themselves. They require that the model be setup in order to be used by roles or subjects, and the default model is `Permission`.
-
-####Authorization Resources (Contexts)
-Authorization resources, or contexts, behave as both the resources that are being accessed by a subject, as well as (optionally) a context within which roles or permissions can be created and assigned. When combined with zuul's "context chain," this allows you to define or assign roles for specific models or even specific instances of those models. No setup is required to use a model as a resource or context, but there is some optional configuration that provides the model directly with methods to authorize against roles and permissions. Resource/context models are not required, and there are no configured defaults.
+* **Authorization Subjects:** An authorization subject is the object to which you grant roles and permissions, usually a user. In order to use zuul, you'll need to setup at least one subject model. The default model is `User`.
+* **Authorization Roles:** Authorization roles are the roles that can be assigned to the subject mentioned above, and then used to allow or deny access to various resources. Zuul requires at least one role model. The default model is `Role`.
+* **Authorization Permissions:** Authorization permissions are optional, and allow finer grained control over which subjects have access to which resources. Permissions can be assigned to roles (which are in turn assigned to subjects), or they can be assigned directly to subjects themselves. They require that the model be setup in order to be used by roles or subjects, and the default model is `Permission`.
+* **Authorization Resources (Contexts):** Authorization resources, or contexts, behave as both the resources that are being accessed by a subject as well as (optionally) a context within which roles or permissions can be defined and assigned. When combined with zuul's "context chain," this allows you to define or assign roles for specific models or even specific instances of those models. No setup is required to use a model as a resource or context, but doing so will provide the resource with methods to authorize against roles and permissions. Defining resource/context models is not required, and there are no configured default class names.
 
 ### Generating Authorization Models
 It's likely you already have a `User` model (or equivalent), especially if you've already got some form of authentication setup in your app. However, you probably don't yet have any role or permission models setup unless you're transitioning from another authorization solution. Either way, you can use the provided generators to create new models or to configure existing models as authorization objects. The generators work just like the normal model generators (with a few additions) and will either create the models and migrations for you if they don't exist, or modify your models and create any necessary migrations if they do.
@@ -123,10 +118,10 @@ For permissions and subjects:
 
 These commands will generate models (if they don't exist) and migrations for the `RoleUser`, `PermissionRole` and `PermissionUser` models.  As with everywhere else in zuul, the model names are based on the default ActiveRecord behavior of sorting alphabetically, but this can all be configured to use custom model and table names for everything.
 
-###Creating and using authorization abilities
+###Creating and using authorization abilities (roles & permissions)
 Once you've run all the generators, you'll need to run the generated migrations with `rake db:migrate` to update your database, and then it's time to start creating roles and permissions (and subjects if you don't have any).
 
-**Note:** There are no inherent abilities granted by assigning any roles or permissions to a subject. Just because you define an `:admin` role and assign it to a user, that doesn't mean they can do anything special. It's up to you to check whether a subject possesses those roles and permissions in your code and act accordingly.
+**Note:** There are no inherent abilities granted by assigning roles or permissions to a subject. Just because you define an `:admin` role and assign it to a user, that doesn't mean they can do anything special. It's up to you to check whether a subject possesses those roles and permissions in your code and act accordingly.
 
 To create a role, all you need to do is use the `Role.create` method and supply the required fields (`slug` and `level`). Roles can be created within a specific context, but that's covered elsewhere in this document.
 
