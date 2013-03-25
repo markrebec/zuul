@@ -12,6 +12,6 @@ class ZuulPermissionSubjectCreate<%= table_name.camelize %> < ActiveRecord::Migr
     add_index :<%= table_name %>, :<%= subject_model.to_s.underscore.singularize %>_id
     add_index :<%= table_name %>, :context_type
     add_index :<%= table_name %>, :context_id
-    add_index :<%= table_name %>, [:<%= permission_model.to_s.underscore.singularize %>_id, :<%= subject_model.to_s.underscore.singularize %>_id, :context_type, :context_id], :unique => true
+    add_index :<%= table_name %>, [:<%= permission_model.to_s.underscore.singularize %>_id, :<%= subject_model.to_s.underscore.singularize %>_id, :context_type, :context_id], :unique => true, :name => 'index_<%= table_name %>_on_<%= permission_model.to_s.underscore.singularize %>_and_<%= subject_model.to_s.underscore.singularize %>_and_context'
   end
 end
