@@ -40,12 +40,6 @@ describe "Zuul::ActiveRecord::Permission" do
       Permission.acts_as_authorization_permission
     end
     
-    it "should validate presence of name" do
-      permission = Permission.new(:slug => 'edit')
-      permission.valid?.should be_false
-      permission.errors.keys.should include(:name)
-    end
-
     it "should validate presence of slug" do
       permission = Permission.new(:name => 'Edit')
       permission.valid?.should be_false

@@ -42,7 +42,7 @@ module Zuul
           auth_scope do
             context = Zuul::Context.parse(context)
             target = target_permission(permission, context, force_context)
-            return false unless verify_target_context(target, context, force_context) && permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).limit(1).first.nil?
+            return false unless verify_target_context(target, context, force_context) && verify_target_context(self, context, false) && permission_role_class.where(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).limit(1).first.nil?
 
             return permission_role_class.create(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id)
           end

@@ -51,12 +51,6 @@ describe "Zuul::ActiveRecord::Role" do
       role.errors.keys.should include(:level)
     end
 
-    it "should validate presence of name" do
-      role = Role.new(:slug => 'admin', :level => 100)
-      role.valid?.should be_false
-      role.errors.keys.should include(:name)
-    end
-
     it "should validate presence of slug" do
       role = Role.new(:name => 'Admin', :level => 100)
       role.valid?.should be_false

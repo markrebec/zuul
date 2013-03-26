@@ -253,7 +253,7 @@ module Zuul
           force_context ||= auth_scope.config.force_context
           context = Zuul::Context.parse(context)
           return (target.context.class_name == context.class_name && target.context.id == context.id) if force_context
-          (target.context.class_name.nil? || target.context.class_name == context.class_name) && (target.context.id.nil? || target.context.id == context.id)
+          (target.context.class_name.nil? && target.context.id.nil?) || (target.context.class_name == context.class_name && (target.context.id.nil? || target.context.id == context.id))
         end
 
         # Simple helper for "IS NULL" vs "= 'VALUE'" SQL syntax
