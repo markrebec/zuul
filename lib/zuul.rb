@@ -13,3 +13,5 @@ end
 require 'zuul/context'
 require 'zuul/active_record'
 require 'zuul/action_controller'
+
+require 'zuul/railtie' if defined?(Rails)
