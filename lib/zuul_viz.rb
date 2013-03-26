@@ -183,9 +183,9 @@ class ZuulViz
     if context.nil?
       "global"
     elsif context.id.nil?
-      context.class_name
+      context.class_name.pluralize
     else
-      "@#{context.class_name.underscore}"
+      "#{context.class_name.underscore}_#{context.id}"
     end
   end
 
