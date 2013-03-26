@@ -9,13 +9,13 @@ module Zuul
 
       module ClassMethods
         def self.extended(base)
-          base.send :attr_accessible, :context_id, :context_type, :level, :name, :slug
+          base.send :attr_accessible, :context_id, :context_type, :level, :slug
           add_validations base
           add_associations base
         end
 
         def self.add_validations(base)
-          base.send :validates_presence_of, :level, :name, :slug
+          base.send :validates_presence_of, :level, :slug
           base.send :validates_uniqueness_of, :slug, :scope => [:context_id, :context_type], :case_sensitive => false
           base.send :validates_format_of, :slug, :with => /\A[a-z0-9_]+\Z/
           base.send :validates_uniqueness_of, :level, :scope => [:context_id, :context_type]
