@@ -909,10 +909,9 @@ The helpers can be nested and chained together, so you can do stuff like:
 * continue filling out readme + documentation
 * write specs for generators
 * write specs for all the controller mixins
-* add some built-in defaults for handling access denied errors and rendering a default template and/or flash message
 * clean up errors/exceptions a bit more
 * i18n for messaging, errors, templates, etc.
-* add a rake task that can generate a map/report of roles and permissions + their contexts and how everything is assigned and linked together (maybe use graphviz?) (maybe even look for where the roles/perms are used in the codebase?)
+* dynamic aliases for scoped methods (like `has_level?` => `has_role?`)
 * create a logger for the ACL DSL stuff and clean up the logging there
 * abstract out ActiveRecord, create ORM layer to allow other datasources
 
