@@ -51,29 +51,31 @@ module Zuul
     
     module ClassMethods
       def self.extended(base)
-        base.send :cattr_accessor, :acl_filters
         base.send :cattr_accessor, :used_acl_filters
-        base.send :class_variable_set, :@@acl_filters, []
-        base.send :class_variable_set, :@@used_acl_filters, []
+        base.send :class_variable_set, :@@used_acl_filters, 0
         base.send :attr_accessor, :acl_dsl
       end
 
       def access_control(*args, &block)
         opts, filter_args = parse_access_control_args(*args)
         
-        acl_filters << append_before_filter(filter_args) do |controller|
-          self.class.used_acl_filters << self.class.acl_filters.slice!(0)
-          
+        callback_method = "_zuul_callback_before_#{acl_filters.length+1}".to_sym
+        define_method callback_method do |controller|
           controller.acl_dsl ||= DSL::Base.new(controller)
           controller.acl_dsl.configure opts
           controller.acl_dsl.execute &block
+          self.class.used_acl_filters += 1
 
-          if self.class.acl_filters.length == 0
-            self.class.acl_filters = self.class.used_acl_filters
-            self.class.used_acl_filters = []
+          if self.class.used_acl_filters == self.class.acl_filters.length
+            self.class.used_acl_filters = 0
             raise Exceptions::AccessDenied if !controller.acl_dsl.authorized? && controller.acl_dsl.mode != :quiet
           end
         end
+        append_before_filter "#{callback_method.to_s}(self)".to_sym, filter_args
+      end
+
+      def acl_filters
+        _process_action_callbacks.select { |f| f.kind == :before && f.filter.match(/\A_zuul_callback_before_.*/) }
       end
 
       # TODO maybe implement these to be used as simple wrappers for access_control
