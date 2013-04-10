@@ -838,8 +838,11 @@ The helpers can be nested and chained together, so you can do stuff like:
 
 ##TODO
 * continue filling out readme + documentation
-* write specs for generators
-* write specs for all the controller mixins
+* **specs for generators**
+* **specs for action controller mixins and ACL DSL**
+* **specs for ZuulViz and rake tasks**
+* **push initial stable build to rubygems**
+* plugin travis
 * clean up errors/exceptions a bit more
 * i18n for messaging, errors, templates, etc.
 * dynamic aliases for scoped methods (like `has_level?` => `has_role?`)
