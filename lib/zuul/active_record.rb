@@ -18,6 +18,9 @@ module Zuul
       def self.extended(base)
       end
 
+      # Includes auth methods into the model and configures auth options and scopes
+      #
+      # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_model(args={}, &block)
         include AuthorizationMethods
         auth_config = Zuul.configuration.clone.configure(args, &block)
@@ -28,32 +31,44 @@ module Zuul
         @auth_scopes[auth_config.scope]
       end
 
+      # Configure the model to act as a zuul authorization role
+      #
+      # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_role(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:role_class => self.name}), &block)
         prepare_join_classes scope.name
         include Role 
       end
 
+      # Configure the model to act as a zuul authorization permission
+      #
+      # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_permission(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:permission_class => self.name}), &block)
         prepare_join_classes scope.name
         include Permission
       end
 
+      # Configure the model to act as a zuul authorization subject
+      #
+      # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_subject(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:subject_class => self.name}), &block)
         prepare_join_classes scope.name
         include Subject
       end
 
+      # Configure the model to act as a zuul authorization context (or resource)
+      #
+      # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_context(args={}, &block)
         acts_as_authorization_model(args, &block)
         include Context
       end
 
-      # TODO Maybe rethink how to do this a bit, especially once scopes are introduced. Right now if the same
-      # join class is used in two different cases, one with_permissions and one without, they'll step on each
-      # other's feet.
+      # Sets up the join models for a newly defined scope.
+      #
+      # This is similar the the acts_as_authorization_* methods, but it handles all the joining models for a scope.
       def prepare_join_classes(scope)
         scope_config = auth_scope(scope).config
 
@@ -80,23 +95,28 @@ module Zuul
         end
       end
 
+      # Checks if the model is setup to act as a zuul authorization role
       def acts_as_authorization_role?
         ancestors.include?(Zuul::ActiveRecord::Role)
       end
 
+      # Checks if the model is setup to act as a zuul authorization permission
       def acts_as_authorization_permission?
         ancestors.include?(Zuul::ActiveRecord::Permission)
       end
 
+      # Checks if the model is setup to act as a zuul authorization context/resource
       def acts_as_authorization_context?
         ancestors.include?(Zuul::ActiveRecord::Context)
       end
 
+      # Checks if the model is setup to act as a zuul authorization subject
       def acts_as_authorization_subject?
         ancestors.include?(Zuul::ActiveRecord::Subject)
       end
     end
 
+    # Defines acts_as_authorization_*? methods to pass through to the class
     module InstanceMethods
       [:role, :permission, :subject, :context].each do |auth_type|
         method_name = "acts_as_authorization_#{auth_type}?"
@@ -116,9 +136,18 @@ module Zuul
       end
 
       module ClassMethods
+        # Return the requested scope or execute an optional block within that scope
+        #
+        # If an optional block is passed, it will be executed within the provided scope. This allows
+        # you to call methods on the model or the auth scope without having to specify a scope
+        # each time. The exec_args hash can be used to pass arguments through to the block.
+        #
+        # The reason this is defined separately at the class and instance level is because it uses
+        # instance_exec to execute the block within the scope of the object (either class or instance)
+        # and then uses method_missing temporarily to provide the auth scope methods.
         def auth_scope(scope=nil, *exec_args, &block)
           scope ||= current_auth_scope
-          raise Exception, "Scope does not exist." unless auth_scopes.has_key?(scope) # TODO make error class
+          raise ::Zuul::Exceptions::UndefinedScope unless auth_scopes.has_key?(scope)
 
           if block_given?
             old_scope = current_auth_scope
@@ -127,7 +156,7 @@ module Zuul
             instance_eval do
               def method_missing (meth,*args)
                 return auth_scopes[current_auth_scope].send(meth, *args) if auth_scopes[current_auth_scope].respond_to?(meth)
-                raise NoMethodError, "#{meth} does not exist."
+                raise NoMethodError, "#{self.name}.#{meth} does not exist."
               end
             end
             block_result = instance_exec(*exec_args, &block)
@@ -142,10 +171,14 @@ module Zuul
           auth_scopes[scope]
         end
 
+        # Evaluate a block within the requested scope
         def auth_scope_eval(scope=nil, &block)
           auth_scope(scope).instance_eval &block
         end
 
+        # Set the current auth scope
+        #
+        # The current_auth_scope is the scope that is currently active on the model for all auth operations
         def current_auth_scope=(scope)
           @current_auth_scope = scope.to_sym
         end
@@ -160,9 +193,18 @@ module Zuul
           self.class.auth_scopes
         end
 
+        # Return the requested scope or execute an optional block within that scope
+        #
+        # If an optional block is passed, it will be executed within the provided scope. This allows
+        # you to call methods on the model or the auth scope without having to specify a scope
+        # each time. The exec_args hash can be used to pass arguments through to the block.
+        #
+        # The reason this is defined separately at the class and instance level is because it uses
+        # instance_exec to execute the block within the scope of the object (either class or instance)
+        # and then uses method_missing temporarily to provide the auth scope methods.
         def auth_scope(scope=nil, *exec_args, &block)
           scope ||= current_auth_scope
-          raise Exception, "Scope does not exist." unless auth_scopes.has_key?(scope) # TODO make error class
+          raise ::Zuul::Exceptions::UndefinedScope unless auth_scopes.has_key?(scope)
 
           if block_given?
             old_scope = current_auth_scope
@@ -171,7 +213,7 @@ module Zuul
             instance_eval do
               def method_missing (meth,*args)
                 return auth_scopes[current_auth_scope].send(meth, *args) if auth_scopes[current_auth_scope].respond_to?(meth)
-                raise NoMethodError, "#{meth} does not exist."
+                raise NoMethodError, "#{self.class.name}##{meth} does not exist."
               end
             end
             block_result = instance_exec(*exec_args, &block)
