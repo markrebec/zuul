@@ -258,8 +258,6 @@ The other option, instead of using `rescue_from`, is to set the `:mode` config o
     end
 
 ##Configuration
-Zuul is extremely configurable, and there are options to control just about everything at the global level and ways to override just about everything in specific authorization objects or `access_control` blocks.  For example, you may have the use of permissions configured globally, but want to disable them for a secondary, special subject+role scope that you're setting up. Or you may want the global default behavior of your access control blocks to be `:allow` (less strict), but then define `access_control :default => :deny` for stricter matching on more sensitive controllers.
-
 In order to configure zuul and set your own global defaults, you can create an initializer in `/config/initializers/zuul.rb`:
 
     Zuul.configure do |config|
@@ -269,83 +267,11 @@ In order to configure zuul and set your own global defaults, you can create an i
       # etc...
     end
 
-Whatever you set here will override the zuul global defaults, and your values will be used as defautls by any authorization models or access control blocks you define (unless you override them).  This allows you to override common defaults like `:with_permissions` without having to do so over and over again in your models and controllers.
+Whatever you set here will override the zuul global defaults, and your values will be used as defaults by any authorization models or access control blocks you define (unless you override these defaults when defining them).  This allows you to override common defaults like `:with_permissions` globally rather than having to do so over and over again in your models and controllers.
 
-Take a look at the authorization models and access control DSL documentation for more information on what config options can be overridden when defining them.
+Take a look at the authorization models and access control DSL documentation for more information on what config options can be overridden when defining each of them.
 
-###Global configuration options
-<table>
-  <tr>
-    <th>Setting</th>
-    <th>Valid Options</th>
-    <th>Description</th>
-  </tr>
-  <tr>
-    <td><code>subject_class</code></td>
-    <td>A string, symbol or class constant. Defaults to <code>:user</code></td>
-    <td>The specified class is used as the default subject class when defining authorization models. It can be overridden when defining the authorization models.</td>
-  </tr>
-  <tr>
-    <td><code>role_class</code></td>
-    <td>A string, symbol or class constant. Defaults to <code>:role</code></td>
-    <td>The specified class is used as the default role class when defining authorization models. It can be overridden when defining the authorization models.</td>
-  </tr>
-  <tr>
-    <td><code>permission_class</code></td>
-    <td>A string, symbol or class constant. Defaults to <code>:permission</code></td>
-    <td>The specified class is used as the default permission class when defining authorization models. It can be overridden when defining the authorization models.</td>
-  </tr>
-  <tr>
-    <td><code>role_subject_class</code></td>
-    <td>A string, symbol or class constant. Defaults to <code>:role_user</code></td>
-    <td>The specified class is used as the default association class for roles and subjects when defining authorization models. It can be overridden when defining the authorization models.</td>
-  </tr>
-  <tr>
-    <td><code>permission_role_class</code></td>
-    <td>A string, symbol or class constant. Defaults to <code>:permission_role</code></td>
-    <td>The specified class is used as the default association class for permissions and roles when defining authorization models. It can be overridden when defining the authorization models.</td>
-  </tr>
-  <tr>
-    <td><code>permission_subject_class</code></td>
-    <td>A string, symbol or class constant. Defaults to <code>:permission_user</code></td>
-    <td>The specified class is used as the default association class for permissions and subjects when defining authorization models. It can be overridden when defining the authorization models.</td>
-  </tr>
-  <tr>
-    <td><code>acl_default</code></td>
-    <td><code>:allow</code> or <code>:deny</code>. Defaults to <code>:deny</code></td>
-    <td>The default matching behavior used by the controller ACL filters. Can be overridden when defining access control filters.</td>
-  </tr>
-  <tr>
-    <td><code>acl_mode</code></td>
-    <td><code>:raise</code> or <code>:quiet</code>. Defaults to <code>:raise</code></td>
-    <td>Dictates how the ACL filters will handle access denied errors. If set to <code>:raise</code> an exception will be raised. If set to <code>:quiet</code> no exception will be raised and you can use the <code>authorized?</code> method to check for the result. Can be overridden when defining access control filters.</td>
-  </tr>
-  <tr>
-    <td><code>acl_collect_results</code></td>
-    <td><code>true</code> or <code>false</code>. Defaults to <code>false</code></td>
-    <td>Whether or not chained ACL filters will collect their results or not by default. If set to <code>true</code> each filter will analyze it's rules and pass along a single result of <code>allow</code> or <code>deny</code>. If set to <code>false</code> the individual rule results will be passed along and analyzed with the next set of rules. Can be overridden when defining access control filters.</td>
-  </tr>
-  <tr>
-    <td><code>subject_method</code></td>
-    <td>A string or symbol. Defaults to <code>:current_user</code></td>
-    <td>The default method used by the ACL filters to determine which subject to authorize against the defined rules. Can be overridden when defining access control filters.</td>
-  </tr>
-  <tr>
-    <td><code>force_context</code></td>
-    <td><code>true</code> or <code>false</code>. Defaults to <code>false</code></td>
-    <td>Whether or not to force provided contexts for authorization operations. This applies to the authorization models and the access control filters, and can be overridden when defining either one.</td>
-  </tr>
-  <tr>
-    <td><code>scope</code></td>
-    <td>A symbol. Defaults to <code>:default</code></td>
-    <td>The default scope to use for authorization operations. This applies to the authorization models and the access control filters, and can be overridden when defining either one.</td>
-  </tr>
-  <tr>
-    <td><code>with_permissions</code></td>
-    <td><code>true</code> or <code>false</code>. Defaults to <code>true</code></td>
-    <td>Enable or disable the use of permissions with your authorization models. Can be overridden when defining the authorization models.</td>
-  </tr>
-</table>
+There is a [complete list of the global configuration options](https://github.com/markrebec/zuul/wiki/Global-Configuration-Options) on the wiki.
 
 ##Authorization Models
 Authorization models are any of the subject, role, permission or resource/context models that are used by the authorization system (take a look at the Getting Started section for a brief explanation of each). They are configured using the `acts_as_authorization_*` methods - such as `acts_as_authorization_subject` for authorization subjects.
