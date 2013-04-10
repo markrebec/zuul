@@ -38,11 +38,15 @@ module Zuul
       @changed
     end
 
+    def changed?(key)
+      changed.has_key?(key)
+    end
+
     def configure(args={}, &block)
       save_state
       configure_with_args args
       configure_with_block &block
-      configure_join_classes if PRIMARY_AUTHORIZATION_CLASSES.keys.any? { |key| changed.keys.include?(key) }
+      configure_join_classes if PRIMARY_AUTHORIZATION_CLASSES.keys.any? { |key| changed?(key) }
       self
     end
 
@@ -59,7 +63,7 @@ module Zuul
     def configure_join_classes
       [[:role, :subject], [:permission, :subject], [:permission, :role]].each do |join_types|
         join_key = "#{join_types.sort[0].to_s}_#{join_types.sort[1].to_s}_class".to_sym
-        next if changed.has_key?(join_key) # don't override join table if it was provided
+        next if changed?(join_key) # don't override join table if it was provided
 
         namespaces = []
         join_class = join_types.map do |class_type|
