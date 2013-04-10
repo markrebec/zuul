@@ -118,10 +118,10 @@ For permissions and subjects:
 
 These commands will generate models (if they don't exist) and migrations for the `RoleUser`, `PermissionRole` and `PermissionUser` models.  As with everywhere else in zuul, the model names are based on the default ActiveRecord behavior of sorting alphabetically, but this can all be configured to use custom model and table names for everything.
 
-###Creating and using authorization abilities (roles & permissions)
-Once you've run all the generators, you'll need to run the generated migrations with `rake db:migrate` to update your database, and then it's time to start creating roles and permissions (and subjects if you don't have any).
+###Run generated migrations
+Once you've run all the generators to create your models and migrations, you'll need to run the generated migrations. Run `rake db:migrate` to update your database.
 
-**Note:** There are no inherent abilities granted by assigning roles or permissions to a subject. Just because you define an `:admin` role and assign it to a user, that doesn't mean they can do anything special. It's up to you to check whether a subject possesses those roles and permissions in your code and act accordingly.
+###Creating and using roles & permissions
 
 To create a role, all you need to do is use the `Role.create` method and supply the required fields (`slug` and `level`). Roles can be created within a specific context, but that's covered elsewhere in this document.
 
@@ -144,6 +144,8 @@ And once you've got a user with roles assigned to them, you can check if they po
     user.has_role?('vip')
     user.has_role_or_higher?('moderator')   # has_role_or_higher? will also return true if the user possesses any roles with a higher level than the one provided
 
+**Note:** There are no inherent abilities granted by assigning roles or permissions to a subject. Just because you define an `:admin` role and assign it to a user, that doesn't mean they can do anything special. It's up to you to check whether a subject possesses those roles and permissions in your code and act accordingly.
+
 Creating and assigning permissions is similar to roles, except the `slug` is the only required field:
 
     view = Permission.create(:slug => 'view')
@@ -161,8 +163,11 @@ And you can assign those permissions to roles (which can in turn be assigned to 
 
 When checking whether a subject possesses a permission, both their individual permissions and those belonging to their assigned roles are evaluated:
 
-    user = User.find(1)
-    user.has_permission?(:edit)  # true if the user has :edit assigned directly OR if the user is assigned a role which is in turn assigned the :edit permission
+    user.assign_permission(:edit)
+    user.has_permission?(:edit)  # true
+    
+    admin_role.assign_permission(:edit)
+    user_with_admin_role.has_permission?(:edit) # true
 
 ###Setup access control for your controllers
 The first step in setting up your controllers is to ensure you have a `current_user` method available. This is provided by many authorization solutions (such as [devise](https://github.com/plataformatec/devise)), but if you don't already have one, you'll need to set one up. All the method needs to do is return a user object or `nil` if there is no user (i.e. not logged in). You can also configure a method other than `current_user` either globally or per-filter.
@@ -221,7 +226,7 @@ You can of course check for permissions as well. This example denies any logged 
 
 There are a number of configuration options and additional DSL methods available for the `access_control` filters, and multiple filters can even be chained together.
 
-By default, an `AccessDenied` exception is raised when a subject is denied access. You can customize this behavior in a few ways to either redirect, render or do essentially whatever you want.
+By default, a `Zuul::Exceptions::AccessDenied` exception is raised when a subject is denied access. You can customize this behavior in a few ways to either redirect, render or do essentially whatever you want.
 
 The first option is to use `rescue_from` in your controllers to catch the exception. In most cases you can define the `rescue_from` block once on your `ApplicationController` and it will be inherited by all child controllers. If you want to do different things in different controllers, you can use `rescue_from` directly with those controllers. Here's a basic example using `ApplicationController`:
 
