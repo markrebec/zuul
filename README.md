@@ -279,9 +279,9 @@ In order to configure zuul and set your own global defaults, you can create an i
       # etc...
     end
 
-Whatever you set here will override the zuul global defaults, and your values will be used as defaults by any authorization models or access control blocks you define (unless you override these defaults when defining them).  This allows you to override common defaults like `:with_permissions` globally rather than having to do so over and over again in your models and controllers.
+Whatever you set here will override the zuul global defaults, and your values will be used as defaults by any authorization models or access control blocks you define (unless you override these defaults again when defining them).  This allows you to override common defaults like `:with_permissions` globally rather than having to do so over and over again in your models and controllers.
 
-Take a look at the authorization models and access control DSL documentation for more information on what config options can be overridden when defining each of them.
+Take a look at the [Authorization Models](https://github.com/markrebec/zuul/wiki/Authorization-Models) and [Access Control DSL](https://github.com/markrebec/zuul/wiki/Access-Control-DSL) documentation for more information on what config options can be overridden when defining each of them.
 
 There is a [complete list of the global configuration options](https://github.com/markrebec/zuul/wiki/Global-Configuration-Options) on the wiki.
 
@@ -289,7 +289,7 @@ There is a [complete list of the global configuration options](https://github.co
 * [Mark Rebec](https://github.com/markrebec) is the current author and maintainer of zuul.
 * Thanks to [Wes Gibbs](https://github.com/wgibbs) for creating the original version of zuul and for allowing me to take over maintenance of the gem.
 * [Oleg Dashevskii's](https://github.com/be9) library [acl9](https://github.com/be9/acl9) is another great authorization and access control solution that provides similar functionality. While acl9 does not support the same context chain (it actually sort of works in the other direction) or authorization scoping that zuul does, it does allow working with roles in context of resources, and it provided much inspiration when building the ActionController DSL included in zuul. I'd advise taking a look at acl9 and comparing it with zuul to see which better fits your needs.
-* The name is a reference to the film [Ghostbusters](http://en.wikipedia.org/wiki/Ghostbusters) (1984), in which an ancient Sumerian deity called [Zuul](http://www.gbfans.com/wiki/Zuul), also known as The Gatekeeper, possesses the character Dana Barrett.
+* The name is a [reference to the film Ghostbusters](http://www.gbfans.com/wiki/Zuul) (1984)
 
 ##Contributing
 
