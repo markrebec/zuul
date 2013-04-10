@@ -8,6 +8,13 @@ The version is being bumped to `0.2.0` and version history is being maintained t
 
 I can't thank Wes enough for allowing me to take over zuul, rather than introducing yet-another-competing-access-control-gem for everyone to sort through!
 
+* [Features](#features)
+* [Getting Started](#getting-started)
+* [Configuration](#configuration)
+* [Authorization Models](https://github.com/markrebec/zuul/wiki/Authorization-Models)
+* [Access Control DSL](https://github.com/markrebec/zuul/wiki/Access-Control-DSL)
+* [Controller and View Helpers](https://github.com/markrebec/zuul/wiki/Controller-and-View-Helpers)
+
 ## Features
 Zuul provides an extremely flexible authorization solution for ActiveRecord wherein roles and (optionally) permissions can be assigned within various contexts, along with an equally robust access control DSL for ActionController and helpers for your views. It can be used with virtually any authentication system (I highly recommend [devise](http://github.com/platformatec/devise) if you haven't chosen one yet), and it provides the following features:
 
