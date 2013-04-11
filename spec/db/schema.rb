@@ -45,6 +45,42 @@ ActiveRecord::Schema.define(:version => 0) do
   create_table :contexts do |t|
     t.string :name
   end
+  
+  create_table :levels do |t|
+    t.string :name
+    t.string :slug
+    t.integer :level
+    t.string :context_type
+    t.integer :context_id
+  end
+  
+  create_table :abilities do |t|
+    t.string :name
+    t.string :slug
+    t.string :context_type
+    t.integer :context_id
+  end
+
+  create_table :level_users do |t|
+    t.integer :user_id
+    t.integer :level_id
+    t.string :context_type
+    t.integer :context_id
+  end
+  
+  create_table :ability_users do |t|
+    t.integer :user_id
+    t.integer :ability_id
+    t.string :context_type
+    t.integer :context_id
+  end
+  
+  create_table :ability_levels do |t|
+    t.integer :level_id
+    t.integer :ability_id
+    t.string :context_type
+    t.integer :context_id
+  end
 
   create_table :soldiers do |t|
     t.string :name

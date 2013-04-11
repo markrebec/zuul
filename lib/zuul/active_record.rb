@@ -136,11 +136,14 @@ module Zuul
       end
 
       module ClassMethods
-        # Return the requested scope or execute an optional block within that scope
+        # Return the requested scope, call a method within a scope or execute an optional block within that scope
         #
         # If an optional block is passed, it will be executed within the provided scope. This allows
         # you to call methods on the model or the auth scope without having to specify a scope
         # each time. The exec_args hash can be used to pass arguments through to the block.
+        #
+        # If a block is not passed, exec_args can be used to provide a method and arguments to be called on the
+        # object within the requested scope.
         #
         # The reason this is defined separately at the class and instance level is because it uses
         # instance_exec to execute the block within the scope of the object (either class or instance)
@@ -149,7 +152,7 @@ module Zuul
           scope ||= current_auth_scope
           raise ::Zuul::Exceptions::UndefinedScope unless auth_scopes.has_key?(scope)
 
-          if block_given?
+          if block_given? || (exec_args.length > 0 && exec_args[0].is_a?(Symbol) && respond_to?(exec_args[0]))
             old_scope = current_auth_scope
             self.current_auth_scope = scope
             
@@ -159,13 +162,13 @@ module Zuul
                 raise NoMethodError, "#{self.name}.#{meth} does not exist."
               end
             end
-            block_result = instance_exec(*exec_args, &block)
+            exec_result = block_given? ? instance_exec(*exec_args, &block) : send(exec_args.slice!(0), *exec_args)
             instance_eval do
               undef method_missing
             end
 
             self.current_auth_scope = old_scope
-            return block_result
+            return exec_result
           end
 
           auth_scopes[scope]
@@ -193,11 +196,14 @@ module Zuul
           self.class.auth_scopes
         end
 
-        # Return the requested scope or execute an optional block within that scope
+        # Return the requested scope, call a method within a scope or execute an optional block within that scope
         #
         # If an optional block is passed, it will be executed within the provided scope. This allows
         # you to call methods on the model or the auth scope without having to specify a scope
         # each time. The exec_args hash can be used to pass arguments through to the block.
+        #
+        # If a block is not passed, exec_args can be used to provide a method and arguments to be called on the
+        # object within the requested scope.
         #
         # The reason this is defined separately at the class and instance level is because it uses
         # instance_exec to execute the block within the scope of the object (either class or instance)
@@ -206,7 +212,7 @@ module Zuul
           scope ||= current_auth_scope
           raise ::Zuul::Exceptions::UndefinedScope unless auth_scopes.has_key?(scope)
 
-          if block_given?
+          if block_given? || (exec_args.length > 0 && exec_args[0].is_a?(Symbol) && respond_to?(exec_args[0]))
             old_scope = current_auth_scope
             self.current_auth_scope = scope
             
@@ -216,13 +222,13 @@ module Zuul
                 raise NoMethodError, "#{self.class.name}##{meth} does not exist."
               end
             end
-            block_result = instance_exec(*exec_args, &block)
+            exec_result = block_given? ? instance_exec(*exec_args, &block) : send(exec_args.slice!(0), *exec_args)
             instance_eval do
               undef method_missing
             end
             
             self.current_auth_scope = old_scope
-            return block_result
+            return exec_result
           end
 
           auth_scopes[scope]

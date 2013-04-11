@@ -43,6 +43,36 @@ class PermissionRole < ActiveRecord::Base
   belongs_to :permission
 end
 
+# Additional models to test scoping
+Object.send(:remove_const, :Level) if defined?(Level)
+class Level < ActiveRecord::Base
+  attr_accessible :name, :slug, :level, :context_type, :context_id
+end
+
+Object.send(:remove_const, :Ability) if defined?(Ability)
+class Ability < ActiveRecord::Base
+  attr_accessible :name, :slug, :context_type, :context_id
+end
+
+Object.send(:remove_const, :AbilityLevel) if defined?(AbilityLevel)
+class AbilityLevel < ActiveRecord::Base
+  belongs_to :ability
+  belongs_to :level
+end
+
+Object.send(:remove_const, :AbilityUser) if defined?(AbilityUser)
+class AbilityUser < ActiveRecord::Base
+  belongs_to :ability
+  belongs_to :user
+end
+
+Object.send(:remove_const, :LevelUser) if defined?(LevelUser)
+class LevelUser < ActiveRecord::Base
+  belongs_to :level
+  belongs_to :user
+end
+
+
 # Dummy model without any configuration for generic tests
 Object.send(:remove_const, :Dummy) if defined?(Dummy)
 class Dummy < ActiveRecord::Base

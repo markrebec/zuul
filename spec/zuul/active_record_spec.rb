@@ -195,6 +195,115 @@ describe "Zuul::ActiveRecord" do
   end
 
   describe "AuthorizationMethods" do
+    describe "auth_scope" do
+      before(:each) do
+        Role.acts_as_authorization_role
+        Permission.acts_as_authorization_permission
+        User.acts_as_authorization_subject
+        Level.acts_as_authorization_role :permission_class => :ability
+        Ability.acts_as_authorization_permission :role_class => :level
+        User.acts_as_authorization_subject :scope => :character, :role_class => :level, :permission_class => :ability
+      end
+
+      context "class method" do
+        it "should return the requested scope" do
+          User.auth_scope.name.should == :default
+          User.auth_scope(:character).name.should == :character
+        end
+
+        it "should raise an exception if the scope doesn't exist" do
+          expect { User.auth_scope(:noscope) }.to raise_exception(Zuul::Exceptions::UndefinedScope)
+        end
+
+        context "when calling a method" do
+          it "should allow calling a method within the requested scope" do
+            User.instance_eval do
+              def scope_test_method
+                role_class_name
+              end
+            end
+            User.auth_scope(:character, :scope_test_method).should == User.auth_scope(:character).role_class_name
+          end
+
+          it "should allow calling a method with arguments within the requested scope" do
+            suffix = rand(100)*rand(100)
+            User.instance_eval do
+              def scope_test_method(suf)
+                "#{role_class_name}_#{suf}"
+              end
+            end
+            User.auth_scope(:character, :scope_test_method, suffix).should == "#{User.auth_scope(:character).role_class_name}_#{suffix}"
+          end
+        end
+        
+        context "when passing a block" do
+          it "should allow executing a block within the requested scope" do
+            User.auth_scope(:character) do
+              role_class_name
+            end.should == User.auth_scope(:character).role_class_name
+          end
+
+          it "should allow executing a block with arguments within the requested scope" do
+            suffix = rand(100)*rand(100)
+            User.auth_scope(:character, suffix) do |suf|
+              "#{role_class_name}_#{suf}"
+            end.should == "#{User.auth_scope(:character).role_class_name}_#{suffix}"
+          end
+        end
+      end
+
+      context "instance method" do
+        before(:each) do
+          @user = User.create(:name => "Tester")
+        end
+
+        it "should return the requested scope" do
+          @user.auth_scope.name.should == :default
+          @user.auth_scope(:character).name.should == :character
+        end
+
+        it "should raise an exception if the scope doesn't exist" do
+          expect { @user.auth_scope(:noscope) }.to raise_exception(Zuul::Exceptions::UndefinedScope)
+        end
+
+        context "when calling a method" do
+          it "should allow calling a method within the requested scope" do
+            @user.instance_eval do
+              def scope_test_method
+                role_class_name
+              end
+            end
+            @user.auth_scope(:character, :scope_test_method).should == @user.auth_scope(:character).role_class_name
+          end
+
+          it "should allow calling a method with arguments within the requested scope" do
+            suffix = rand(100)*rand(100)
+            @user.instance_eval do
+              def scope_test_method(suf)
+                "#{role_class_name}_#{suf}"
+              end
+            end
+            @user.auth_scope(:character, :scope_test_method, suffix).should == "#{@user.auth_scope(:character).role_class_name}_#{suffix}"
+          end
+        end
+        
+        context "when passing a block" do
+          it "should allow executing a block within the requested scope" do
+            @user.auth_scope(:character) do
+              role_class_name
+            end.should == @user.auth_scope(:character).role_class_name
+          end
+
+          it "should allow executing a block with arguments within the requested scope" do
+            suffix = rand(100)*rand(100)
+            @user.auth_scope(:character, suffix) do |suf|
+              "#{role_class_name}_#{suf}"
+            end.should == "#{@user.auth_scope(:character).role_class_name}_#{suffix}"
+          end
+        end
+      end
+    end
+
     describe "target_role" do
       before(:each) do
         prep_dummy
