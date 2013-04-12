@@ -29,11 +29,15 @@ Zuul provides an extremely flexible authorization solution for ActiveRecord wher
 * **Helpers:** There are a few helpers included, like `for_role`, which allow you to execute blocks or display templates based on whether or not a subject possesses the specified role/permission, with optional fallback blocks if not.
 
 ## Getting Started
-Zuul &gt;= 0.2.0 works with Rails &gt;= 3.1 (probably older versions too, but it hasn't ben tested yet). To use it, ensure you're using rubygems.org as a source (if you don't know what that means, you probably are) and add this to your gemfile:
+You can install zuul from rubygems with:
+
+    gem install zuul
+
+Zuul &gt;= 0.2.0 works with Rails &gt;= 3.1 (probably older versions too, but it hasn't ben tested yet). To use it add this to your Gemfile:
 
     gem `zuul`
 
-Then run bundler to install it. *Note: Zuul 0.2.0 is not yet available on rubygems. If you with to use the current version, you'll need to point to this github repo until 0.2.0 is released.*
+Then run bundler to install it.
 
 In order to use the core authorization functionality, you'll need to setup subjects and roles. Permissions are enabled in the default configuration, so if you don't specify otherwise you'll have to setup the permissions model as well. Each authorization model type has it's own default class, but those can be overridden in the global initializer config or they can be specified per-model as you're setting up authorization models.
 
