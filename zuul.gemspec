@@ -5,8 +5,8 @@ Gem::Specification.new do |s|
   s.name        = "zuul"
   s.version     = Zuul::VERSION
   s.date        = "2013-02-19"
-  s.summary     = "Authorizaion and ACL for Activerecord and ActionController respectively."
-  s.description = "Flexible and easy to use authorization system for ActiveRecord and ActionController."
+  s.summary     = "Authorizaion and ACL for Activerecord and ActionController."
+  s.description = "Flexible, configurable authorization system for ActiveRecord and an access control DSL for ActionController."
   s.authors     = ["Mark Rebec"]
   s.email       = ["mark@markrebec.com"]
   s.files       = Dir["lib/**/*"]
