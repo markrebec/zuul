@@ -97,6 +97,7 @@ module Zuul
 
       def parse_access_control_args(*args)
         args = args[0] if args.is_a?(Array)
+        args = {} if args.nil?
         filter_args = args.select { |k,v| [:except, :only].include?(k) }
         [:except, :only].each { |k| args.delete(k) }
         return [args, filter_args]
