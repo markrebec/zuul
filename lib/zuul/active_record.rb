@@ -66,6 +66,30 @@ module Zuul
         include Context
       end
 
+      # Configure the model to act as a zuul joining model for roles and subjects
+      #
+      # The args parameter is an optional hash of configuration options.
+      def acts_as_authorization_permission_role(args={}, &block)
+        scope = acts_as_authorization_model(args.merge({:permission_role_class => self.name}), &block)
+        include PermissionRole
+      end
+
+      # Configure the model to act as a zuul joining model for roles and subjects
+      #
+      # The args parameter is an optional hash of configuration options.
+      def acts_as_authorization_permission_subject(args={}, &block)
+        scope = acts_as_authorization_model(args.merge({:permission_subject_class => self.name}), &block)
+        include PermissionSubject
+      end
+
+      # Configure the model to act as a zuul joining model for roles and subjects
+      #
+      # The args parameter is an optional hash of configuration options.
+      def acts_as_authorization_role_subject(args={}, &block)
+        scope = acts_as_authorization_model(args.merge({:role_subject_class => self.name}), &block)
+        include RoleSubject
+      end
+
       # Sets up the join models for a newly defined scope.
       #
       # This is similar the the acts_as_authorization_* methods, but it handles all the joining models for a scope.
@@ -74,22 +98,19 @@ module Zuul
 
         unless auth_scope(scope).role_subject_class.ancestors.include?(RoleSubject)
           auth_scope(scope).role_subject_class.instance_eval do
-            acts_as_authorization_model(scope_config.to_h)
-            include RoleSubject
+            acts_as_authorization_role_subject(scope_config.to_h)
           end
         end
         
         if auth_scope(scope).config.with_permissions
           unless auth_scope(scope).permission_subject_class.ancestors.include?(PermissionSubject)
             auth_scope(scope).permission_subject_class.instance_eval do
-              acts_as_authorization_model(scope_config.to_h)
-              include PermissionSubject
+              acts_as_authorization_permission_subject(scope_config.to_h)
             end
           end
           unless auth_scope(scope).permission_role_class.ancestors.include?(PermissionRole)
             auth_scope(scope).permission_role_class.instance_eval do
-              acts_as_authorization_model(scope_config.to_h)
-              include PermissionRole
+              acts_as_authorization_permission_role(scope_config.to_h)
             end
           end
         end
