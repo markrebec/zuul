@@ -62,7 +62,8 @@ module Zuul
       #
       # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_context(args={}, &block)
-        acts_as_authorization_model(args, &block)
+        scope = acts_as_authorization_model(args, &block)
+        prepare_join_classes scope.name
         include Context
       end
 
