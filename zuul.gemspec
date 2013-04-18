@@ -4,7 +4,7 @@ require "zuul/version"
 Gem::Specification.new do |s|
   s.name        = "zuul"
   s.version     = Zuul::VERSION
-  s.date        = "2013-02-19"
+  s.date        = "2013-04-18"
   s.summary     = "Authorizaion and ACL for Activerecord and ActionController."
   s.description = "Flexible, configurable authorization system for ActiveRecord and an access control DSL for ActionController."
   s.authors     = ["Mark Rebec"]
