@@ -306,6 +306,7 @@ There is a [complete list of the global configuration options](https://github.co
 * plugin travis
 * clean up errors/exceptions a bit more
 * i18n for messaging, errors, templates, etc.
+* add support for user agents, operating systems, etc. that can work just like roles/permissions?
 * dynamic aliases for scoped methods (like `has_level?` => `has_role?`)
 * create a logger for the ACL DSL stuff and clean up the logging there
 * abstract out ActiveRecord, create ORM layer to allow other datasources
