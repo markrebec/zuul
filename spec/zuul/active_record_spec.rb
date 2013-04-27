@@ -47,7 +47,7 @@ describe "Zuul::ActiveRecord" do
       Skill.auth_scope.subject_class.should == Soldier
       Skill.auth_scope.role_class.should == Rank
 
-      Weapon.acts_as_authorization_context :permission_class => Skill
+      Weapon.acts_as_authorization_context :subject_class => Soldier, :role_class => Rank, :permission_class => Skill
       Weapon.auth_scope.permission_class.should == Skill
     end
 
@@ -61,7 +61,7 @@ describe "Zuul::ActiveRecord" do
       Skill.acts_as_authorization_permission :subject_class => Soldier, :role_class => :Rank
       Skill.auth_scope.subject_class.should == Soldier
       Skill.auth_scope.role_class.should == Rank
-      Weapon.acts_as_authorization_context :permission_class => Skill
+      Weapon.acts_as_authorization_context :subject_class => "soldier", :role_class => :rank, :permission_class => Skill
       Weapon.auth_scope.permission_class.should == Skill
     end
 
