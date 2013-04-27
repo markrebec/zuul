@@ -125,4 +125,19 @@ describe "Zuul::Context" do
       Zuul::Context.new('Context', obj.id).type.should == :instance
     end
   end
+  
+  describe "#type_s" do
+    it "should return 'global' for a nil context" do
+      Zuul::Context.new.type_s.should == 'global'
+    end
+
+    it "should return class name for a class context" do
+      Zuul::Context.new('Context', nil).type_s.should == 'Context'
+    end
+
+    it "should return class name and ID for an instance context" do
+      obj = Context.create(:name => "Test Context")
+      Zuul::Context.new('Context', obj.id).type_s.should == "Context(#{obj.id})"
+    end
+  end
 end

@@ -34,6 +34,12 @@ module Zuul
       :instance
     end
 
+    def type_s
+      return 'global' if class_name.nil?
+      return class_name if id.nil?
+      "#{class_name}(#{id})"
+    end
+
     def to_context
       return nil if class_name.nil?
       return class_name.constantize if id.nil?
