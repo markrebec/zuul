@@ -190,6 +190,41 @@ describe "Zuul::ActiveRecord::Role" do
       @role.context_id.should == context.id
     end
   end
+
+  context "#assigned_contexts" do
+    before(:each) do
+      User.acts_as_authorization_subject
+      Role.acts_as_authorization_role
+      @role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+    end
+
+    it "should return an array of contexts within which the role is assigned to subjects" do
+      context = Context.create(:name => "Test Context")
+      user = User.create(:name => "Test User")
+      user.assign_role(:admin)
+      user.assign_role(:admin, Context)
+      user.assign_role(:admin, context)
+      @role.assigned_contexts.length.should == 3
+      @role.assigned_contexts.each do |actxt|
+        ['global', 'Context', "Context(#{context.id})"].should include(actxt.type_s)
+      end
+    end
+
+    it "should return a de-duped array of only unique contexts" do
+      context = Context.create(:name => "Test Context")
+      user_one = User.create(:name => "Test User")
+      user_two = User.create(:name => "Other Test User")
+      user_one.assign_role(:admin)
+      user_one.assign_role(:admin, Context)
+      user_one.assign_role(:admin, context)
+      user_two.assign_role(:admin, Context)
+      user_two.assign_role(:admin, context)
+      @role.assigned_contexts.length.should == 3
+      @role.assigned_contexts.each do |actxt|
+        ['global', 'Context', "Context(#{context.id})"].should include(actxt.type_s)
+      end
+    end
+  end
   
   context "with permissions disabled" do
     before(:each) do

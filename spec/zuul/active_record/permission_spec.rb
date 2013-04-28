@@ -171,4 +171,113 @@ describe "Zuul::ActiveRecord::Permission" do
       @permission.context_id.should == context.id
     end
   end
+
+  describe "assigned context methods" do
+    before(:each) do
+      User.acts_as_authorization_subject
+      Role.acts_as_authorization_role
+      Permission.acts_as_authorization_permission
+      @permission = Permission.create(:name => 'Edit', :slug => 'edit')
+    end
+    
+    context "#role_contexts" do
+      it "should return an array of contexts within which the permission is assigned to roles" do
+        context = Context.create(:name => "Test Context")
+        role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+        role.assign_permission(:edit)
+        role.assign_permission(:edit, Context)
+        role.assign_permission(:edit, context)
+        @permission.role_contexts.length.should == 3
+        @permission.role_contexts.each do |actxt|
+          ['global', 'Context', "Context(#{context.id})"].should include(actxt.type_s)
+        end
+      end
+      
+      it "should return a de-duped array of only unique contexts" do
+        context = Context.create(:name => "Test Context")
+        admin = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+        mod = Role.create(:name => 'Moderator', :slug => 'moderator', :level => 100)
+        admin.assign_permission(:edit)
+        admin.assign_permission(:edit, Context)
+        admin.assign_permission(:edit, context)
+        mod.assign_permission(:edit, Context)
+        mod.assign_permission(:edit, context)
+        @permission.role_contexts.length.should == 3
+        @permission.role_contexts.each do |actxt|
+          ['global', 'Context', "Context(#{context.id})"].should include(actxt.type_s)
+        end
+      end
+    end
+
+    context "#subject_contexts" do
+      it "should return an array of contexts within which the permission is assigned to subjects" do
+        context = Context.create(:name => "Test Context")
+        user = User.create(:name => "Test User")
+        user.assign_permission(:edit)
+        user.assign_permission(:edit, Context)
+        user.assign_permission(:edit, context)
+        @permission.subject_contexts.length.should == 3
+        @permission.subject_contexts.each do |actxt|
+          ['global', 'Context', "Context(#{context.id})"].should include(actxt.type_s)
+        end
+      end
+      
+      it "should return a de-duped array of only unique contexts" do
+        context = Context.create(:name => "Test Context")
+        user_one = User.create(:name => "Test User")
+        user_two = User.create(:name => "Other Test User")
+        user_one.assign_permission(:edit)
+        user_one.assign_permission(:edit, Context)
+        user_one.assign_permission(:edit, context)
+        user_two.assign_permission(:edit, Context)
+        user_two.assign_permission(:edit, context)
+        @permission.subject_contexts.length.should == 3
+        @permission.subject_contexts.each do |actxt|
+          ['global', 'Context', "Context(#{context.id})"].should include(actxt.type_s)
+        end
+      end
+    end
+    
+    context "#assigned_contexts" do
+      it "should return an array of contexts within which the permission is assigned to roles and subjects" do
+        context = Context.create(:name => "Test Context")
+        user = User.create(:name => "Test User")
+        user.assign_permission(:edit)
+        user.assign_permission(:edit, Context)
+        user.assign_permission(:edit, Weapon)
+        user.assign_permission(:edit, context)
+        role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+        role.assign_permission(:edit)
+        role.assign_permission(:edit, Context)
+        role.assign_permission(:edit, context)
+        @permission.assigned_contexts.length.should == 4
+        @permission.assigned_contexts.each do |actxt|
+          ['global', 'Context', 'Weapon', "Context(#{context.id})"].should include(actxt.type_s)
+        end
+      end
+      
+      it "should return a de-duped array of only unique contexts" do
+        context = Context.create(:name => "Test Context")
+        user_one = User.create(:name => "Test User")
+        user_two = User.create(:name => "Other Test User")
+        user_one.assign_permission(:edit)
+        user_one.assign_permission(:edit, Context)
+        user_one.assign_permission(:edit, context)
+        user_two.assign_permission(:edit, Context)
+        user_two.assign_permission(:edit, context)
+        admin = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+        mod = Role.create(:name => 'Moderator', :slug => 'moderator', :level => 100)
+        admin.assign_permission(:edit)
+        admin.assign_permission(:edit, Context)
+        admin.assign_permission(:edit, Weapon)
+        admin.assign_permission(:edit, context)
+        mod.assign_permission(:edit, Context)
+        mod.assign_permission(:edit, context)
+        @permission.assigned_contexts.length.should == 4
+        @permission.assigned_contexts.each do |actxt|
+          ['global', 'Context', 'Weapon', "Context(#{context.id})"].should include(actxt.type_s)
+        end
+      end
+    end
+  end
 end

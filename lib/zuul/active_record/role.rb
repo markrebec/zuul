@@ -4,6 +4,7 @@ module Zuul
       def self.included(base)
         base.send :extend, ClassMethods
         base.send :include, ContextMethods # defined in lib/zuul/active_record.rb
+        base.send :include, InstanceMethods
         base.send :include, PermissionMethods if base.auth_scope.config.with_permissions
       end
 
@@ -28,6 +29,15 @@ module Zuul
           if base.auth_scope.config.with_permissions
             base.send :has_many, base.auth_scope.permission_roles_table_name.to_sym
             base.send :has_many, base.auth_scope.permissions_table_name.to_sym, :through => base.auth_scope.permission_roles_table_name.to_sym
+          end
+        end
+      end
+
+      module InstanceMethods
+        # Returns a list of contexts within which the role has been assigned to subjects
+        def assigned_contexts
+          auth_scope do
+            send(role_subjects_table_name.to_sym).group(:context_type, :context_id).map(&:context)
           end
         end
       end
