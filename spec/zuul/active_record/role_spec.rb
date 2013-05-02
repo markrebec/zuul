@@ -123,6 +123,17 @@ describe "Zuul::ActiveRecord::Role" do
     role.should respond_to(:role_users)
     role.should respond_to(:users)
   end
+
+  it "should use :dependent => :destroy for the role_subjects association" do
+    User.acts_as_authorization_subject
+    Role.acts_as_authorization_role
+    user = User.create(:name => 'Tester')
+    role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+    user.assign_role(:admin)
+    RoleUser.count.should == 1
+    role.destroy
+    RoleUser.count.should == 0
+  end
   
   it "should use the reflection classes to create the has_many associations" do
     Rank.acts_as_authorization_role :subject_class => :soldier, :with_permissions => false
@@ -261,6 +272,15 @@ describe "Zuul::ActiveRecord::Role" do
       role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
       role.should respond_to(:permission_roles)
       role.should respond_to(:permissions)
+    end
+
+    it "should use :dependent => :destroy for the permission_roles association" do
+      permission = Permission.create(:name => 'Edit', :slug => 'edit')
+      role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+      role.assign_permission(:edit)
+      PermissionRole.count.should == 1
+      role.destroy
+      PermissionRole.count.should == 0
     end
     
     it "should use the reflection classes to create the has_many associations" do

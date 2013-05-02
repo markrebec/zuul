@@ -14,7 +14,7 @@ module Zuul
 
         module ClassMethods
           def self.extended(base)
-            base.send :has_many, base.auth_scope.role_subjects_table_name.to_sym
+            base.send :has_many, base.auth_scope.role_subjects_table_name.to_sym, :dependent => :destroy
             base.send :has_many, base.auth_scope.roles_table_name.to_sym, :through => base.auth_scope.role_subjects_table_name.to_sym
           end
         end
@@ -137,7 +137,7 @@ module Zuul
 
         module ClassMethods
           def self.extended(base)
-            base.send :has_many, base.auth_scope.permission_subjects_table_name.to_sym
+            base.send :has_many, base.auth_scope.permission_subjects_table_name.to_sym, :dependent => :destroy
             base.send :has_many, base.auth_scope.permissions_table_name.to_sym, :through => base.auth_scope.permission_subjects_table_name.to_sym
           end
         end

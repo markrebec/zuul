@@ -87,6 +87,17 @@ describe "Zuul::ActiveRecord::Permission" do
     permission.should respond_to(:users)
   end
   
+  it "should use :dependent => :destroy for the permission_subjects association" do
+    Permission.acts_as_authorization_permission
+    User.acts_as_authorization_subject
+    permission = Permission.create(:name => 'Edit', :slug => 'edit')
+    user = User.create(:name => 'Tester')
+    user.assign_permission(:edit)
+    PermissionUser.count.should == 1
+    permission.destroy
+    PermissionUser.count.should == 0
+  end
+  
   it "should use the reflection classes to create the has_many associations" do
     Skill.acts_as_authorization_permission :subject_class => :soldier, :role_class => :rank
     Skill.reflections.keys.should include(:skill_soldiers)
@@ -103,6 +114,17 @@ describe "Zuul::ActiveRecord::Permission" do
     permission = Permission.create(:name => 'Edit', :slug => 'edit')
     permission.should respond_to(:permission_roles)
     permission.should respond_to(:roles)
+  end
+    
+  it "should use :dependent => :destroy for the permission_roles association" do
+    Permission.acts_as_authorization_permission
+    Role.acts_as_authorization_role
+    permission = Permission.create(:name => 'Edit', :slug => 'edit')
+    role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
+    role.assign_permission(:edit)
+    PermissionRole.count.should == 1
+    permission.destroy
+    PermissionRole.count.should == 0
   end
   
   it "should use the reflection classes to create the has_many associations" do

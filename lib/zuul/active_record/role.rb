@@ -24,10 +24,10 @@ module Zuul
         end
 
         def self.add_associations(base)
-          base.send :has_many, base.auth_scope.role_subjects_table_name.to_sym
+          base.send :has_many, base.auth_scope.role_subjects_table_name.to_sym, :dependent => :destroy
           base.send :has_many, base.auth_scope.subjects_table_name.to_sym, :through => base.auth_scope.role_subjects_table_name.to_sym
           if base.auth_scope.config.with_permissions
-            base.send :has_many, base.auth_scope.permission_roles_table_name.to_sym
+            base.send :has_many, base.auth_scope.permission_roles_table_name.to_sym, :dependent => :destroy
             base.send :has_many, base.auth_scope.permissions_table_name.to_sym, :through => base.auth_scope.permission_roles_table_name.to_sym
           end
         end
