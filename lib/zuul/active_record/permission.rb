@@ -21,10 +21,10 @@ module Zuul
         end
 
         def self.add_associations(base)
-          base.send :has_many, base.auth_scope.permission_roles_table_name.to_sym, :dependent => :destroy
-          base.send :has_many, base.auth_scope.roles_table_name.to_sym, :through => base.auth_scope.permission_roles_table_name.to_sym
-          base.send :has_many, base.auth_scope.permission_subjects_table_name.to_sym, :dependent => :destroy
-          base.send :has_many, base.auth_scope.subjects_table_name.to_sym, :through => base.auth_scope.permission_subjects_table_name.to_sym
+          base.send :has_many, base.auth_scope.permission_role_class_name.pluralize.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.permission_role_class_name, :dependent => :destroy
+          base.send :has_many, base.auth_scope.role_class_name.pluralize.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.role_class_name, :through => base.auth_scope.permission_role_class_name.pluralize.underscore.to_sym
+          base.send :has_many, base.auth_scope.permission_subject_class_name.pluralize.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.permission_subject_class_name, :dependent => :destroy
+          base.send :has_many, base.auth_scope.subject_class_name.pluralize.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.subject_class_name, :through => base.auth_scope.permission_subject_class_name.pluralize.underscore.to_sym
         end
       end
 
@@ -37,14 +37,14 @@ module Zuul
         # Returns a list of contexts within which the permission has been assigned to roles
         def role_contexts
           auth_scope do
-            send(permission_roles_table_name.to_sym).group(:context_type, :context_id).map(&:context)
+            send(permission_role_class_name.pluralize.underscore.to_sym).group(:context_type, :context_id).map(&:context)
           end
         end
         
         # Returns a list of contexts within which the permission has been assigned to subjects
         def subject_contexts
           auth_scope do
-            send(permission_subjects_table_name.to_sym).group(:context_type, :context_id).map(&:context)
+            send(permission_subject_class_name.pluralize.underscore.to_sym).group(:context_type, :context_id).map(&:context)
           end
         end
       end

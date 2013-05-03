@@ -24,11 +24,11 @@ module Zuul
         end
 
         def self.add_associations(base)
-          base.send :has_many, base.auth_scope.role_subjects_table_name.to_sym, :dependent => :destroy
-          base.send :has_many, base.auth_scope.subjects_table_name.to_sym, :through => base.auth_scope.role_subjects_table_name.to_sym
+          base.send :has_many, base.auth_scope.role_subject_class_name.pluralize.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.role_subject_class_name, :dependent => :destroy
+          base.send :has_many, base.auth_scope.subject_class_name.pluralize.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.subject_class_name, :through => base.auth_scope.role_subject_class_name.pluralize.underscore.to_sym
           if base.auth_scope.config.with_permissions
-            base.send :has_many, base.auth_scope.permission_roles_table_name.to_sym, :dependent => :destroy
-            base.send :has_many, base.auth_scope.permissions_table_name.to_sym, :through => base.auth_scope.permission_roles_table_name.to_sym
+            base.send :has_many, base.auth_scope.permission_role_class_name.pluralize.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.permission_role_class_name, :dependent => :destroy
+            base.send :has_many, base.auth_scope.permission_class_name.pluralize.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.permission_class_name, :through => base.auth_scope.permission_role_class_name.pluralize.underscore.to_sym
           end
         end
       end
@@ -37,7 +37,7 @@ module Zuul
         # Returns a list of contexts within which the role has been assigned to subjects
         def assigned_contexts
           auth_scope do
-            send(role_subjects_table_name.to_sym).group(:context_type, :context_id).map(&:context)
+            send(role_subject_class_name.pluralize.underscore.to_sym).group(:context_type, :context_id).map(&:context)
           end
         end
       end
@@ -110,7 +110,7 @@ module Zuul
             force_context ||= config.force_context
             context = Zuul::Context.parse(context)
             if force_context
-              return permission_class.joins(permission_roles_table_name.to_sym).where(permission_roles_table_name.to_sym => {role_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => context.id})
+              return permission_class.joins(permission_role_class_name.pluralize.underscore.to_sym).where(permission_role_class_name.pluralize.underscore.to_sym => {role_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => context.id})
             else
               return permission_class.joins("LEFT JOIN #{permission_roles_table_name} ON #{permission_roles_table_name}.#{permission_foreign_key} = #{permissions_table_name}.id").where("#{permission_roles_table_name}.#{role_foreign_key} = ? AND (#{permission_roles_table_name}.context_type #{sql_is_or_equal(context.class_name)} ? OR #{permission_roles_table_name}.context_type IS NULL) AND (#{permission_roles_table_name}.context_id #{sql_is_or_equal(context.id)} ? OR #{permission_roles_table_name}.context_id IS NULL)", id, context.class_name, context.id)
             end
