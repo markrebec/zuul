@@ -1,3 +1,4 @@
+require 'protected_attributes'
 require 'zuul/exceptions'
 require 'zuul/configuration'
 

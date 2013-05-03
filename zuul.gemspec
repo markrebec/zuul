@@ -12,9 +12,10 @@ Gem::Specification.new do |s|
   s.test_files  = Dir["spec/**/*"]
   s.homepage    = "http://github.com/markrebec/zuul"
 
-  s.add_dependency "activesupport"
-  s.add_dependency "activerecord"
-  s.add_dependency "actionpack"
+  s.add_dependency "protected_attributes"
+  s.add_dependency "activesupport", "~> 4.0.0.rc1"
+  s.add_dependency "activerecord", "~> 4.0.0.rc1"
+  s.add_dependency "actionpack", "~> 4.0.0.rc1"
 
   s.add_development_dependency "sqlite3"
   s.add_development_dependency "rspec"
