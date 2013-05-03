@@ -20,8 +20,8 @@ module Zuul
         end
 
         def self.add_associations(base)
-          base.send :belongs_to, base.auth_scope.permission_class_name.underscore.to_sym
-          base.send :belongs_to, base.auth_scope.subject_class_name.underscore.to_sym
+          base.send :belongs_to, base.auth_scope.permission_class_name.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.permission_class_name
+          base.send :belongs_to, base.auth_scope.subject_class_name.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.subject_class_name
         end
       end
     end
