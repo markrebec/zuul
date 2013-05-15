@@ -61,17 +61,19 @@ module Zuul
       def access_control(*args, &block)
         opts, filter_args = parse_access_control_args(*args)
         
-        acl_filters << append_before_filter(filter_args) do |controller|
-          self.class.used_acl_filters << self.class.acl_filters.slice!(0)
+        if(filter_args)
+          acl_filters << append_before_filter(filter_args) do |controller|
+            self.class.used_acl_filters << self.class.acl_filters.slice!(0)
           
-          controller.acl_dsl ||= DSL::Base.new(controller)
-          controller.acl_dsl.configure opts
-          controller.acl_dsl.execute &block
+            controller.acl_dsl ||= DSL::Base.new(controller)
+            controller.acl_dsl.configure opts
+            controller.acl_dsl.execute &block
 
-          if self.class.acl_filters.length == 0
-            self.class.acl_filters = self.class.used_acl_filters
-            self.class.used_acl_filters = []
-            raise Exceptions::AccessDenied if !controller.acl_dsl.authorized? && controller.acl_dsl.mode != :quiet
+            if self.class.acl_filters.length == 0
+              self.class.acl_filters = self.class.used_acl_filters
+              self.class.used_acl_filters = []
+              raise Exceptions::AccessDenied if !controller.acl_dsl.authorized? && controller.acl_dsl.mode != :quiet
+            end
           end
         end
       end
@@ -94,11 +96,15 @@ module Zuul
       #alias_method :deny_permission, :deny_permissions
 
       def parse_access_control_args(*args)
+        filter_args = nil
         args = args[0] if args.is_a?(Array)
-        filter_args = args.select { |k,v| [:except, :only].include?(k) }
-        [:except, :only].each { |k| args.delete(k) }
+        if(args)
+          filter_args = args.select { |k,v| [:except, :only].include?(k) }
+          [:except, :only].each { |k| args.delete(k) }
+        end
         return [args, filter_args]
       end
+
     end
   end
 end
