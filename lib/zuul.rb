@@ -8,6 +8,22 @@ module Zuul
   def self.configure(&block)
     @@configuration.configure &block
   end
+  
+  def self.should_whitelist?
+    rails3? or rails4? && protected_attribtues?
+  end
+  
+  def self.rails3?
+    3 == Rails::VERSION::MAJOR
+  end
+  
+  def self.rails4?
+    4== Rails::VERSION::MAJOR
+  end
+
+  def self.protected_attribtues?
+    defined? ::ProtectedAttributes
+  end
 end
 
 require 'zuul/context'

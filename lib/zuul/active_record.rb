@@ -268,7 +268,8 @@ module Zuul
     # to provide easy access to the context for that object.
     module ContextMethods
       def self.included(base)
-        base.send :attr_accessible, :context
+        base.send :attr_accessible, :context if ::Zuul
+.should_whitelist?
       end
 
       # Return a Zuul::Context object representing the context for the role
