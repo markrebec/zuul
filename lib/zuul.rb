@@ -11,15 +11,15 @@ module Zuul
   end
   
   def self.should_whitelist?
-    rails3? or rails4? && protected_attribtues?
+    active_record3? or active_record4? && protected_attribtues?
   end
   
-  def self.rails3?
-    3 == Rails::VERSION::MAJOR
+  def self.active_record3?
+    ::ActiveRecord::VERSION::MAJOR == 3
   end
   
-  def self.rails4?
-    4== Rails::VERSION::MAJOR
+  def self.active_record4?
+    ::ActiveRecord::VERSION::MAJOR == 4
   end
 
   def self.protected_attribtues?
