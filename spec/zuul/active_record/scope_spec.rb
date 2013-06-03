@@ -30,6 +30,18 @@ describe "Zuul::ActiveRecord::Scope" do
         end
       end
 
+      it "should define *_singular_key methods for each of the class types" do
+        Zuul::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.each do |class_type|
+          @scope.should respond_to("#{class_type.to_s.gsub(/_class$/,'').singularize}_singular_key")
+        end
+      end
+
+      it "should define *_plural_key methods for each of the class types" do
+        Zuul::Configuration::DEFAULT_AUTHORIZATION_CLASSES.keys.each do |class_type|
+          @scope.should respond_to("#{class_type.to_s.gsub(/_class$/,'').singularize}_plural_key")
+        end
+      end
+
       it "should define *_foreign_key methods for each of the primary class types" do
         Zuul::Configuration::PRIMARY_AUTHORIZATION_CLASSES.keys.each do |class_type|
           @scope.should respond_to("#{class_type.to_s.gsub(/_class$/,'').singularize}_foreign_key")
@@ -41,6 +53,8 @@ describe "Zuul::ActiveRecord::Scope" do
           @scope.should respond_to("#{class_type.to_s.gsub(/_class$/,'').pluralize}_class_name")
           @scope.should respond_to("#{class_type.to_s.gsub(/_class$/,'').pluralize}_class")
           @scope.should respond_to("#{class_type.to_s.gsub(/_class$/,'').pluralize}_table_name")
+          @scope.should respond_to("#{class_type.to_s.gsub(/_class$/,'').pluralize}_singular_key")
+          @scope.should respond_to("#{class_type.to_s.gsub(/_class$/,'').pluralize}_plural_key")
         end
         Zuul::Configuration::PRIMARY_AUTHORIZATION_CLASSES.keys.each do |class_type|
           @scope.should respond_to("#{class_type.to_s.gsub(/_class$/,'').pluralize}_foreign_key")
@@ -54,6 +68,8 @@ describe "Zuul::ActiveRecord::Scope" do
           @scope.should respond_to("#{@scope.config.send(class_type).to_s.singularize}_class_name")
           @scope.should respond_to("#{@scope.config.send(class_type).to_s.singularize}_class")
           @scope.should respond_to("#{@scope.config.send(class_type).to_s.singularize}_table_name")
+          @scope.should respond_to("#{@scope.config.send(class_type).to_s.singularize}_singular_key")
+          @scope.should respond_to("#{@scope.config.send(class_type).to_s.singularize}_plural_key")
         end
         Zuul::Configuration::PRIMARY_AUTHORIZATION_CLASSES.keys.each do |class_type|
           @scope.should respond_to("#{@scope.config.send(class_type).to_s.singularize}_foreign_key")
@@ -65,6 +81,8 @@ describe "Zuul::ActiveRecord::Scope" do
           @scope.should respond_to("#{@scope.config.send(class_type).to_s.underscore.pluralize}_class_name")
           @scope.should respond_to("#{@scope.config.send(class_type).to_s.underscore.pluralize}_class")
           @scope.should respond_to("#{@scope.config.send(class_type).to_s.underscore.pluralize}_table_name")
+          @scope.should respond_to("#{@scope.config.send(class_type).to_s.underscore.pluralize}_singular_key")
+          @scope.should respond_to("#{@scope.config.send(class_type).to_s.underscore.pluralize}_plural_key")
         end
         Zuul::Configuration::PRIMARY_AUTHORIZATION_CLASSES.keys.each do |class_type|
           @scope.should respond_to("#{@scope.config.send(class_type).to_s.underscore.pluralize}_foreign_key")

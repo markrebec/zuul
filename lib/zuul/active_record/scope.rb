@@ -14,10 +14,12 @@ module Zuul
 
       # Define dynamic reflection methods that reference the config to be used for subjects, roles, permissions and their associations.
       def define_reflection_methods
+
         # *_class_name, *_class, *_table_name methods for all classes
         @config.classes.to_h.each do |class_type,class_name|
           class_type_name = class_type.to_s.gsub(/_class$/,'').singularize
           class_eval do
+            
             # def CLASS_TYPE_class_name
             define_method "#{class_type_name}_class_name" do
               if @config.send(class_type).is_a?(Class)
@@ -39,13 +41,26 @@ module Zuul
               send("#{class_type_name}_class").table_name
             end
             alias_method "#{class_type_name.pluralize}_table_name", "#{class_type_name}_table_name"
+
+            # def CLASS_TYPE_singular_key (used primarily for associations)
+            define_method "#{class_type_name}_singular_key" do
+              send("#{class_type_name}_class_name").underscore.split("/").last.singularize.to_sym
+            end
+            alias_method "#{class_type_name.pluralize}_singular_key", "#{class_type_name}_singular_key"
+
+            # def CLASS_TYPE_plural_key (use primarily for associations)
+            define_method "#{class_type_name}_plural_key" do
+              send("#{class_type_name}_class_name").underscore.split("/").last.pluralize.to_sym
+            end
+            alias_method "#{class_type_name.pluralize}_plural_key", "#{class_type_name}_plural_key"
             
             unless class_type.to_s.underscore == "#{class_name.to_s.underscore}_class"
-              ["_class_name", "_class", "_table_name"].each do |suffix|
+              %w(_class_name _class _table_name _singular_key _plural_key).each do |suffix|
                 alias_method "#{class_name.to_s.underscore.singularize}#{suffix}", "#{class_type_name}#{suffix}"
                 alias_method "#{class_name.to_s.underscore.pluralize}#{suffix}", "#{class_name.to_s.underscore.singularize}#{suffix}"
               end
             end
+          
           end
         end
 
