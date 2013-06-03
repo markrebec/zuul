@@ -35,6 +35,7 @@ Then run bundler to install it.
 If you are using Rails 4 (or ActiveRecord 4) and **are not** using the [protected_attributes gem](https://github.com/rails/protected_attributes), Zuul will not set `attr_accessible` for any of your authorization models.  If you want to create or update any of these models - for example you might have an admin controller to manage roles - you'll need to utilize [strong_parameters](https://github.com/rails/strong_parameters) (which is bundled with Rails &gt;= 4).
 
 To get started using Zuul you'll need to setup a few things first. Here is an outline of the steps you'll need to take:
+
 1. Setup authorization models (subjects, roles, permissions & associations)
 2. Run the generated migrations
 3. Create your subjects, roles and permissions and assign some abilities
