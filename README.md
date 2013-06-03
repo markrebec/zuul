@@ -34,6 +34,13 @@ Then run bundler to install it.
 
 If you are using Rails 4 (or ActiveRecord 4) and **are not** using the [protected_attributes gem](https://github.com/rails/protected_attributes), Zuul will not set `attr_accessible` for any of your authorization models.  If you want to create or update any of these models - for example you might have an admin controller to manage roles - you'll need to utilize [strong_parameters](https://github.com/rails/strong_parameters) (which is bundled with Rails &gt;= 4).
 
+To get started using Zuul you'll need to setup a few things first. Here is an outline of the steps you'll need to take:
+1. Setup authorization models (subjects, roles, permissions & associations)
+2. Run the generated migrations
+3. Create your subjects, roles and permissions and assign some abilities
+4. Setup ACL for your controllers
+
+### Generating Authorization Models
 In order to use the core authorization functionality, you'll need to setup subjects and roles. Permissions are enabled in the default configuration, so if you don't specify otherwise you'll have to setup the permissions model as well. Each authorization model type has it's own default class, but those can be overridden in the global initializer config or they can be specified per-model as you're setting up authorization models.
 
 There are four types of authorization objects:
@@ -43,7 +50,6 @@ There are four types of authorization objects:
 * **Authorization Permissions:** Authorization permissions are optional, and allow finer grained control over which subjects have access to which resources. Permissions can be assigned to roles (which are in turn assigned to subjects), or they can be assigned directly to subjects themselves. They require that the model be setup in order to be used by roles or subjects, and the default model is `Permission`.
 * **Authorization Resources (Contexts):** Authorization resources, or contexts, behave as both the resources that are being accessed by a subject as well as (optionally) a context within which roles or permissions can be defined and assigned. When combined with zuul's "context chain," this allows you to define or assign roles for specific models or even specific instances of those models. No setup is required to use a model as a resource or context, but doing so will provide the resource with methods to authorize against roles and permissions. Defining resource/context models is not required, and there are no configured default class names.
 
-### Generating Authorization Models
 It's likely you already have a `User` model (or equivalent), especially if you've already got some form of authentication setup in your app. However, you probably don't yet have any role or permission models setup unless you're transitioning from another authorization solution. Either way, you can use the provided generators to create new models or to configure existing models as authorization objects. The generators work just like the normal model generators (with a few additions) and will either create the models and migrations for you if they don't exist, or modify your models and create any necessary migrations if they do.
 
 ####Generate an authorization subject model
