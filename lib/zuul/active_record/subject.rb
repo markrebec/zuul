@@ -14,8 +14,8 @@ module Zuul
 
         module ClassMethods
           def self.extended(base)
-            base.send :has_many, base.auth_scope.role_subjects_class_name.pluralize.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.role_subjects_class_name, :dependent => :destroy
-            base.send :has_many, base.auth_scope.roles_class_name.pluralize.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.role_class_name, :through => base.auth_scope.role_subjects_class_name.underscore.to_sym.to_s.split("/").last.to_sym
+            base.send :has_many, base.auth_scope.role_subject_plural_key, :class_name => base.auth_scope.role_subjects_class_name, :dependent => :destroy
+            base.send :has_many, base.auth_scope.role_plural_key, :class_name => base.auth_scope.role_class_name, :through => base.auth_scope.role_subject_plural_key
           end
         end
 
@@ -65,7 +65,7 @@ module Zuul
               target = target_role(role, context, force_context)
               return false if target.nil?
 
-              return true unless (context.id.nil? && !force_context) || role_subject_class.joins(role_class_name.underscore.to_sym).where(subject_foreign_key.to_sym => id, role_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).first.nil?
+              return true unless (context.id.nil? && !force_context) || role_subject_class.joins(role_table_name.singularize.to_sym).where(subject_foreign_key.to_sym => id, role_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).first.nil?
               return false if force_context
               return true unless context.class_name.nil? || role_subject_class.where(subject_foreign_key.to_sym => id, role_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => nil).first.nil?
               return !role_subject_class.where(subject_foreign_key.to_sym => id, role_foreign_key.to_sym => target.id, :context_type => nil, :context_id => nil).first.nil?
@@ -89,9 +89,9 @@ module Zuul
               
               return true if has_role?(target, context, force_context)
               
-              return true unless context.id.nil? || role_subject_class.joins(role_class_name.underscore.to_sym).where(subject_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => context.id).where("#{roles_table_name}.level >= ? AND #{roles_table_name}.context_type #{sql_is_or_equal(target.context_type)} ? AND #{roles_table_name}.context_id #{sql_is_or_equal(target.context_id)} ?", target.level, target.context_type, target.context_id).first.nil?
-              return true unless context.class_name.nil? || role_subject_class.joins(role_class_name.underscore.to_sym).where(subject_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => nil).where("#{roles_table_name}.level >= ? AND #{roles_table_name}.context_type #{sql_is_or_equal(target.context_type)} ? AND #{roles_table_name}.context_id #{sql_is_or_equal(target.context_id)} ?", target.level, target.context_type, target.context_id).first.nil?
-              return !role_subject_class.joins(role_class_name.underscore.to_sym).where(subject_foreign_key.to_sym => id, :context_type => nil, :context_id => nil).where("#{roles_table_name}.level >= ? AND #{roles_table_name}.context_type #{sql_is_or_equal(target.context_type)} ? AND #{roles_table_name}.context_id #{sql_is_or_equal(target.context_id)} ?", target.level, target.context_type, target.context_id).first.nil?
+              return true unless context.id.nil? || role_subject_class.joins(role_table_name.singularize.to_sym).where(subject_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => context.id).where("#{roles_table_name}.level >= ? AND #{roles_table_name}.context_type #{sql_is_or_equal(target.context_type)} ? AND #{roles_table_name}.context_id #{sql_is_or_equal(target.context_id)} ?", target.level, target.context_type, target.context_id).first.nil?
+              return true unless context.class_name.nil? || role_subject_class.joins(role_table_name.singularize.to_sym).where(subject_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => nil).where("#{roles_table_name}.level >= ? AND #{roles_table_name}.context_type #{sql_is_or_equal(target.context_type)} ? AND #{roles_table_name}.context_id #{sql_is_or_equal(target.context_id)} ?", target.level, target.context_type, target.context_id).first.nil?
+              return !role_subject_class.joins(role_table_name.singularize.to_sym).where(subject_foreign_key.to_sym => id, :context_type => nil, :context_id => nil).where("#{roles_table_name}.level >= ? AND #{roles_table_name}.context_type #{sql_is_or_equal(target.context_type)} ? AND #{roles_table_name}.context_id #{sql_is_or_equal(target.context_id)} ?", target.level, target.context_type, target.context_id).first.nil?
             end
           end
           alias_method :role_or_higher?, :has_role_or_higher?
@@ -113,9 +113,9 @@ module Zuul
               force_context ||= config.force_context
               context = Zuul::Context.parse(context)
               if force_context
-                return role_class.joins(role_subject_class_name.pluralize.underscore.to_sym).where("#{role_subjects_table_name}.#{subject_foreign_key} = ? AND #{role_subjects_table_name}.context_type #{sql_is_or_equal(context.class_name)} ? AND #{role_subjects_table_name}.context_id #{sql_is_or_equal(context.id)} ?", id, context.class_name, context.id)
+                return role_class.joins(role_subject_plural_key).where("#{role_subjects_table_name}.#{subject_foreign_key} = ? AND #{role_subjects_table_name}.context_type #{sql_is_or_equal(context.class_name)} ? AND #{role_subjects_table_name}.context_id #{sql_is_or_equal(context.id)} ?", id, context.class_name, context.id)
               else
-                return role_class.joins(role_subject_class_name.pluralize.underscore.to_sym).where("#{role_subjects_table_name}.#{subject_foreign_key} = ? AND ((#{role_subjects_table_name}.context_type #{sql_is_or_equal(context.class_name)} ? OR #{role_subjects_table_name}.context_type IS NULL) AND (#{role_subjects_table_name}.context_id #{sql_is_or_equal(context.id)} ? OR #{role_subjects_table_name}.context_id IS NULL))", id, context.class_name, context.id)
+                return role_class.joins(role_subject_plural_key).where("#{role_subjects_table_name}.#{subject_foreign_key} = ? AND ((#{role_subjects_table_name}.context_type #{sql_is_or_equal(context.class_name)} ? OR #{role_subjects_table_name}.context_type IS NULL) AND (#{role_subjects_table_name}.context_id #{sql_is_or_equal(context.id)} ? OR #{role_subjects_table_name}.context_id IS NULL))", id, context.class_name, context.id)
               end
             end
           end
@@ -137,8 +137,8 @@ module Zuul
 
         module ClassMethods
           def self.extended(base)
-            base.send :has_many, base.auth_scope.permission_subject_class_name.pluralize.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.permission_subject_class_name, :dependent => :destroy
-            base.send :has_many, base.auth_scope.permission_class_name.pluralize.underscore.to_sym.to_s.split("/").last.to_sym, :class_name => base.auth_scope.permission_class_name, :through => base.auth_scope.permission_subject_class_name.pluralize.underscore.to_sym
+            base.send :has_many, base.auth_scope.permission_subject_plural_key, :class_name => base.auth_scope.permission_subject_class_name, :dependent => :destroy
+            base.send :has_many, base.auth_scope.permission_plural_key, :class_name => base.auth_scope.permission_class_name, :through => base.auth_scope.permission_subject_plural_key
           end
         end
 
