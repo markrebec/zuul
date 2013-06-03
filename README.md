@@ -1,13 +1,6 @@
 # Zuul
 Contextual Authorization and Access Control for ActiveRecord and ActionController respectively, along with a few handy extras (like easy to use generators) for Rails.
 
-#### Zuul is undergoing some changes
-[Wes Gibbs](https://github.com/wgibbs) has been kind enough to transfer maintenance of the gem to myself ([Mark Rebec](https://github.com/markrebec)), and in turn I'm taking some time to update zuul to provide some new features and make everything compatible with the latest versions of ActiveRecord and ActionController.
-
-The version is being bumped to `0.2.0` and version history is being maintained to allow maintenance and forking of any `0.1.x` versions of the gem.
-
-I can't thank Wes enough for allowing me to take over zuul, rather than introducing yet-another-competing-access-control-gem for everyone to sort through!
-
 * [Features](#features)
 * [Getting Started](#getting-started)
 * [Configuration](#configuration)
@@ -33,11 +26,13 @@ You can install zuul from rubygems with:
 
     gem install zuul
 
-Zuul &gt;= 0.2.0 works with Rails &gt;= 3.1 (probably older versions too, but it hasn't ben tested yet). To use it add this to your Gemfile:
+Zuul &gt;= 0.2.0 works with Rails &gt;= 3.1 - to use it add this to your Gemfile:
 
     gem `zuul`
 
 Then run bundler to install it.
+
+If you are using Rails 4 (or ActiveRecord 4) and **are not** using the [protected_attributes gem](https://github.com/rails/protected_attributes), Zuul will not set `attr_accessible` for any of your authorization models.  If you want to create or update any of these models - for example you might have an admin controller to manage roles - you'll need to utilize [strong_parameters](https://github.com/rails/strong_parameters) (which is bundled with Rails &gt;= 4).
 
 In order to use the core authorization functionality, you'll need to setup subjects and roles. Permissions are enabled in the default configuration, so if you don't specify otherwise you'll have to setup the permissions model as well. Each authorization model type has it's own default class, but those can be overridden in the global initializer config or they can be specified per-model as you're setting up authorization models.
 
@@ -63,7 +58,7 @@ The above will create a standard migration at `/db/migrate/TIMESTAMP_create_user
     class User < ActiveRecord::Base
       # Setup authorization for your subject model
       acts_as_authorization_subject
-      attr_accessible :email, :password
+      attr_accessible :email, :password # Rails 3 only
     end
 
 If you are modifying an existing model, any optional fields passed into the generator are ignored, and the only change the generator makes is to insert the following lines into your model:
@@ -83,7 +78,7 @@ If the `Role` model doesn't exist, the above command will create a migration in 
     class Role < ActiveRecord::Base
       # Setup authorization for your role model
       acts_as_authorization_role
-      attr_accessible :name
+      attr_accessible :name # Rails 3 only
     end
 
 If you are using the generator to configure an existing model, a migration will be created at `/db/migrate/TIMESTAMP_add_zuul_role_to_roles.rb` to add the required authorization fields. The model will also be configured with the `acts_as_authorization_role` method, and the following lines will be inserted into your model:
@@ -296,13 +291,17 @@ There is a [complete list of the global configuration options](https://github.co
 * The name is a [reference to the film Ghostbusters](http://www.gbfans.com/wiki/Zuul) (1984)
 
 ##Contributing
+1. Fork it
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create new Pull Request
 
 ##TODO
 * continue filling out readme + documentation
 * **specs for generators**
 * **specs for action controller mixins and ACL DSL**
 * **specs for ZuulViz and rake tasks**
-* **push initial stable build to rubygems**
 * plugin travis
 * clean up errors/exceptions a bit more
 * i18n for messaging, errors, templates, etc.
