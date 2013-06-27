@@ -1,3 +1,6 @@
+0.2.6:
+* No longer raising an exception when overriding an existing scope, relying on developers to do what they need
+
 0.2.5:
 * Adds support for ActiveRecord4 (and by extension Rails4) and Strong Parameters (when using ActiveRecord ~>4.0.0 and NOT using the protected_attributes gem)
 * Clean up some of the model associations to better support custom class names and namespaced classes
