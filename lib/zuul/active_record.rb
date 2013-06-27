@@ -22,10 +22,9 @@ module Zuul
       #
       # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_model(args={}, &block)
-        include AuthorizationMethods
+        include AuthorizationMethods unless ancestors.include?(AuthorizationMethods)
         auth_config = Zuul.configuration.clone.configure(args, &block)
         @auth_scopes ||= {}
-        raise "Scope already in use: #{auth_config.scope}" if @auth_scopes.has_key?(auth_config.scope)
         @auth_scopes[auth_config.scope] = Scope.new(auth_config)
         @auth_scopes[:default] ||= @auth_scopes[auth_config.scope]
         @auth_scopes[auth_config.scope]
