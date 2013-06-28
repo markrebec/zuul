@@ -70,7 +70,13 @@ module Zuul
           class_eval do
             # def CLASS_TYPE_foreign_key
             define_method "#{class_type_name}_foreign_key" do
-              "#{send("#{class_type_name}_table_name").singularize}_#{send("#{class_type_name}_class").primary_key}"
+              # This is hideous, but we need some sort of fallback for cases like Rails 4 Heroku deploys where the environment and
+              # database are not available.
+              begin
+                "#{send("#{class_type_name}_table_name").singularize}_#{send("#{class_type_name}_class").primary_key}"
+              rescue
+                "#{send("#{class_type_name}_table_name").singularize}_id"
+              end
             end
             alias_method "#{class_type.to_s.gsub(/_class$/,"").pluralize}_foreign_key", "#{class_type.to_s.gsub(/_class$/,"").singularize}_foreign_key"
             
