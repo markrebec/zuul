@@ -1,3 +1,6 @@
+0.2.7:
+* Put a temporary, ugly hack in place to force Heroku production deploys to work until I can find a real solution
+
 0.2.6:
 * No longer raising an exception when overriding an existing scope, relying on developers to do what they need
 
