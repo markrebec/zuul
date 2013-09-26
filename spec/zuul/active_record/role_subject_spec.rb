@@ -77,7 +77,7 @@ describe "Zuul::ActiveRecord::RoleSubject" do
   it "should provide the model with belongs_to associations for roles and subjects" do
     RoleUser.reflections.keys.should include(:role)
     RoleUser.reflections.keys.should include(:user)
-    ru = RoleUser.create(:role_id => 1, :use_id => 1)
+    ru = RoleUser.create(:role_id => 1, :user_id => 1)
     ru.should respond_to(:role)
     ru.should respond_to(:user)
   end

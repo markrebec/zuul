@@ -1,20 +1,17 @@
 # Default Subject, Role, Permission and Context models
 Object.send(:remove_const, :User) if defined?(User) # we do this to undefine the model and start fresh, without any of the authorization stuff applied by tests
 class User < ActiveRecord::Base
-  attr_accessible :name if ::Zuul
-.should_whitelist?
+  attr_accessible :name if ::Zuul.should_whitelist?
 end
 
 Object.send(:remove_const, :Role) if defined?(Role)
 class Role < ActiveRecord::Base
-  attr_accessible :name, :slug, :level, :context_type, :context_id if ::Zuul
-.should_whitelist?
+  attr_accessible :name, :slug, :level, :context_type, :context_id if ::Zuul.should_whitelist?
 end
 
 Object.send(:remove_const, :Permission) if defined?(Permission)
 class Permission < ActiveRecord::Base
-  attr_accessible :name, :slug, :context_type, :context_id if ::Zuul
-.should_whitelist?
+  attr_accessible :name, :slug, :context_type, :context_id if ::Zuul.should_whitelist?
 end
 
 Object.send(:remove_const, :Context) if defined?(Context)
@@ -49,12 +46,12 @@ end
 # Additional models to test scoping
 Object.send(:remove_const, :Level) if defined?(Level)
 class Level < ActiveRecord::Base
-  attr_accessible :name, :slug, :level, :context_type, :context_id
+  attr_accessible :name, :slug, :level, :context_type, :context_id if ::Zuul.should_whitelist?
 end
 
 Object.send(:remove_const, :Ability) if defined?(Ability)
 class Ability < ActiveRecord::Base
-  attr_accessible :name, :slug, :context_type, :context_id
+  attr_accessible :name, :slug, :context_type, :context_id if ::Zuul.should_whitelist?
 end
 
 Object.send(:remove_const, :AbilityLevel) if defined?(AbilityLevel)
@@ -84,20 +81,17 @@ end
 # Custom named Subject, Role, Permission and Context models
 Object.send(:remove_const, :Soldier) if defined?(Soldier)
 class Soldier < ActiveRecord::Base
-  attr_accessible :name if ::Zuul
-.should_whitelist?
+  attr_accessible :name if ::Zuul.should_whitelist?
 end
 
 Object.send(:remove_const, :Rank) if defined?(Rank)
 class Rank < ActiveRecord::Base
-  attr_accessible :name, :slug, :level, :context_type, :context_id if ::Zuul
-.should_whitelist?
+  attr_accessible :name, :slug, :level, :context_type, :context_id if ::Zuul.should_whitelist?
 end
 
 Object.send(:remove_const, :Skill) if defined?(Skill)
 class Skill < ActiveRecord::Base
-  attr_accessible :name, :slug, :context_type, :context_id if ::Zuul
-.should_whitelist?
+  attr_accessible :name, :slug, :context_type, :context_id if ::Zuul.should_whitelist?
 end
 
 Object.send(:remove_const, :Weapon) if defined?(Weapon)
@@ -136,20 +130,17 @@ module ZuulModels
 
   send(:remove_const, :User) if defined?(ZuulModels::User)
   class User < ActiveRecord::Base
-    attr_accessible :name if ::Zuul
-.should_whitelist?
+    attr_accessible :name if ::Zuul.should_whitelist?
   end
 
   send(:remove_const, :Role) if defined?(ZuulModels::Role)
   class Role < ActiveRecord::Base
-    attr_accessible :name, :slug, :level, :context_type, :context_id if ::Zuul
-.should_whitelist?
+    attr_accessible :name, :slug, :level, :context_type, :context_id if ::Zuul.should_whitelist?
   end
 
   send(:remove_const, :Permission) if defined?(ZuulModels::Permission)
   class Permission < ActiveRecord::Base
-    attr_accessible :name, :slug, :context_type, :context_id if ::Zuul
-.should_whitelist?
+    attr_accessible :name, :slug, :context_type, :context_id if ::Zuul.should_whitelist?
   end
 
   send(:remove_const, :Context) if defined?(ZuulModels::Context)

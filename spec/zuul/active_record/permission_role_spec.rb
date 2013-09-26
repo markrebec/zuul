@@ -77,7 +77,7 @@ describe "Zuul::ActiveRecord::PermissionRole" do
   it "should provide the model with belongs_to associations for permissions and roles" do
     PermissionRole.reflections.keys.should include(:permission)
     PermissionRole.reflections.keys.should include(:role)
-    pu = PermissionRole.create(:permission_id => 1, :use_id => 1)
+    pu = PermissionRole.create(:permission_id => 1, :role_id => 1)
     pu.should respond_to(:permission)
     pu.should respond_to(:role)
   end

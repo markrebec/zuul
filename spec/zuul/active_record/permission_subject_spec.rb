@@ -77,7 +77,7 @@ describe "Zuul::ActiveRecord::PermissionSubject" do
   it "should provide the model with belongs_to associations for permissions and subjects" do
     PermissionUser.reflections.keys.should include(:permission)
     PermissionUser.reflections.keys.should include(:user)
-    pu = PermissionUser.create(:permission_id => 1, :use_id => 1)
+    pu = PermissionUser.create(:permission_id => 1, :user_id => 1)
     pu.should respond_to(:permission)
     pu.should respond_to(:user)
   end
