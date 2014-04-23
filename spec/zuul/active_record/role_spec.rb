@@ -338,19 +338,19 @@ describe "Zuul::ActiveRecord::Role" do
         nil_permission_role.id.should_not be_nil
         nil_permission_role.context_type.should be_nil
         nil_permission_role.context_id.should be_nil
-        nil_permission_role.permission.should == nil_permission
+        nil_permission_role.permission.id.should == nil_permission.id
         
         class_permission_role = @role.assign_permission(:edit, Context)
         class_permission_role.id.should_not be_nil
         class_permission_role.context_type.should == 'Context'
         class_permission_role.context_id.should be_nil
-        class_permission_role.permission.should == class_permission
+        class_permission_role.permission.id.should == class_permission.id
         
         inst_permission_role = @role.assign_permission(:edit, context)
         inst_permission_role.id.should_not be_nil
         inst_permission_role.context_type.should == 'Context'
         inst_permission_role.context_id.should == context.id
-        inst_permission_role.permission.should == inst_permission
+        inst_permission_role.permission.id.should == inst_permission.id
       end
 
       it "should use the permission object when one is provided" do
