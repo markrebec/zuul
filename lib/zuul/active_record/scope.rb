@@ -9,7 +9,6 @@ module Zuul
         @config = config
         @name = @config.scope
         define_reflection_methods
-        super()
       end
 
       # Define dynamic reflection methods that reference the config to be used for subjects, roles, permissions and their associations.
