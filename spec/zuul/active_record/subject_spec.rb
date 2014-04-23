@@ -150,15 +150,18 @@ describe "Zuul::ActiveRecord::Subject" do
         RoleUser.where(:user_id => @user.id, :role_id => role.id).count.should == 1
       end
 
-      it "should fail and return false if the provided role is already assigned in the provided context" do
+      it "should return the assigned role if it is already assigned within the provided context" do
         role = Role.create(:name => 'Admin', :slug => 'admin', :level => 100)
         context = Context.create(:name => "Test Context")
         @user.assign_role(role)
-        @user.assign_role(role).should be_false
+        @user.assign_role(role).should be_an_instance_of(RoleUser)
+        RoleUser.where(:user_id => @user.id, :role_id => role.id, :context_type => nil, :context_id => nil).count.should == 1
         @user.assign_role(role, Context)
-        @user.assign_role(role, Context).should be_false
+        @user.assign_role(role, Context).should be_an_instance_of(RoleUser)
+        RoleUser.where(:user_id => @user.id, :role_id => role.id, :context_type => 'Context', :context_id => nil).count.should == 1
         @user.assign_role(role, context)
-        @user.assign_role(role, context).should be_false
+        @user.assign_role(role, context).should be_an_instance_of(RoleUser)
+        RoleUser.where(:user_id => @user.id, :role_id => role.id, :context_type => 'Context', :context_id => context.id).count.should == 1
       end
 
       context "when forcing context" do
@@ -847,15 +850,18 @@ describe "Zuul::ActiveRecord::Subject" do
         PermissionUser.where(:user_id => @user.id, :permission_id => permission.id).count.should == 1
       end
 
-      it "should fail and return false if the provided permission is already assigned in the provided context" do
+      it "should return the assigned permission if it is already assigned within the provided context" do 
         permission = Permission.create(:name => 'Edit', :slug => 'edit')
         context = Context.create(:name => "Test Context")
         @user.assign_permission(permission)
-        @user.assign_permission(permission).should be_false
+        @user.assign_permission(permission).should be_an_instance_of(PermissionUser)
+        PermissionUser.where(:user_id => @user.id, :permission_id => permission.id, :context_type => nil, :context_id => nil).count.should == 1
         @user.assign_permission(permission, Context)
-        @user.assign_permission(permission, Context).should be_false
+        @user.assign_permission(permission, Context).should be_an_instance_of(PermissionUser)
+        PermissionUser.where(:user_id => @user.id, :permission_id => permission.id, :context_type => 'Context', :context_id => nil).count.should == 1
         @user.assign_permission(permission, context)
-        @user.assign_permission(permission, context).should be_false
+        @user.assign_permission(permission, context).should be_an_instance_of(PermissionUser)
+        PermissionUser.where(:user_id => @user.id, :permission_id => permission.id, :context_type => 'Context', :context_id => context.id).count.should == 1
       end
 
       context "when forcing context" do
