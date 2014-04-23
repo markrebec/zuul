@@ -24,8 +24,17 @@ module Zuul
       !class_name.nil? && id.nil?
     end
 
-    def nil?
+    def global?
       class_name.nil? && id.nil?
+    end
+    alias_method :nil?, :global?
+
+    def ==(kontext)
+      class_name == kontext.class_name && id == kontext.id
+    end
+
+    def <=(kontext)
+      kontext.global? || (class_name == kontext.class_name && (kontext.id.nil? || id == kontext.id))
     end
 
     def type
