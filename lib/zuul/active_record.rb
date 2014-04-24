@@ -22,6 +22,7 @@ module Zuul
       #
       # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_model(args={}, &block)
+        #zuul_modules << :authorization_methods
         include AuthorizationMethods unless ancestors.include?(AuthorizationMethods)
         auth_config = Zuul.configuration.clone.configure(args, &block)
         @auth_scopes ||= {}
@@ -36,6 +37,7 @@ module Zuul
       def acts_as_authorization_role(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:role_class => self.name}), &block)
         prepare_join_classes scope.name
+        zuul_modules << :role
         include Role 
       end
 
@@ -45,6 +47,7 @@ module Zuul
       def acts_as_authorization_permission(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:permission_class => self.name}), &block)
         prepare_join_classes scope.name
+        zuul_modules << :permission
         include Permission
       end
 
@@ -54,6 +57,7 @@ module Zuul
       def acts_as_authorization_subject(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:subject_class => self.name}), &block)
         prepare_join_classes scope.name
+        zuul_modules << :subject
         include Subject
       end
 
@@ -63,6 +67,7 @@ module Zuul
       def acts_as_authorization_context(args={}, &block)
         scope = acts_as_authorization_model(args, &block)
         prepare_join_classes scope.name
+        zuul_modules << :context
         include Context
       end
 
@@ -71,6 +76,7 @@ module Zuul
       # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_permission_role(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:permission_role_class => self.name}), &block)
+        zuul_modules << :permission_role
         include PermissionRole
       end
 
@@ -79,6 +85,7 @@ module Zuul
       # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_permission_subject(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:permission_subject_class => self.name}), &block)
+        zuul_modules << :permission_subject
         include PermissionSubject
       end
 
@@ -87,6 +94,7 @@ module Zuul
       # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_role_subject(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:role_subject_class => self.name}), &block)
+        zuul_modules << :role_subject
         include RoleSubject
       end
 
@@ -96,19 +104,19 @@ module Zuul
       def prepare_join_classes(scope)
         scope_config = auth_scope(scope).config
 
-        unless auth_scope(scope).role_subject_class.ancestors.include?(RoleSubject)
+        unless auth_scope(scope).role_subject_class.acts_as_authorization_role_subject?
           auth_scope(scope).role_subject_class.instance_eval do
             acts_as_authorization_role_subject(scope_config.to_h)
           end
         end
         
         if auth_scope(scope).config.with_permissions
-          unless auth_scope(scope).permission_subject_class.ancestors.include?(PermissionSubject)
+          unless auth_scope(scope).permission_subject_class.acts_as_authorization_permission_subject?
             auth_scope(scope).permission_subject_class.instance_eval do
               acts_as_authorization_permission_subject(scope_config.to_h)
             end
           end
-          unless auth_scope(scope).permission_role_class.ancestors.include?(PermissionRole)
+          unless auth_scope(scope).permission_role_class.acts_as_authorization_permission_role?
             auth_scope(scope).permission_role_class.instance_eval do
               acts_as_authorization_permission_role(scope_config.to_h)
             end
@@ -116,30 +124,62 @@ module Zuul
         end
       end
 
+
+      def acts_as_authorization_model?(type)
+        zuul_modules.include?(type)
+        #ancestors.include?("zuul/active_record/#{type}".camelize.constantize)
+      end
+
       # Checks if the model is setup to act as a zuul authorization role
       def acts_as_authorization_role?
-        ancestors.include?(Zuul::ActiveRecord::Role)
+        acts_as_authorization_model? :role
       end
 
       # Checks if the model is setup to act as a zuul authorization permission
       def acts_as_authorization_permission?
-        ancestors.include?(Zuul::ActiveRecord::Permission)
+        acts_as_authorization_model? :permission
       end
 
       # Checks if the model is setup to act as a zuul authorization context/resource
       def acts_as_authorization_context?
-        ancestors.include?(Zuul::ActiveRecord::Context)
+        acts_as_authorization_model? :context
       end
 
       # Checks if the model is setup to act as a zuul authorization subject
       def acts_as_authorization_subject?
-        ancestors.include?(Zuul::ActiveRecord::Subject)
+        acts_as_authorization_model? :subject
+      end
+
+      # Checks if the model is setup to act as a zuul authorization role_subject
+      def acts_as_authorization_role_subject?
+        acts_as_authorization_model? :role_subject
+      end
+
+      # Checks if the model is setup to act as a zuul authorization permission_subject
+      def acts_as_authorization_permission_subject?
+        acts_as_authorization_model? :permission_subject
+      end
+
+      # Checks if the model is setup to act as a zuul authorization permission_role
+      def acts_as_authorization_permission_role?
+        acts_as_authorization_model? :permission_role
+      end
+
+      def zuul_modules
+        @zuul_modules ||= []
       end
     end
 
-    # Defines acts_as_authorization_*? methods to pass through to the class
     module InstanceMethods
-      [:role, :permission, :subject, :context].each do |auth_type|
+      def initialize(*attrs)
+        self.class_eval do
+          zuul_modules.each { |m| include "zuul/active_record/#{m}".camelize.constantize }
+        end
+        super
+      end
+
+      # Defines acts_as_authorization_*? methods to pass through to the class
+      [:role, :permission, :subject, :context, :role_subject, :permission_subject, :permission_role].each do |auth_type|
         method_name = "acts_as_authorization_#{auth_type}?"
         define_method method_name do
           self.class.send method_name
