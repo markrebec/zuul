@@ -36,6 +36,10 @@ module Zuul
     def <=(kontext)
       kontext.global? || (class_name == kontext.class_name && (kontext.id.nil? || id == kontext.id))
     end
+    
+    def >=(kontext)
+      kontext <= self
+    end
 
     def type
       return :nil if class_name.nil?

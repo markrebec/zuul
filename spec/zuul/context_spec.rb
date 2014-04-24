@@ -96,18 +96,360 @@ describe "Zuul::Context" do
     end
   end
 
-  describe "#nil?" do
+  describe "#global?" do
     it "should return true for a nil context" do
-      Zuul::Context.new.nil?.should be_true
+      Zuul::Context.new.global?.should be_true
     end
 
     it "should return false for a class context" do
-      Zuul::Context.new('Context', nil).nil?.should be_false
+      Zuul::Context.new('Context', nil).global?.should be_false
     end
 
     it "should return false for an instance context" do
       obj = Context.create(:name => "Test Context")
+      Zuul::Context.new('Context', obj.id).global?.should be_false
+    end
+
+    it "should be aliased to #nil? for deprecation and compatibility" do
+      Zuul::Context.new.nil?.should be_true
+      Zuul::Context.new('Context', nil).nil?.should be_false
+      obj = Context.create(:name => "Test Context")
       Zuul::Context.new('Context', obj.id).nil?.should be_false
+    end
+  end
+
+  describe "#==" do
+    it "should return true if the classes and ids are equal" do
+      obj = Context.create(:name => "Test Context")
+      
+      Zuul::Context.new.should == Zuul::Context.new
+      Zuul::Context.new('Context', nil).should == Zuul::Context.new('Context', nil)
+      Zuul::Context.new('Context', obj.id).should == Zuul::Context.new('Context', obj.id)
+    end
+
+    it "should return false if the classes are not equal" do
+      obj = Context.create(:name => "Test Context")
+      
+      Zuul::Context.new.should_not == Zuul::Context.new('Context', nil)
+      Zuul::Context.new('Context', nil).should_not == Zuul::Context.new('OtherContext', nil)
+    end
+
+    it "should return false if the ids are not equal" do
+      obj1 = Context.create(:name => "Test Context One")
+      obj2 = Context.create(:name => "Test Context Two")
+      
+      Zuul::Context.new('Context', obj1.id).should_not == Zuul::Context.new('Context', nil)
+      Zuul::Context.new('Context', obj1.id).should_not == Zuul::Context.new('Context', obj2.id)
+    end
+  end
+
+  describe "#<=" do
+    context "with a global context" do
+      let(:context) { Zuul::Context.new }
+      
+      context "when compared a global context" do
+        let(:kontext) { Zuul::Context.new }
+        
+        it "should return true" do
+          expect(context <= kontext).to be_true
+        end
+      end
+      
+      context "when compared to a class context" do
+        let(:kontext) { Zuul::Context.new('Context') }
+        
+        it "should return false" do
+          expect(context <= kontext).to be_false
+        end
+      end
+      
+      context "when compared to an instance context" do
+        let(:kontext) do
+          obj = Context.create(:name => "Test Context")
+          Zuul::Context.new('Context', obj.id)
+        end
+        
+        it "should return false" do
+          expect(context <= kontext).to be_false
+        end
+      end
+    end
+    
+    context "with a class context" do
+      let(:context) { Zuul::Context.new('Context') }
+      
+      context "when compared a global context" do
+        let(:kontext) { Zuul::Context.new }
+        
+        it "should return true" do
+          expect(context <= kontext).to be_true
+        end
+      end
+      
+      context "when compared to a class context" do
+        context "with the same class" do
+          let(:kontext) { Zuul::Context.new('Context') }
+          
+          it "should return true" do
+            expect(context <= kontext).to be_true
+          end
+        end
+        
+        context "with a different class" do
+          let(:kontext) { Zuul::Context.new('OtherContext') }
+          
+          it "should return false" do
+            expect(context <= kontext).to be_false
+          end
+        end
+      end
+
+      context "when compared to an instance context" do
+        context "with the same class" do
+          let(:kontext) do
+            obj = Context.create(:name => "Test Context")
+            Zuul::Context.new('Context', obj.id)
+          end
+          
+          it "should return false" do
+            expect(context <= kontext).to be_false
+          end
+        end
+        
+        context "with a different class" do
+          let(:kontext) do
+            obj = ZuulModels::Context.create(:name => "Test Context")
+            Zuul::Context.new('OtherContext', obj.id)
+          end
+          
+          it "should return false" do
+            expect(context <= kontext).to be_false
+          end
+        end
+      end
+    end
+    
+    context "with an instance context" do
+      let(:obj) { Context.create(:name => "Test Context") }
+      let(:context) do
+        Zuul::Context.new('Context', obj.id)
+      end
+
+      context "when compared a global context" do
+        let(:kontext) { Zuul::Context.new }
+        
+        it "should return true" do
+          expect(context <= kontext).to be_true
+        end
+      end
+      
+      context "when compared to a class context" do
+        context "with the same class" do
+          let(:kontext) { Zuul::Context.new('Context') }
+          
+          it "should return true" do
+            expect(context <= kontext).to be_true
+          end
+        end
+        
+        context "with a different class" do
+          let(:kontext) { Zuul::Context.new('OtherContext') }
+          
+          it "should return false" do
+            expect(context <= kontext).to be_false
+          end
+        end
+      end
+      
+      context "when compared to an instance context" do
+        context "with the same class" do
+          context "with the same id" do
+            let(:kontext) do
+              Zuul::Context.new('Context', obj.id)
+            end
+            
+            it "should return true" do
+              expect(context <= kontext).to be_true
+            end
+          end
+          
+          context "with a different id" do
+            let(:kontext) do
+              other_obj = Context.create(:name => "Other Context")
+              Zuul::Context.new('Context', other_obj.id)
+            end
+
+            it "should return false" do
+              expect(context <= kontext).to be_false
+            end
+          end
+        end
+        
+        context "with a different class" do
+          let(:kontext) do
+            Zuul::Context.new('OtherContext', obj.id)
+          end
+          
+          it "should return false" do
+            expect(context <= kontext).to be_false
+          end
+        end
+      end
+    end
+  end
+
+  describe "#>=" do
+    context "with a global context" do
+      let(:context) { Zuul::Context.new }
+      
+      context "when compared a global context" do
+        let(:kontext) { Zuul::Context.new }
+        
+        it "should return true" do
+          expect(context >= kontext).to be_true
+        end
+      end
+      
+      context "when compared to a class context" do
+        let(:kontext) { Zuul::Context.new('Context') }
+        
+        it "should return true" do
+          expect(context >= kontext).to be_true
+        end
+      end
+      
+      context "when compared to an instance context" do
+        let(:kontext) do
+          obj = Context.create(:name => "Test Context")
+          Zuul::Context.new('Context', obj.id)
+        end
+        
+        it "should return true" do
+          expect(context >= kontext).to be_true
+        end
+      end
+    end
+    
+    context "with a class context" do
+      let(:context) { Zuul::Context.new('Context') }
+      
+      context "when compared a global context" do
+        let(:kontext) { Zuul::Context.new }
+        
+        it "should return false" do
+          expect(context >= kontext).to be_false
+        end
+      end
+      
+      context "when compared to a class context" do
+        context "with the same class" do
+          let(:kontext) { Zuul::Context.new('Context') }
+          
+          it "should return true" do
+            expect(context >= kontext).to be_true
+          end
+        end
+        
+        context "with a different class" do
+          let(:kontext) { Zuul::Context.new('OtherContext') }
+          
+          it "should return false" do
+            expect(context >= kontext).to be_false
+          end
+        end
+      end
+
+      context "when compared to an instance context" do
+        context "with the same class" do
+          let(:kontext) do
+            obj = Context.create(:name => "Test Context")
+            Zuul::Context.new('Context', obj.id)
+          end
+          
+          it "should return true" do
+            expect(context >= kontext).to be_true
+          end
+        end
+        
+        context "with a different class" do
+          let(:kontext) do
+            obj = ZuulModels::Context.create(:name => "Test Context")
+            Zuul::Context.new('OtherContext', obj.id)
+          end
+          
+          it "should return false" do
+            expect(context >= kontext).to be_false
+          end
+        end
+      end
+    end
+    
+    context "with an instance context" do
+      let(:obj) { Context.create(:name => "Test Context") }
+      let(:context) do
+        Zuul::Context.new('Context', obj.id)
+      end
+
+      context "when compared a global context" do
+        let(:kontext) { Zuul::Context.new }
+        
+        it "should return false" do
+          expect(context >= kontext).to be_false
+        end
+      end
+      
+      context "when compared to a class context" do
+        context "with the same class" do
+          let(:kontext) { Zuul::Context.new('Context') }
+          
+          it "should return false" do
+            expect(context >= kontext).to be_false
+          end
+        end
+        
+        context "with a different class" do
+          let(:kontext) { Zuul::Context.new('OtherContext') }
+          
+          it "should return false" do
+            expect(context >= kontext).to be_false
+          end
+        end
+      end
+      
+      context "when compared to an instance context" do
+        context "with the same class" do
+          context "with the same id" do
+            let(:kontext) do
+              Zuul::Context.new('Context', obj.id)
+            end
+            
+            it "should return true" do
+              expect(context >= kontext).to be_true
+            end
+          end
+          
+          context "with a different id" do
+            let(:kontext) do
+              other_obj = Context.create(:name => "Other Context")
+              Zuul::Context.new('Context', other_obj.id)
+            end
+
+            it "should return false" do
+              expect(context >= kontext).to be_false
+            end
+          end
+        end
+        
+        context "with a different class" do
+          let(:kontext) do
+            Zuul::Context.new('OtherContext', obj.id)
+          end
+          
+          it "should return false" do
+            expect(context >= kontext).to be_false
+          end
+        end
+      end
     end
   end
 
