@@ -43,7 +43,7 @@ module Zuul
               target = target_role(role, context, force_context)
               return false if target.nil?
             
-              assigned_role = role_subject_class.find_by(subject_foreign_key.to_sym => id, role_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id)
+              assigned_role = role_subject_for(target, context)
               return false if assigned_role.nil?
               return assigned_role.destroy
             end
@@ -63,11 +63,12 @@ module Zuul
               context = Zuul::Context.parse(context)
               target = target_role(role, context, force_context)
               return false if target.nil?
+              return role_subject_for?(target, context) if force_context
 
-              return true unless (context.id.nil? && !force_context) || role_subject_class.joins(role_table_name.singularize.to_sym).find_by(subject_foreign_key.to_sym => id, role_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).nil?
-              return false if force_context
-              return true unless context.class_name.nil? || role_subject_class.find_by(subject_foreign_key.to_sym => id, role_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => nil).nil?
-              return !role_subject_class.find_by(subject_foreign_key.to_sym => id, role_foreign_key.to_sym => target.id, :context_type => nil, :context_id => nil).nil?
+              return true if role_subject_for?(target, context)
+              return true if context.instance? && role_subject_for?(target, Zuul::Context.new(context.klass))
+              return true if !context.global? && role_subject_for?(target, Zuul::Context.new)
+              return false
             end
           end
           alias_method :role?, :has_role?
@@ -125,6 +126,17 @@ module Zuul
           def roles_for?(context=nil, force_context=nil)
             roles_for(context, force_context).count > 0
           end
+
+          # Looks up a single role subject based on the passed target and context
+          def role_subject_for(target, context)
+            auth_scope do
+              return role_subject_class.joins(role_table_name.singularize.to_sym).find_by(subject_foreign_key.to_sym => id, role_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id)
+            end
+          end
+
+          def role_subject_for?(target, context)
+            !role_subject_for(target, context).nil?
+          end
         end
       end
 
@@ -167,7 +179,7 @@ module Zuul
               target = target_permission(permission, context, force_context)
               return false if target.nil?
               
-              assigned_permission = permission_subject_class.find_by(subject_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id)
+              assigned_permission = permission_subject_for(target, context)
               return false if assigned_permission.nil?
               return assigned_permission.destroy
             end
@@ -190,17 +202,12 @@ module Zuul
               context = Zuul::Context.parse(context)
               target = target_permission(permission, context, force_context)
               return false if target.nil?
+              return permission_role_or_subject_for?(target, context) if force_context
 
-              return true unless (context.id.nil? && !force_context) || permission_subject_class.find_by(subject_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).nil?
-              unless force_context
-                return true unless context.class_name.nil? || permission_subject_class.find_by(subject_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => nil).nil?
-                return true unless permission_subject_class.find_by(subject_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => nil, :context_id => nil).nil?
-              end
-
-              return true unless (context.id.nil? && !force_context) || permission_role_class.find_by(role_foreign_key.to_sym => roles_for(context).map(&:id), permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).nil?
-              return false if force_context
-              return true unless context.class_name.nil? || permission_role_class.find_by(role_foreign_key.to_sym => roles_for(context).map(&:id), permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => nil).nil?
-              return !permission_role_class.find_by(role_foreign_key.to_sym => roles_for(context).map(&:id), permission_foreign_key.to_sym => target.id, :context_type => nil, :context_id => nil).nil?
+              return true if permission_role_or_subject_for?(target, context)
+              return true if context.instance? && permission_role_or_subject_for?(target, Zuul::Context.new(context.klass))
+              return true if !context.global? && permission_role_or_subject_for?(target, Zuul::Context.new)
+              return false
             end
           end
           alias_method :permission?, :has_permission?
@@ -230,6 +237,39 @@ module Zuul
           def permissions_for?(context=nil, force_context=nil)
             permissions_for(context, force_context).count > 0
           end
+
+          # Looks up a permission subject based on the passed target and context
+          def permission_subject_for(target, context)
+            auth_scope do
+              return permission_subject_class.find_by(subject_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id)
+            end
+          end
+
+          def permission_subject_for?(target, context)
+            !permission_subject_for(target, context).nil?
+          end
+
+          # Looks up a permission role based on the passed target and context
+          def permission_role_for(target, context, proles=nil)
+            auth_scope do
+              proles ||= roles_for(context)
+              return permission_role_class.find_by(role_foreign_key.to_sym => proles.map(&:id), permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id)
+            end
+          end
+
+          def permission_role_for?(target, context, proles=nil)
+            !permission_role_for(target, context, proles).nil?
+          end
+
+          # Looks up a permission subject or role based on the passed target and context
+          def permission_role_or_subject_for(target, context, proles=nil)
+            permission_subject_for(target, context) || permission_role_for(target, context, proles)
+          end
+
+          def permission_role_or_subject_for?(target, context, proles=nil)
+            !permission_role_or_subject_for(target, context, proles).nil?
+          end
+
         end
       end
     end
