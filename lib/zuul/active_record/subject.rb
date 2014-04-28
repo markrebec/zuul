@@ -42,7 +42,7 @@ module Zuul
               context = Zuul::Context.parse(context)
               target = target_role(role, context, force_context)
               return false if target.nil?
-            
+
               assigned_role = role_subject_for(target, context)
               return false if assigned_role.nil?
               return assigned_role.destroy
@@ -88,7 +88,7 @@ module Zuul
               return false if target.nil?
               return true if has_role?(target, context, force_context)
               return role_subject_or_higher_for?(target, context) if force_context
-              
+
               return true if role_subject_or_higher_for?(target, context)
               return true if context.instance? && role_subject_or_higher_for?(target, Zuul::Context.new(context.klass))
               return true if !context.global? && role_subject_or_higher_for?(target, Zuul::Context.new)
@@ -120,7 +120,7 @@ module Zuul
               end
             end
           end
-          
+
           # Check whether the subject possesses any roles within the specified context.
           #
           # This includes any roles found by looking up the context chain.
@@ -215,7 +215,7 @@ module Zuul
           # Assigns a permission to a subject within the provided context.
           #
           # If a Permission object is provided it's used directly, otherwise if a
-          # permission slug is provided, the permission is looked up in the context 
+          # permission slug is provided, the permission is looked up in the context
           # chain by target_permission.
           def assign_permission(permission, context=nil, force_context=nil)
             auth_scope do
@@ -229,14 +229,14 @@ module Zuul
           # Removes a permission from a subject within the provided context.
           #
           # If a Permission object is provided it's used directly, otherwise if a
-          # permission slug is provided, the permission is looked up in the context 
+          # permission slug is provided, the permission is looked up in the context
           # chain by target_permission.
           def unassign_permission(permission, context=nil, force_context=nil)
             auth_scope do
               context = Zuul::Context.parse(context)
               target = target_permission(permission, context, force_context)
               return false if target.nil?
-              
+
               assigned_permission = permission_subject_for(target, context)
               return false if assigned_permission.nil?
               return assigned_permission.destroy
@@ -247,7 +247,7 @@ module Zuul
           # Checks whether a subject has a permission within the provided context.
           #
           # If a Permission object is provided it's used directly, otherwise if a
-          # permission slug is provided, the permission is looked up in the context 
+          # permission slug is provided, the permission is looked up in the context
           # chain by target_permission.
           #
           # The assigned context behaves the same way, in that if the permission is not found
@@ -288,7 +288,7 @@ module Zuul
               end
             end
           end
-          
+
           # Check whether the subject possesses any permissions within the specified context.
           #
           # This includes permissions assigned directly to the subject or any roles possessed by
