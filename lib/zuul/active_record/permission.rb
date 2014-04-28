@@ -9,8 +9,7 @@ module Zuul
 
       module ClassMethods
         def self.extended(base)
-          base.send :attr_accessible, :context, :context_id, :context_type, :slug if ::Zuul
-.should_whitelist?
+          base.send :attr_accessible, :context, :context_id, :context_type, :slug if ::Zuul.should_whitelist?
           add_validations base
           add_associations base
         end
