@@ -171,13 +171,6 @@ module Zuul
     end
 
     module InstanceMethods
-      def initialize(*attrs)
-        self.class_eval do
-          zuul_modules.each { |m| include "zuul/active_record/#{m}".camelize.constantize }
-        end
-        super
-      end
-
       # Defines acts_as_authorization_*? methods to pass through to the class
       [:role, :permission, :subject, :context, :role_subject, :permission_subject, :permission_role].each do |auth_type|
         method_name = "acts_as_authorization_#{auth_type}?"
@@ -197,7 +190,7 @@ module Zuul
       end
 
       module ClassMethods
-        # Return the requested scope, call a method within a scope or execute an optional block within that scope
+        # Return the requested scope, call a method within a scope, or execute an optional block within that scope
         #
         # If an optional block is passed, it will be executed within the provided scope. This allows
         # you to call methods on the model or the auth scope without having to specify a scope
@@ -257,7 +250,7 @@ module Zuul
           self.class.auth_scopes
         end
 
-        # Return the requested scope, call a method within a scope or execute an optional block within that scope
+        # Return the requested scope, call a method within a scope, or execute an optional block within that scope
         #
         # If an optional block is passed, it will be executed within the provided scope. This allows
         # you to call methods on the model or the auth scope without having to specify a scope
