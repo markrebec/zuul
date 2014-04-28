@@ -10,8 +10,7 @@ module Zuul
 
       module ClassMethods
         def self.extended(base)
-          base.send :attr_accessible, :context_id, :context_type, :level, :slug if ::Zuul
-.should_whitelist?
+          base.send :attr_accessible, :context_id, :context_type, :level, :slug if ::Zuul.should_whitelist?
           add_validations base
           add_associations base
         end
@@ -70,7 +69,7 @@ module Zuul
             target = target_permission(permission, context, force_context)
             return false if target.nil?
 
-            assigned_permission = permission_role_class.find_by(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id)
+            assigned_permission = permission_role_for(target, context)
             return false if assigned_permission.nil?
             return assigned_permission.destroy
           end
@@ -85,20 +84,18 @@ module Zuul
         #
         # The assigned context behaves the same way, in that if the permission is not found
         # to belong to the role with the specified context, we look up the context chain.
-        #
-        # TODO add options to force context, not go up the chain
         def has_permission?(permission, context=nil, force_context=nil)
           auth_scope do
             force_context ||= config.force_context
             context = Zuul::Context.parse(context)
             target = target_permission(permission, context, force_context)
             return false if target.nil?
+            return permission_role_for?(target, context) if force_context
 
-            return true unless (context.id.nil? && !force_context) || permission_role_class.find_by(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id).nil?
-            unless force_context
-              return true unless context.class_name.nil? || permission_role_class.find_by(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => nil).nil?
-              return !permission_role_class.find_by(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => nil, :context_id => nil).nil?
-            end
+            return true if permission_role_for?(target, context)
+            return true if context.instance? && permission_role_for?(target, Zuul::Context.new(context.klass))
+            return true if !context.global? && permission_role_for?(target, Zuul::Context.new)
+            return false
           end
         end
         alias_method :permission?, :has_permission?
@@ -111,9 +108,9 @@ module Zuul
             force_context ||= config.force_context
             context = Zuul::Context.parse(context)
             if force_context
-              return permission_class.joins(permission_role_plural_key).where(permission_role_plural_key => {role_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => context.id})
+              return role_permissions_for(context)
             else
-              return permission_class.joins("LEFT JOIN #{permission_roles_table_name} ON #{permission_roles_table_name}.#{permission_foreign_key} = #{permissions_table_name}.id").where("#{permission_roles_table_name}.#{role_foreign_key} = ? AND (#{permission_roles_table_name}.context_type #{sql_is_or_equal(context.class_name)} ? OR #{permission_roles_table_name}.context_type IS NULL) AND (#{permission_roles_table_name}.context_id #{sql_is_or_equal(context.id)} ? OR #{permission_roles_table_name}.context_id IS NULL)", id, context.class_name, context.id)
+              return role_permissions_within(context)
             end
           end
         end
@@ -121,6 +118,52 @@ module Zuul
         # Check whether the role possesses any permissions within the specified context.
         def permissions_for?(context=nil, force_context=nil)
           permissions_for(context, force_context).count > 0
+        end
+
+        # Looks up a single permission role based on the passed target and context
+        def permission_role_for(target, context)
+          auth_scope do
+            return permission_role_class.find_by(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id)
+          end
+        end
+
+        def permission_role_for?(target, context)
+          !permission_role_for(target, context).nil?
+        end
+
+        def role_permissions_for(context)
+          auth_scope do
+            return permission_class.joins(permission_role_plural_key).where(permission_role_plural_key => {role_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => context.id})
+          end
+        end
+
+        def role_permissions_for?(context)
+          !role_permissions_for(context).empty?
+        end
+
+        def role_permissions_within(context)
+          auth_scope do
+            return permission_class.joins("
+                LEFT JOIN #{permission_roles_table_name}
+                  ON #{permission_roles_table_name}.#{permission_foreign_key} = #{permissions_table_name}.id"
+              ).where("
+                #{permission_roles_table_name}.#{role_foreign_key} = ?
+                AND (
+                  #{permission_roles_table_name}.context_type #{sql_is_or_equal(context.class_name)} ?
+                  OR #{permission_roles_table_name}.context_type IS NULL
+                )
+                AND (
+                  #{permission_roles_table_name}.context_id #{sql_is_or_equal(context.id)} ?
+                  OR #{permission_roles_table_name}.context_id IS NULL
+                )",
+                id,
+                context.class_name,
+                context.id)
+          end
+        end
+
+        def role_permissions_within?(context)
+          !role_permissions_within(context).empty?
         end
       end
     end
