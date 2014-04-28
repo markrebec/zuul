@@ -1,5 +1,6 @@
 module Zuul
   class Context < Struct.new(:class_name, :id)
+    alias_attribute :klass, :class_name
 
     def self.parse(*args)
       if args.length >= 2

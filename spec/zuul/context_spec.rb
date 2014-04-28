@@ -2,6 +2,11 @@ require 'spec_helper'
 
 describe "Zuul::Context" do
 
+  it "should alias :klass to :class_name" do
+    context = Zuul::Context.parse(Context)
+    expect(context.klass).to eql(context.class_name)
+  end
+
   describe "parse" do
     it "should allow passing nil" do
       expect { Zuul::Context.parse(nil) }.to_not raise_exception
