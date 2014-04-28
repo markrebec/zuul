@@ -86,12 +86,13 @@ module Zuul
               context = Zuul::Context.parse(context)
               target = target_role(role, context, force_context)
               return false if target.nil?
-              
               return true if has_role?(target, context, force_context)
+              return role_subject_or_higher_for?(target, context) if force_context
               
-              return true unless context.id.nil? || role_subject_class.joins(role_table_name.singularize.to_sym).where(subject_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => context.id).where("#{roles_table_name}.level >= ? AND #{roles_table_name}.context_type #{sql_is_or_equal(target.context_type)} ? AND #{roles_table_name}.context_id #{sql_is_or_equal(target.context_id)} ?", target.level, target.context_type, target.context_id).limit(1).first.nil?
-              return true unless context.class_name.nil? || role_subject_class.joins(role_table_name.singularize.to_sym).where(subject_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => nil).where("#{roles_table_name}.level >= ? AND #{roles_table_name}.context_type #{sql_is_or_equal(target.context_type)} ? AND #{roles_table_name}.context_id #{sql_is_or_equal(target.context_id)} ?", target.level, target.context_type, target.context_id).limit(1).first.nil?
-              return !role_subject_class.joins(role_table_name.singularize.to_sym).where(subject_foreign_key.to_sym => id, :context_type => nil, :context_id => nil).where("#{roles_table_name}.level >= ? AND #{roles_table_name}.context_type #{sql_is_or_equal(target.context_type)} ? AND #{roles_table_name}.context_id #{sql_is_or_equal(target.context_id)} ?", target.level, target.context_type, target.context_id).limit(1).first.nil?
+              return true if role_subject_or_higher_for?(target, context)
+              return true if context.instance? && role_subject_or_higher_for?(target, Zuul::Context.new(context.klass))
+              return true if !context.global? && role_subject_or_higher_for?(target, Zuul::Context.new)
+              return false
             end
           end
           alias_method :role_or_higher?, :has_role_or_higher?
@@ -113,9 +114,9 @@ module Zuul
               force_context ||= config.force_context
               context = Zuul::Context.parse(context)
               if force_context
-                return role_class.joins(role_subject_plural_key).where("#{role_subjects_table_name}.#{subject_foreign_key} = ? AND #{role_subjects_table_name}.context_type #{sql_is_or_equal(context.class_name)} ? AND #{role_subjects_table_name}.context_id #{sql_is_or_equal(context.id)} ?", id, context.class_name, context.id)
+                return subject_roles_for(context)
               else
-                return role_class.joins(role_subject_plural_key).where("#{role_subjects_table_name}.#{subject_foreign_key} = ? AND ((#{role_subjects_table_name}.context_type #{sql_is_or_equal(context.class_name)} ? OR #{role_subjects_table_name}.context_type IS NULL) AND (#{role_subjects_table_name}.context_id #{sql_is_or_equal(context.id)} ? OR #{role_subjects_table_name}.context_id IS NULL))", id, context.class_name, context.id)
+                return subject_roles_within(context)
               end
             end
           end
@@ -136,6 +137,63 @@ module Zuul
 
           def role_subject_for?(target, context)
             !role_subject_for(target, context).nil?
+          end
+
+          # Looks up a single role subject with a level greather than or equal to the target level based on the passed target and context
+          def role_subject_or_higher_for(target, context)
+            auth_scope do
+              return role_subject_class.joins(role_table_name.singularize.to_sym).where(subject_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => context.id).where("
+                #{roles_table_name}.level >= ?
+                AND #{roles_table_name}.context_type #{sql_is_or_equal(target.context_type)} ?
+                AND #{roles_table_name}.context_id #{sql_is_or_equal(target.context_id)} ?",
+                target.level,
+                target.context_type,
+                target.context_id).limit(1).first
+            end
+          end
+
+          def role_subject_or_higher_for?(target, context)
+            !role_subject_or_higher_for(target, context).nil?
+          end
+
+          def subject_roles_for(context)
+            auth_scope do
+              return role_class.joins(role_subject_plural_key).where("
+                #{role_subjects_table_name}.#{subject_foreign_key} = ?
+                AND #{role_subjects_table_name}.context_type #{sql_is_or_equal(context.class_name)} ?
+                AND #{role_subjects_table_name}.context_id #{sql_is_or_equal(context.id)} ?",
+                id,
+                context.class_name,
+                context.id)
+            end
+          end
+
+          def subject_roles_for?(context)
+            !subject_roles_for(context).empty?
+          end
+
+          def subject_roles_within(context)
+            auth_scope do
+              return role_class.joins(role_subject_plural_key).where("
+                #{role_subjects_table_name}.#{subject_foreign_key} = ?
+                AND (
+                  (
+                    #{role_subjects_table_name}.context_type #{sql_is_or_equal(context.class_name)} ?
+                    OR #{role_subjects_table_name}.context_type IS NULL
+                  )
+                  AND (
+                    #{role_subjects_table_name}.context_id #{sql_is_or_equal(context.id)} ?
+                    OR #{role_subjects_table_name}.context_id IS NULL
+                  )
+                )",
+                id,
+                context.class_name,
+                context.id)
+            end
+          end
+
+          def subject_roles_within?(context)
+            !subject_roles_within(context).empty?
           end
         end
       end
@@ -222,10 +280,11 @@ module Zuul
             auth_scope do
               force_context ||= config.force_context
               context = Zuul::Context.parse(context)
+              roles = roles_for(context)
               if force_context
-                return permission_class.joins("LEFT JOIN #{permission_roles_table_name} ON #{permission_roles_table_name}.#{permission_foreign_key} = #{permissions_table_name}.id LEFT JOIN #{permission_subjects_table_name} ON #{permission_subjects_table_name}.#{permission_foreign_key} = #{permissions_table_name}.id").where("(#{permission_subjects_table_name}.#{subject_foreign_key} = ? AND #{permission_subjects_table_name}.context_type #{sql_is_or_equal(context.class_name)} ? AND #{permission_subjects_table_name}.context_id #{sql_is_or_equal(context.id)} ?) OR (#{permission_roles_table_name}.#{role_foreign_key} IN (?) AND #{permission_roles_table_name}.context_type #{sql_is_or_equal(context.class_name)} ? AND #{permission_roles_table_name}.context_id #{sql_is_or_equal(context.id)} ?)", id, context.class_name, context.id, roles_for(context).map(&:id), context.class_name, context.id)
+                return role_and_subject_permissions_for(context, roles)
               else
-                return permission_class.joins("LEFT JOIN #{permission_roles_table_name} ON #{permission_roles_table_name}.#{permission_foreign_key} = #{permissions_table_name}.id LEFT JOIN #{permission_subjects_table_name} ON #{permission_subjects_table_name}.#{permission_foreign_key} = #{permissions_table_name}.id").where("(#{permission_subjects_table_name}.#{subject_foreign_key} = ? AND (#{permission_subjects_table_name}.context_type #{sql_is_or_equal(context.class_name)} ? OR #{permission_subjects_table_name}.context_type IS NULL) AND (#{permission_subjects_table_name}.context_id #{sql_is_or_equal(context.id)} ? OR #{permission_subjects_table_name}.context_id IS NULL)) OR (#{permission_roles_table_name}.#{role_foreign_key} IN (?) AND (#{permission_roles_table_name}.context_type #{sql_is_or_equal(context.class_name)} ? OR #{permission_roles_table_name}.context_type IS NULL) AND (#{permission_roles_table_name}.context_id #{sql_is_or_equal(context.id)} ? OR #{permission_roles_table_name}.context_id IS NULL))", id, context.class_name, context.id, roles_for(context).map(&:id), context.class_name, context.id)
+                return role_and_subject_permissions_within(context, roles)
               end
             end
           end
@@ -235,7 +294,7 @@ module Zuul
           # This includes permissions assigned directly to the subject or any roles possessed by
           # the subject, as well as all permissions found by looking up the context chain.
           def permissions_for?(context=nil, force_context=nil)
-            permissions_for(context, force_context).count > 0
+            !permissions_for(context, force_context).empty?
           end
 
           # Looks up a permission subject based on the passed target and context
@@ -268,6 +327,81 @@ module Zuul
 
           def permission_role_or_subject_for?(target, context, proles=nil)
             !permission_role_or_subject_for(target, context, proles).nil?
+          end
+
+          def role_and_subject_permissions_for(context, proles=nil)
+            auth_scope do
+              return permission_class.joins("
+                  LEFT JOIN #{permission_roles_table_name}
+                    ON #{permission_roles_table_name}.#{permission_foreign_key} = #{permissions_table_name}.id
+                  LEFT JOIN #{permission_subjects_table_name}
+                    ON #{permission_subjects_table_name}.#{permission_foreign_key} = #{permissions_table_name}.id"
+                ).where("
+                  (
+                    #{permission_subjects_table_name}.#{subject_foreign_key} = ?
+                    AND #{permission_subjects_table_name}.context_type #{sql_is_or_equal(context.class_name)} ?
+                    AND #{permission_subjects_table_name}.context_id #{sql_is_or_equal(context.id)} ?
+                  )
+                  OR
+                  (
+                    #{permission_roles_table_name}.#{role_foreign_key} IN (?)
+                    AND #{permission_roles_table_name}.context_type #{sql_is_or_equal(context.class_name)} ?
+                    AND #{permission_roles_table_name}.context_id #{sql_is_or_equal(context.id)} ?
+                  )",
+                  id,
+                  context.class_name,
+                  context.id,
+                  (proles || roles_for(context)).map(&:id),
+                  context.class_name,
+                  context.id)
+            end
+          end
+
+          def role_and_subject_permissions_for?(context, proles=nil)
+            !role_and_subject_permissions_for(context, proles).empty?
+          end
+
+          def role_and_subject_permissions_within(context, proles=nil)
+            auth_scope do
+              return permission_class.joins("
+                  LEFT JOIN #{permission_roles_table_name}
+                  ON #{permission_roles_table_name}.#{permission_foreign_key} = #{permissions_table_name}.id
+                  LEFT JOIN #{permission_subjects_table_name}
+                  ON #{permission_subjects_table_name}.#{permission_foreign_key} = #{permissions_table_name}.id"
+                ).where("
+                  (
+                    #{permission_subjects_table_name}.#{subject_foreign_key} = ?
+                    AND (
+                      #{permission_subjects_table_name}.context_type #{sql_is_or_equal(context.class_name)} ?
+                      OR #{permission_subjects_table_name}.context_type IS NULL
+                    )
+                    AND (
+                      #{permission_subjects_table_name}.context_id #{sql_is_or_equal(context.id)} ?
+                      OR #{permission_subjects_table_name}.context_id IS NULL
+                    )
+                  )
+                  OR (
+                    #{permission_roles_table_name}.#{role_foreign_key} IN (?)
+                    AND (
+                      #{permission_roles_table_name}.context_type #{sql_is_or_equal(context.class_name)} ?
+                      OR #{permission_roles_table_name}.context_type IS NULL
+                    )
+                    AND (
+                      #{permission_roles_table_name}.context_id #{sql_is_or_equal(context.id)} ?
+                      OR #{permission_roles_table_name}.context_id IS NULL
+                    )
+                  )",
+                  id,
+                  context.class_name,
+                  context.id,
+                  (proles || roles_for(context)).map(&:id),
+                  context.class_name,
+                  context.id)
+            end
+          end
+
+          def role_and_subject_permissions_within?(context, proles=nil)
+            !role_and_subject_permissions_within(context, proles).empty?
           end
 
         end
