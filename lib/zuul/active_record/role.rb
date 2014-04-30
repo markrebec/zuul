@@ -3,7 +3,7 @@ module Zuul
     module Role
       def self.included(base)
         base.send :extend, ClassMethods
-        base.send :include, ContextMethods # defined in lib/zuul/active_record.rb
+        base.send :include, ContextAccessors
         base.send :include, InstanceMethods
         base.send :include, PermissionMethods if base.auth_scope.config.with_permissions
       end

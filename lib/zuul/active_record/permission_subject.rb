@@ -3,7 +3,7 @@ module Zuul
     module PermissionSubject
       def self.included(base)
         base.send :extend, ClassMethods
-        base.send :include, ContextMethods # defined in lib/zuul/active_record.rb
+        base.send :include, ContextAccessors
       end
 
       module ClassMethods

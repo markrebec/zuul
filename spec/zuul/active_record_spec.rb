@@ -159,9 +159,9 @@ describe "Zuul::ActiveRecord" do
       Role.ancestors.include?(Zuul::ActiveRecord::Role).should be_true
     end
     
-    it "should extend the model with Zuul::ActiveRecord::ContextMethods" do
+    it "should extend the model with Zuul::ActiveRecord::ContextAccessors" do
       Role.acts_as_authorization_role
-      Role.ancestors.include?(Zuul::ActiveRecord::ContextMethods).should be_true
+      Role.ancestors.include?(Zuul::ActiveRecord::ContextAccessors).should be_true
     end
     
     it "should extend the model with Zuul::ActiveRecord::Role::PermissionMethods if permissions enabled" do
@@ -181,9 +181,9 @@ describe "Zuul::ActiveRecord" do
       Permission.ancestors.include?(Zuul::ActiveRecord::Permission).should be_true
     end
     
-    it "should extend the model with Zuul::ActiveRecord::ContextMethods" do
+    it "should extend the model with Zuul::ActiveRecord::ContextAccessors" do
       Permission.acts_as_authorization_permission
-      Permission.ancestors.include?(Zuul::ActiveRecord::ContextMethods).should be_true
+      Permission.ancestors.include?(Zuul::ActiveRecord::ContextAccessors).should be_true
     end
   end
 
