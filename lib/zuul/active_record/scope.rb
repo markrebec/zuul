@@ -12,6 +12,46 @@ module Zuul
       end
 
       # Define dynamic reflection methods that reference the config to be used for subjects, roles, permissions and their associations.
+      #
+      # With a standard configuration, this defines the following methods:
+      #
+      # def subject_class                 : Subject
+      # def role_class                    : Role
+      # def permission_class              : Permission
+      # def role_subject_class            : RoleSubject
+      # def permission_role_class         : PermissionRole
+      #
+      # def subject_class_name            : 'Subject'
+      # def role_class_name               : 'Role'
+      # def permission_class_name         : 'Permission'
+      # def role_subject_class_name       : 'RoleSubject'
+      # def permission_role_class_name    : 'PermissionRole'
+      #
+      # def subject_table_name            : 'subjects'
+      # def role_table_name               : 'roles'
+      # def permission_table_name         : 'permissions'
+      # def role_subject_table_name       : 'role_subjects'
+      # def permission_role_table_name    : 'permission_roles'
+      #
+      # def subject_singular_key          : 'subject'
+      # def role_singular_key             : 'role'
+      # def permission_singular_key       : 'permission'
+      # def role_subject_singular_key     : 'role_subject'
+      # def permission_role_singular_key  : 'permission_role'
+      #
+      # def subject_plural_key            : 'subjects'
+      # def role_plural_key               : 'roles'
+      # def permission_plural_key         : 'permissions'
+      # def role_subject_plural_key       : 'role_subjects'
+      # def permission_role_plural_key    : 'permission_roles'
+      #
+      # def subject_foreign_key           : 'subject_id'
+      # def role_foreign_key              : 'role_id'
+      # def permission_foreign_key        : 'permission_id'
+      #
+      # All methods are also aliased to pluralized versions, so you can use `subject_class` or `subjects_class`, and
+      # when custom class names are used the methods are prefixed with those classes and aliased, so `user_class_name`
+      # is aliased to `subject_class_name`
       def define_reflection_methods
 
         # *_class_name, *_class, *_table_name methods for all classes
@@ -53,6 +93,7 @@ module Zuul
             end
             alias_method "#{class_type_name.pluralize}_plural_key", "#{class_type_name}_plural_key"
             
+            # These define aliases for custom class names, like user_class and user_table_name aliased to subject_class and subject_table_name
             unless class_type.to_s.underscore == "#{class_name.to_s.underscore}_class"
               %w(_class_name _class _table_name _singular_key _plural_key).each do |suffix|
                 alias_method "#{class_name.to_s.underscore.singularize}#{suffix}", "#{class_type_name}#{suffix}"
