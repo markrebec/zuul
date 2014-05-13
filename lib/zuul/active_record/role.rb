@@ -120,7 +120,7 @@ module Zuul
           permissions_for(context, force_context).count > 0
         end
 
-        # Looks up a single permission role based on the passed target and context
+        # Looks up a single permission_role based on the passed target and context
         def permission_role_for(target, context)
           auth_scope do
             return permission_role_class.find_by(role_foreign_key.to_sym => id, permission_foreign_key.to_sym => target.id, :context_type => context.class_name, :context_id => context.id)
@@ -131,6 +131,7 @@ module Zuul
           !permission_role_for(target, context).nil?
         end
 
+        # Looks up all permissions for this role for the passed context
         def role_permissions_for(context)
           auth_scope do
             return permission_class.joins(permission_role_plural_key).where(permission_role_plural_key => {role_foreign_key.to_sym => id, :context_type => context.class_name, :context_id => context.id})
@@ -141,6 +142,7 @@ module Zuul
           !role_permissions_for(context).empty?
         end
 
+        # Looks up all permissions for this role within the passed context (within the context chain)
         def role_permissions_within(context)
           auth_scope do
             return permission_class.joins("

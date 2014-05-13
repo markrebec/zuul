@@ -156,6 +156,7 @@ module Zuul
             !role_subject_or_higher_for(target, context).nil?
           end
 
+          # Looks up all roles for the subject for the passed context
           def subject_roles_for(context)
             auth_scope do
               return role_class.joins(role_subject_plural_key).where("
@@ -172,6 +173,7 @@ module Zuul
             !subject_roles_for(context).empty?
           end
 
+          # Looks up all roles for the subject within the passed context (within the context chain)
           def subject_roles_within(context)
             auth_scope do
               return role_class.joins(role_subject_plural_key).where("
