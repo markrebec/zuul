@@ -23,7 +23,6 @@ module Zuul
       #
       # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_model(args={}, &block)
-        #zuul_modules << :authorization_methods
         include AuthorizationMethods unless ancestors.include?(AuthorizationMethods)
         auth_config = Zuul.configuration.clone.configure(args, &block)
         @auth_scopes ||= {}
@@ -38,7 +37,6 @@ module Zuul
       def acts_as_authorization_role(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:role_class => self.name}), &block)
         prepare_join_classes scope.name
-        zuul_modules << :role
         include Role 
       end
 
@@ -48,7 +46,6 @@ module Zuul
       def acts_as_authorization_permission(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:permission_class => self.name}), &block)
         prepare_join_classes scope.name
-        zuul_modules << :permission
         include Permission
       end
 
@@ -58,7 +55,6 @@ module Zuul
       def acts_as_authorization_subject(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:subject_class => self.name}), &block)
         prepare_join_classes scope.name
-        zuul_modules << :subject
         include Subject
       end
 
@@ -68,7 +64,6 @@ module Zuul
       def acts_as_authorization_context(args={}, &block)
         scope = acts_as_authorization_model(args, &block)
         prepare_join_classes scope.name
-        zuul_modules << :context
         include Context
       end
 
@@ -77,7 +72,6 @@ module Zuul
       # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_permission_role(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:permission_role_class => self.name}), &block)
-        zuul_modules << :permission_role
         include PermissionRole
       end
 
@@ -86,7 +80,6 @@ module Zuul
       # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_permission_subject(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:permission_subject_class => self.name}), &block)
-        zuul_modules << :permission_subject
         include PermissionSubject
       end
 
@@ -95,7 +88,6 @@ module Zuul
       # The args parameter is an optional hash of configuration options.
       def acts_as_authorization_role_subject(args={}, &block)
         scope = acts_as_authorization_model(args.merge({:role_subject_class => self.name}), &block)
-        zuul_modules << :role_subject
         include RoleSubject
       end
 
@@ -127,8 +119,7 @@ module Zuul
 
 
       def acts_as_authorization_model?(type)
-        zuul_modules.include?(type)
-        #ancestors.include?("zuul/active_record/#{type}".camelize.constantize)
+        ancestors.include?("zuul/active_record/#{type}".camelize.constantize)
       end
 
       # Checks if the model is setup to act as a zuul authorization role
@@ -164,10 +155,6 @@ module Zuul
       # Checks if the model is setup to act as a zuul authorization permission_role
       def acts_as_authorization_permission_role?
         acts_as_authorization_model? :permission_role
-      end
-
-      def zuul_modules
-        @zuul_modules ||= []
       end
     end
 
