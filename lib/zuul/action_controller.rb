@@ -71,11 +71,11 @@ module Zuul
             raise Exceptions::AccessDenied if !controller.acl_dsl.authorized? && controller.acl_dsl.mode != :quiet
           end
         end
-        append_before_filter "#{callback_method.to_s}(self)".to_sym, filter_args
+        append_before_filter "#{callback_method.to_s}(self)", filter_args
       end
 
       def acl_filters
-        _process_action_callbacks.select { |f| f.kind == :before && f.filter.match(/\A_zuul_callback_before_.*/) }
+        _process_action_callbacks.select { |f| f.kind == :before && f.instance_variable_get(:@filter).match(/\A_zuul_callback_before_.*/) }
       end
 
       # TODO maybe implement these to be used as simple wrappers for access_control
