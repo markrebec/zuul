@@ -1,3 +1,6 @@
+0.2.8:
+* Lots of refactoring and cleanup, a few minor fixes for Rails 4.1 compatibility
+
 0.2.7:
 * Put a temporary, ugly hack in place to force Heroku production deploys to work until I can find a real solution
 
