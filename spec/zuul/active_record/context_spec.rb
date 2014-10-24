@@ -20,11 +20,11 @@ describe "Zuul::ActiveRecord::Context" do
       context = Context.create(:name => "Test Context")
       user = User.create(:name => "Test User")
       role = Role.create(:name => "Admin", :slug => "admin", :level => 100)
-      context.allowed?(user, role).should be_false
-      context.allowed?(user, role).should == user.has_role?(role, context)
+      expect(context.allowed?(user, role)).to be_false
+      expect(context.allowed?(user, role)).to eql(user.has_role?(role, context))
       user.assign_role(role, context)
-      context.allowed?(user, role).should be_true
-      context.allowed?(user, role).should == user.has_role?(role, context)
+      expect(context.allowed?(user, role)).to be_true
+      expect(context.allowed?(user, role)).to eql(user.has_role?(role, context))
     end
   end
 
