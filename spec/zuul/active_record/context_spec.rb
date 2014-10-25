@@ -31,7 +31,7 @@ describe "Zuul::ActiveRecord::Context" do
   describe "allowed_to?" do
     it "should not be available if permissions are disabled" do
       Weapon.acts_as_authorization_context :with_permissions => false
-      Weapon.new.should_not respond_to(:allowed_to?)
+      expect(Weapon.new).to_not respond_to(:allowed_to?)
     end
 
     it "should require a subject and a permission object or slug" do
@@ -45,11 +45,11 @@ describe "Zuul::ActiveRecord::Context" do
       context = Context.create(:name => "Test Context")
       user = User.create(:name => "Test User")
       permission = Permission.create(:name => "Edit", :slug => "edit")
-      context.allowed_to?(user, permission).should be_false
-      context.allowed_to?(user, permission).should == user.has_permission?(permission, context)
+      expect(context.allowed_to?(user, permission)).to be_false
+      expect(context.allowed_to?(user, permission)).to eql(user.has_permission?(permission, context))
       user.assign_permission(permission, context)
-      context.allowed_to?(user, permission).should be_true
-      context.allowed_to?(user, permission).should == user.has_permission?(permission, context)
+      expect(context.allowed_to?(user, permission)).to be_true
+      expect(context.allowed_to?(user, permission)).to eql(user.has_permission?(permission, context))
     end
   end
 
@@ -61,18 +61,18 @@ describe "Zuul::ActiveRecord::Context" do
       ctxtrole = Role.create(:name => 'Context Admin', :slug => 'ctxtadmin', :level => 100, :context => context)
       user.assign_role(:admin, context)
       user.assign_role(:ctxtadmin, context)
-      Role.count.should == 2
-      RoleUser.where(:context_type => context.class.name, :context_id => context.id).count.should == 2
+      expect(Role.count).to eql(2)
+      expect(RoleUser.where(:context_type => context.class.name, :context_id => context.id).count).to eql(2)
       context.destroy
-      Role.count.should == 1
-      RoleUser.where(:context_type => context.class.name, :context_id => context.id).count.should == 0
+      expect(Role.count).to eql(1)
+      expect(RoleUser.where(:context_type => context.class.name, :context_id => context.id).count).to eql(0)
     end
   end
 
   describe "destroy_zuul_permissions" do
     it "should not be available if permissions are disabled" do
       Weapon.acts_as_authorization_context :with_permissions => false
-      Weapon.new.should_not respond_to(:destroy_zuul_permissions)
+      expect(Weapon.new).to_not respond_to(:destroy_zuul_permissions)
     end
     
     it "should destroy all permission_subjects, permission_roles and permissions that use this context" do
@@ -85,15 +85,15 @@ describe "Zuul::ActiveRecord::Context" do
       user.assign_permission(:ctxtedit, context)
       role.assign_permission(:edit, context)
       
-      Permission.count.should == 2
-      Permission.where(:context_type => context.class.name, :context_id => context.id).count.should == 1
-      PermissionRole.where(:context_type => context.class.name, :context_id => context.id).count.should == 1
-      PermissionUser.where(:context_type => context.class.name, :context_id => context.id).count.should == 2
+      expect(Permission.count).to eql(2)
+      expect(Permission.where(:context_type => context.class.name, :context_id => context.id).count).to eql(1)
+      expect(PermissionRole.where(:context_type => context.class.name, :context_id => context.id).count).to eql(1)
+      expect(PermissionUser.where(:context_type => context.class.name, :context_id => context.id).count).to eql(2)
       context.destroy
-      Permission.count.should == 1
-      Permission.where(:context_type => context.class.name, :context_id => context.id).count.should == 0
-      PermissionRole.where(:context_type => context.class.name, :context_id => context.id).count.should == 0
-      PermissionUser.where(:context_type => context.class.name, :context_id => context.id).count.should == 0
+      expect(Permission.count).to eql(1)
+      expect(Permission.where(:context_type => context.class.name, :context_id => context.id).count).to eql(0)
+      expect(PermissionRole.where(:context_type => context.class.name, :context_id => context.id).count).to eql(0)
+      expect(PermissionUser.where(:context_type => context.class.name, :context_id => context.id).count).to eql(0)
     end
   end
 end
