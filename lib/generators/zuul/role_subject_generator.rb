@@ -17,17 +17,17 @@ module ActiveRecord
         def name
           [role_model, subject_model].sort.map(&:to_s).map(&:camelize).map(&:singularize).join("")
         end
-        
+
         def copy_role_subject_migration
           attributes << Rails::Generators::GeneratedAttribute.new("#{role_model.to_s.underscore.singularize}_id", :integer)
           attributes << Rails::Generators::GeneratedAttribute.new("#{subject_model.to_s.underscore.singularize}_id", :integer)
           attributes << Rails::Generators::GeneratedAttribute.new("context_type", :string)
           attributes << Rails::Generators::GeneratedAttribute.new("context_id", :integer)
-          
+
           if (behavior == :invoke && model_exists?) || (behavior == :revoke && migration_exists?(:role_subject, table_name))
-            migration_template "role_subject_existing.rb", "db/migrate/add_zuul_role_subject_to_#{table_name}"
+            migration_template "role_subject_existing.rb", "db/migrate/add_zuul_role_subject_to_#{table_name}.rb"
           else
-            migration_template "role_subject.rb", "db/migrate/zuul_role_subject_create_#{table_name}"
+            migration_template "role_subject.rb", "db/migrate/zuul_role_subject_create_#{table_name}.rb"
           end
         end
 
