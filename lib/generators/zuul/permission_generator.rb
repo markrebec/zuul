@@ -15,9 +15,9 @@ module ActiveRecord
 
         def copy_zuul_migration
           if (behavior == :invoke && model_exists?) || (behavior == :revoke && migration_exists?(:permission, table_name))
-            migration_template "permission_existing.rb", "db/migrate/add_zuul_permission_to_#{table_name}"
+            migration_template "permission_existing.rb", "db/migrate/add_zuul_permission_to_#{table_name}.rb"
           else
-            migration_template "permission.rb", "db/migrate/zuul_permission_create_#{table_name}"
+            migration_template "permission.rb", "db/migrate/zuul_permission_create_#{table_name}.rb"
           end
         end
 

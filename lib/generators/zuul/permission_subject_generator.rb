@@ -17,17 +17,17 @@ module ActiveRecord
         def name
           [permission_model, subject_model].sort.map(&:to_s).map(&:camelize).map(&:singularize).join("")
         end
-        
+
         def copy_permission_subject_migration
           attributes << Rails::Generators::GeneratedAttribute.new("#{permission_model.to_s.underscore.singularize}_id", :integer)
           attributes << Rails::Generators::GeneratedAttribute.new("#{subject_model.to_s.underscore.singularize}_id", :integer)
           attributes << Rails::Generators::GeneratedAttribute.new("context_type", :string)
           attributes << Rails::Generators::GeneratedAttribute.new("context_id", :integer)
-          
+
           if (behavior == :invoke && model_exists?) || (behavior == :revoke && migration_exists?(:permission_subject, table_name))
-            migration_template "permission_subject_existing.rb", "db/migrate/add_zuul_permission_subject_to_#{table_name}"
+            migration_template "permission_subject_existing.rb", "db/migrate/add_zuul_permission_subject_to_#{table_name}.rb"
           else
-            migration_template "permission_subject.rb", "db/migrate/zuul_permission_subject_create_#{table_name}"
+            migration_template "permission_subject.rb", "db/migrate/zuul_permission_subject_create_#{table_name}.rb"
           end
         end
 

@@ -12,12 +12,12 @@ module ActiveRecord
 
         include ::Zuul::Generators::OrmHelpers
         source_root File.expand_path("../templates", __FILE__)
-        
+
         def copy_role_migration
           if (behavior == :invoke && model_exists?) || (behavior == :revoke && migration_exists?(:role, table_name))
-            migration_template "role_existing.rb", "db/migrate/add_zuul_role_to_#{table_name}"
+            migration_template "role_existing.rb", "db/migrate/add_zuul_role_to_#{table_name}.rb"
           else
-            migration_template "role.rb", "db/migrate/zuul_role_create_#{table_name}"
+            migration_template "role.rb", "db/migrate/zuul_role_create_#{table_name}.rb"
           end
         end
 
